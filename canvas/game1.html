@@ -15,11 +15,20 @@ canvas {
 var myGamePiece;
 var myObstacles = [];
 var myScore;
+var crashSound;
+var backgroundMusic;
 
 function startGame() {
     myGamePiece = new component(30, 30, "red", 10, 120);
     myGamePiece.gravity = 0.05;
     myScore = new component("30px", "Consolas", "black", 280, 40, "text");
+
+    // Add audio effects
+    crashSound = new Audio('crashSound.mp3'); // Replace with the path to your crash sound file
+    backgroundMusic = new Audio('background.mp3'); // Replace with the path to your background music file
+    backgroundMusic.loop = true;
+    backgroundMusic.play();
+
     myGameArea.start();
 }
 
@@ -32,7 +41,7 @@ var myGameArea = {
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.frameNo = 0;
         this.interval = setInterval(updateGameArea, 20);
-        },
+    },
     clear : function() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
@@ -94,6 +103,7 @@ function updateGameArea() {
     var x, height, gap, minHeight, maxHeight, minGap, maxGap;
     for (i = 0; i < myObstacles.length; i += 1) {
         if (myGamePiece.crashWith(myObstacles[i])) {
+            crashSound.play();  // Play crash sound when crashing
             return;
         } 
     }
@@ -135,3 +145,4 @@ function accelerate(n) {
 <p>How long can you stay alive?</p>
 </body>
 </html>
+
