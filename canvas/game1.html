@@ -17,24 +17,25 @@ var myObstacles = [];
 var myScore;
 var crashSound;
 var backgroundMusic;
-var musicStarted = false; // Track whether music has started
-var gamePaused = false; // Track game pause state
-var gameRunning = false; // Track if the game has started
-var gameInterval; // Store the interval reference for pausing/resuming
+var musicStarted = false;
+var gamePaused = false;
+var gameRunning = false;
+var gameInterval;
 
 function startGame() {
     if (!gameRunning) {
-        myGamePiece = new component(30, 30, "red", 10, 120);
+        // Create the game character (image instead of red square)
+        myGamePiece = new component(30, 30, "", 10, 120, "image"); // Replace "character.png" with your image path
         myGamePiece.gravity = 0.05;
         myScore = new component("30px", "Consolas", "black", 280, 40, "text");
 
         // Initialize audio effects
-        crashSound = new Audio("ntriolo.github.io/canvas/mixkit-8-bit-bomb-explosion-2811.mp3"); // Replace with correct path to your crash sound file
-        backgroundMusic = new Audio("ntriolo.github.io/canvas/Background music FREE DOWNLOAD (194).mp3"); // Replace with correct path to your background music file
-        backgroundMusic.loop = true; // Loop background music
+        crashSound = new Audio('crash.mp3'); 
+        backgroundMusic = new Audio('background.mp3');
+        backgroundMusic.loop = true;
 
         myGameArea.start();
-        gameRunning = true; // Mark the game as started
+        gameRunning = true; 
     }
 }
 
@@ -46,22 +47,21 @@ var myGameArea = {
         this.context = this.canvas.getContext("2d");
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.frameNo = 0;
-        this.interval = setInterval(updateGameArea, 20); // Start game loop
-        gameInterval = this.interval; // Store interval for pausing and resuming
-        window.addEventListener('keydown', moveKey); // Add keyboard control
-        window.addEventListener('keyup', stopMove);  // Stop movement when key is released
+        this.interval = setInterval(updateGameArea, 20);
+        gameInterval = this.interval; 
+        window.addEventListener('keydown', moveKey); 
+        window.addEventListener('keyup', stopMove); 
     },
     clear : function() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     },
     stop : function() {
-        clearInterval(this.interval); // Stop the game loop
+        clearInterval(this.interval); 
     }
 }
 
 function component(width, height, color, x, y, type) {
     this.type = type;
-    this.score = 0;
     this.width = width;
     this.height = height;
     this.speedX = 0;
@@ -70,23 +70,33 @@ function component(width, height, color, x, y, type) {
     this.y = y;
     this.gravity = 0;
     this.gravitySpeed = 0;
+
+    if (this.type == "image") {
+        this.image = new Image();
+        this.image.src = color;  // Color becomes the image source for images
+    }
+
     this.update = function() {
         ctx = myGameArea.context;
         if (this.type == "text") {
             ctx.font = this.width + " " + this.height;
             ctx.fillStyle = color;
             ctx.fillText(this.text, this.x, this.y);
+        } else if (this.type == "image") {
+            ctx.drawImage(this.image, this.x, this.y, this.width, this.height); // Draw image
         } else {
             ctx.fillStyle = color;
             ctx.fillRect(this.x, this.y, this.width, this.height);
         }
     }
+
     this.newPos = function() {
         this.gravitySpeed += this.gravity;
         this.x += this.speedX;
         this.y += this.speedY + this.gravitySpeed;
         this.hitBottom();
     }
+
     this.hitBottom = function() {
         var rockbottom = myGameArea.canvas.height - this.height;
         if (this.y > rockbottom) {
@@ -94,6 +104,7 @@ function component(width, height, color, x, y, type) {
             this.gravitySpeed = 0;
         }
     }
+
     this.crashWith = function(otherobj) {
         var myleft = this.x;
         var myright = this.x + (this.width);
@@ -115,7 +126,7 @@ function updateGameArea() {
     var x, height, gap, minHeight, maxHeight, minGap, maxGap;
     for (i = 0; i < myObstacles.length; i += 1) {
         if (myGamePiece.crashWith(myObstacles[i])) {
-            crashSound.play();  // Play crash sound when crashing
+            crashSound.play();  
             return;
         } 
     }
@@ -129,8 +140,10 @@ function updateGameArea() {
         minGap = 50;
         maxGap = 200;
         gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
-        myObstacles.push(new component(10, height, "green", x, 0));
-        myObstacles.push(new component(10, x - height - gap, "green", x, height + gap));
+
+        // Create poles as images instead of green bars
+        myObstacles.push(new component(10, height, "pole.png", x, 0, "image"));  // Top pole
+        myObstacles.push(new component(10, x - height - gap, "pole.png", x, height + gap, "image"));  // Bottom pole
     }
     for (i = 0; i < myObstacles.length; i += 1) {
         myObstacles[i].x += -1;
@@ -147,54 +160,48 @@ function everyinterval(n) {
     return false;
 }
 
-// Move the game piece using arrow keys
 function moveKey(e) {
     switch(e.key) {
         case 'ArrowUp':
-            myGamePiece.speedY = -6; // Move up
+            myGamePiece.speedY = -2;
             break;
         case 'ArrowDown':
-            myGamePiece.speedY = 6;  // Move down
+            myGamePiece.speedY = 2;
             break;
         case 'ArrowLeft':
-            myGamePiece.speedX = -6; // Move left
+            myGamePiece.speedX = -2;
             break;
         case 'ArrowRight':
-            myGamePiece.speedX = 6;  // Move right
+            myGamePiece.speedX = 2;
             break;
     }
 
-    // Start music if it hasn't started yet (on first user interaction)
     if (!musicStarted) {
         backgroundMusic.play();
         musicStarted = true;
     }
 }
 
-// Stop movement when the key is released
 function stopMove(e) {
     switch(e.key) {
         case 'ArrowUp':
         case 'ArrowDown':
-            myGamePiece.speedY = 0; // Stop vertical movement
+            myGamePiece.speedY = 0;
             break;
         case 'ArrowLeft':
         case 'ArrowRight':
-            myGamePiece.speedX = 0; // Stop horizontal movement
+            myGamePiece.speedX = 0;
             break;
     }
 }
 
-// Pause or continue the game
 function togglePauseGame() {
     if (gamePaused) {
-        // Continue the game
-        myGameArea.interval = setInterval(updateGameArea, 20); // Resume the game loop
+        myGameArea.interval = setInterval(updateGameArea, 20);
         gamePaused = false;
         document.getElementById('pauseButton').textContent = "Pause";
     } else {
-        // Pause the game
-        clearInterval(myGameArea.interval); // Pause the game loop
+        clearInterval(myGameArea.interval);
         gamePaused = true;
         document.getElementById('pauseButton').textContent = "Continue";
     }
@@ -207,7 +214,7 @@ function togglePauseGame() {
 <button id="pauseButton" onclick="togglePauseGame()">Pause</button>
 
 <br>
-<p>Use arrow keys to control the red square, or use the accelerate button to adjust gravity</p>
+<p>Use arrow keys to control the character, or use the accelerate button to adjust gravity</p>
 
 </body>
 </html>
