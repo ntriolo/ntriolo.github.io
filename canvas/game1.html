@@ -29,7 +29,9 @@ function startGame() {
     backgroundMusic = new Audio("https://github.com/ntriolo/ntriolo.github.io/blob/main/canvas/Background%20music%20FREE%20DOWNLOAD%20(194).mp3"); // Replace with correct path to your background music file
     backgroundMusic.loop = true; // Loop background music
 
-    myGameArea.start();
+   myGameArea.start();
+    window.addEventListener('keydown', moveKey); // Add keyboard control
+    window.addEventListener('keyup', stopMove);  // Stop movement when key is released
 }
 
 var myGameArea = {
@@ -135,8 +137,22 @@ function everyinterval(n) {
     return false;
 }
 
-function accelerate(n) {
-    myGamePiece.gravity = n;
+// Move the game piece using arrow keys
+function moveKey(e) {
+    switch(e.key) {
+        case 'ArrowUp':
+            myGamePiece.speedY = -2; // Move up
+            break;
+        case 'ArrowDown':
+            myGamePiece.speedY = 2;  // Move down
+            break;
+        case 'ArrowLeft':
+            myGamePiece.speedX = -2; // Move left
+            break;
+        case 'ArrowRight':
+            myGamePiece.speedX = 2;  // Move right
+            break;
+    }
 
     // Start music if it hasn't started yet (on first user interaction)
     if (!musicStarted) {
@@ -144,10 +160,30 @@ function accelerate(n) {
         musicStarted = true;
     }
 }
+
+// Stop movement when the key is released
+function stopMove(e) {
+    switch(e.key) {
+        case 'ArrowUp':
+        case 'ArrowDown':
+            myGamePiece.speedY = 0; // Stop vertical movement
+            break;
+        case 'ArrowLeft':
+        case 'ArrowRight':
+            myGamePiece.speedX = 0; // Stop horizontal movement
+            break;
+    }
+}
+
+// Accelerate function for button control (optional)
+function accelerate(n) {
+    myGamePiece.gravity = n;
+}
+
 </script>
 <br>
 <button onmousedown="accelerate(-0.2)" onmouseup="accelerate(0.05)">ACCELERATE</button>
-<p>Use the ACCELERATE button to stay in the air</p>
+<p>Use the ACCELERATE button to stay in the air or control with arrow keys</p>
 <p>How long can you stay alive?</p>
 </body>
 </html>
