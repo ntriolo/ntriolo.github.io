@@ -15,21 +15,20 @@ canvas {
 var myGamePiece;
 var myObstacles = [];
 var myScore;
+var crashSound;
+var backgroundMusic;
+var musicStarted = false; // Track whether music has started
 
 function startGame() {
-    myGamePiece = new gameObject(30, 30, "red", 10, 120);
-    character2 = new gameObject(20, 20, "yellow", 20, 150);
-    
+    myGamePiece = new component(30, 30, "red", 10, 120);
     myGamePiece.gravity = 0.05;
-    myScore = new gameObject("30px", "Consolas", "black", 280, 40, "text");
+    myScore = new component("30px", "Consolas", "black", 280, 40, "text");
 
-    // Audio effects
-    crashSound = new Audio("https://github.com/ntriolo/ntriolo.github.io/blob/main/mixkit-8-bit-bomb-explosion-2811.mp3"); 
-    backgroundMusic = new Audio("https://github.com/ntriolo/ntriolo.github.io/blob/main/Background%20music%20FREE%20DOWNLOAD%20(194).mp3"); 
-    backgroundMusic.loop = true;
-    backgroundMusic.play(); 
+    // Initialize audio effects
+    crashSound = new Audio('crash.mp3'); // Replace with correct path to your crash sound file
+    backgroundMusic = new Audio('background.mp3'); // Replace with correct path to your background music file
+    backgroundMusic.loop = true; // Loop background music
 
-    
     myGameArea.start();
 }
 
@@ -42,13 +41,13 @@ var myGameArea = {
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.frameNo = 0;
         this.interval = setInterval(updateGameArea, 20);
-        },
+    },
     clear : function() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 }
 
-function gameObject(width, height, color, x, y, type) {
+function component(width, height, color, x, y, type) {
     this.type = type;
     this.score = 0;
     this.width = width;
@@ -118,8 +117,8 @@ function updateGameArea() {
         minGap = 50;
         maxGap = 200;
         gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
-        myObstacles.push(new gameObject(10, height, "green", x, 0));
-        myObstacles.push(new gameObject(10, x - height - gap, "green", x, height + gap));
+        myObstacles.push(new component(10, height, "green", x, 0));
+        myObstacles.push(new component(10, x - height - gap, "green", x, height + gap));
     }
     for (i = 0; i < myObstacles.length; i += 1) {
         myObstacles[i].x += -1;
@@ -129,7 +128,6 @@ function updateGameArea() {
     myScore.update();
     myGamePiece.newPos();
     myGamePiece.update();
-    character2.update();
 }
 
 function everyinterval(n) {
