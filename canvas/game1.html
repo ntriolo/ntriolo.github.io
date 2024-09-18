@@ -23,6 +23,12 @@ function startGame() {
     myGamePiece.gravity = 0.05;
     myScore = new gameObject("30px", "Consolas", "black", 280, 40, "text");
 
+    // Add audio effects
+    crashSound = new Audio(''); // Replace with the path to your crash sound file
+    backgroundMusic = new Audio(''); // Replace with the path to your background music file
+    backgroundMusic.loop = true;
+    backgroundMusic.play();
+
     
     myGameArea.start();
 }
