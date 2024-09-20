@@ -24,7 +24,7 @@ var gameInterval; // Store the interval reference for pausing/resuming
 
 function startGame() {
     if (!gameRunning) {
-        myGamePiece = new component(30, 30, "Army man.jpeg", 10, 120, "image"); // Replace "character.png" with your image path
+        myGamePiece = new component(30, 30,'Army man.jpeg', 10, 120, "image"); // Replace "character.png" with your image path
         myGamePiece.gravity = 0.05;
         myScore = new component("30px", "Consolas", "blue", 280, 40, "text");
 
