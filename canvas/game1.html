@@ -33,6 +33,8 @@ function startGame() {
         backgroundMusic = new Audio('Background music FREE DOWNLOAD (194).mp3'); // Replace with correct path to your background music file
         backgroundMusic.loop = true; // Loop background music
 
+        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height,'run down city background.webp' , 0, 0, "background");
+
         myGameArea.start();
         gameRunning = true; // Mark the game as started
     }
