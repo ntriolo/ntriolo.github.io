@@ -175,6 +175,11 @@ function updateGameArea() {
             myProjectiles[i].newPos();
             myProjectiles[i].update();
         }
+
+        // Remove projectiles that go off screen
+        myProjectiles = myProjectiles.filter(function(projectile) {
+            return projectile.x < myGameArea.canvas.width;
+        });
     }
 
     // Update the score
@@ -190,16 +195,16 @@ function moveKey(e) {
     if (!gameOver) {
         switch(e.key) {
             case 'ArrowUp':
-                myGamePiece.speedY = -8;
+                myGamePiece.speedY = -2;
                 break;
             case 'ArrowDown':
-                myGamePiece.speedY = 8;
+                myGamePiece.speedY = 2;
                 break;
             case 'ArrowLeft':
-                myGamePiece.speedX = -8;
+                myGamePiece.speedX = -2;
                 break;
             case 'ArrowRight':
-                myGamePiece.speedX = 8;
+                myGamePiece.speedX = 2;
                 break;
             case ' ': // Space bar to shoot
                 shootProjectile();
@@ -229,9 +234,11 @@ function stopMove(e) {
 }
 
 function shootProjectile() {
-    var projectile = new component(5, 5, "blue", myGamePiece.x + 30, myGamePiece.y + 12, "projectile");
-    projectile.speedX = 5; // Projectile speed
-    myProjectiles.push(projectile);
+    if (myWall) { // Only allow shooting if the wall still exists
+        var projectile = new component(5, 5, "blue", myGamePiece.x + 30, myGamePiece.y + 12, "projectile");
+        projectile.speedX = 5; // Projectile speed
+        myProjectiles.push(projectile);
+    }
 }
 
 </script>
