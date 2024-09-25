@@ -150,8 +150,8 @@ function updateGameArea() {
         gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
 
         // Create poles as images instead of green bars
-        myObstacles.push(new component(10, height, "pole.png", x, 0, "image"));  // Top pole
-        myObstacles.push(new component(10, x - height - gap, "pole.png", x, height + gap, "image"));  // Bottom pole
+        myObstacles.push(new component(10, height, "https://github.com/ntriolo/ntriolo.github.io/blob/main/canvas/sandbag:barbwire%20pillars.jpeg", x, 0, "image"));  // Top pole
+        myObstacles.push(new component(10, x - height - gap, "https://github.com/ntriolo/ntriolo.github.io/blob/main/canvas/sandbag:barbwire%20pillars.jpeg", x, height + gap, "image"));  // Bottom pole
     }
     for (i = 0; i < myObstacles.length; i += 1) {
         myObstacles[i].x += -1;
