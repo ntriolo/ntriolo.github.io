@@ -163,10 +163,12 @@ function updateGameArea() {
             myObstacles.push(new component(10, height, "green", x, 0));  // Top pole
             myObstacles.push(new component(10, myGameArea.canvas.height - height - gap, "green", x, height + gap));  // Bottom pole
 
+           
             // Add breakable wall between the pillars
-            var wallHeight = 20;  // Set height for the breakable wall
-            var wallY = height + (gap / 2) - (wallHeight / 2);
-            breakableWalls.push(new component(10, wallHeight, "red", x, wallY, "wall"));
+var wallHeight = 50;  // Increased height for better visibility
+var wallY = height + (gap / 2) - (wallHeight / 2);
+breakableWalls.push(new component(30, wallHeight, "blue", x, wallY, "wall"));  // Increased width, changed color to blue
+
         }
 
         // Move obstacles
