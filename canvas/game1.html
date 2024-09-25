@@ -21,7 +21,6 @@ var backgroundImage;
 var musicStarted = false;
 var gamePaused = false;
 var gameRunning = false;
-var gameInterval;
 
 function startGame() {
     if (!gameRunning) {
@@ -52,7 +51,6 @@ var myGameArea = {
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.frameNo = 0;
         this.interval = setInterval(updateGameArea, 20);
-        gameInterval = this.interval; 
         window.addEventListener('keydown', moveKey); 
         window.addEventListener('keyup', stopMove); 
     },
@@ -139,7 +137,8 @@ function updateGameArea() {
     for (i = 0; i < myObstacles.length; i += 1) {
         if (myGamePiece.crashWith(myObstacles[i])) {
             crashSound.play();
-            return; // Stop the game when a crash happens
+            myGameArea.stop(); // Stop the game on crash
+            return; // Stop further processing
         } 
     }
 
@@ -172,29 +171,6 @@ function updateGameArea() {
     myScore.update();
 
     // Update the position of the game piece (character)
-    myGamePiece.newPos();
-    myGamePiece.update();
-    myGameArea.clear();
-    myGameArea.frameNo += 1;
-    if (myGameArea.frameNo == 1 || everyinterval(150)) {
-        x = myGameArea.canvas.width;
-        minHeight = 20;
-        maxHeight = 200;
-        height = Math.floor(Math.random()*(maxHeight-minHeight+1)+minHeight);
-        minGap = 50;
-        maxGap = 200;
-        gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
-
-        // Create poles as images instead of green bars
-        myObstacles.push(new component(10, height, "pole.png", x, 0, "image"));  // Top pole
-        myObstacles.push(new component(10, x - height - gap, "pole.png", x, height + gap, "image"));  // Bottom pole
-    }
-    for (i = 0; i < myObstacles.length; i += 1) {
-        myObstacles[i].x += -1;
-        myObstacles[i].update();
-    }
-    myScore.text="SCORE: " + myGameArea.frameNo;
-    myScore.update();
     myGamePiece.newPos();
     myGamePiece.update();
 }
@@ -239,26 +215,13 @@ function stopMove(e) {
     }
 }
 
-function togglePauseGame() {
-    if (gamePaused) {
-        myGameArea.interval = setInterval(updateGameArea, 20);
-        gamePaused = false;
-        document.getElementById('pauseButton').textContent = "Pause";
-    } else {
-        clearInterval(myGameArea.interval);
-        gamePaused = true;
-        document.getElementById('pauseButton').textContent = "Continue";
-    }
-}
-
 </script>
 
 <!-- Buttons for starting and pausing the game -->
 <button onclick="startGame()">Start Game</button>
-<button id="pauseButton" onclick="togglePauseGame()">Pause</button>
 
 <br>
-<p>Use arrow keys to control the character, or use the accelerate button to adjust gravity</p>
+<p>Use arrow keys to control the character.</p>
 
 </body>
 </html>
