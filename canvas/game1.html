@@ -21,12 +21,12 @@ var backgroundImage;
 var musicStarted = false;
 var gamePaused = false;
 var gameRunning = false;
-var gameOver = false; // Add this flag for game over
+var gameInterval;
 
 function startGame() {
     if (!gameRunning) {
-        // Initialize everything
-        myGamePiece = new component(30, 30, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/Army%20man.jpeg ", 10, 120, "image");
+        // Create the game character (image instead of red square)
+        myGamePiece = new component(30, 30, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/Army%20man.jpeg", 10, 120, "image"); // Replace "character.png" with your image path
         myGamePiece.gravity = 0.05;
         myScore = new component("30px", "Consolas", "black", 280, 40, "text");
 
@@ -36,11 +36,10 @@ function startGame() {
         backgroundMusic.loop = true;
 
         // Load background image
-        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/run down city background.webp ", 0, 0, "background");
+        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/run down city background.webp ", 0, 0, "background"); // Replace "background.png" with your image path
 
         myGameArea.start();
-        gameRunning = true;
-        gameOver = false; // Reset game over flag when starting
+        gameRunning = true; 
     }
 }
 
@@ -53,6 +52,7 @@ var myGameArea = {
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.frameNo = 0;
         this.interval = setInterval(updateGameArea, 20);
+        gameInterval = this.interval; 
         window.addEventListener('keydown', moveKey); 
         window.addEventListener('keyup', stopMove); 
     },
@@ -64,8 +64,7 @@ var myGameArea = {
     }
 }
 
-    
-    function component(width, height, color, x, y, type) {
+function component(width, height, color, x, y, type) {
     this.type = type;
     this.width = width;
     this.height = height;
@@ -87,25 +86,19 @@ var myGameArea = {
             ctx.font = this.width + " " + this.height;
             ctx.fillStyle = color;
             ctx.fillText(this.text, this.x, this.y);
-        } else if (this.type == "image") {
-            ctx.drawImage(this.image, this.x, this.y, this.width, this.height); // Draw image
-        } else if (this.type == "background") {
-            // Make the background fill the entire canvas
-            ctx.drawImage(this.image, 0, 0, myGameArea.canvas.width, myGameArea.canvas.height); 
+        } else if (this.type == "image" || this.type == "background") {
+            ctx.drawImage(this.image, this.x, this.y, this.width, this.height); // Draw image or background
         } else {
             ctx.fillStyle = color;
             ctx.fillRect(this.x, this.y, this.width, this.height);
         }
     }
-}
 
     this.newPos = function() {
-        if (!gameOver) { // Allow movement only if the game is not over
-            this.gravitySpeed += this.gravity;
-            this.x += this.speedX;
-            this.y += this.speedY + this.gravitySpeed;
-            this.hitBottom();
-        }
+        this.gravitySpeed += this.gravity;
+        this.x += this.speedX;
+        this.y += this.speedY + this.gravitySpeed;
+        this.hitBottom();
     }
 
     this.hitBottom = function() {
@@ -136,54 +129,37 @@ var myGameArea = {
 function updateGameArea() {
     var x, height, gap, minHeight, maxHeight, minGap, maxGap;
 
-    if (!gameOver) {
-        // Clear the game area first if the game is still running
-        myGameArea.clear();
+    // Draw background first
+    backgroundImage.update();
 
-        // Draw background image
-        backgroundImage.update();
-
-        // Check for crashes
-        for (i = 0; i < myObstacles.length; i += 1) {
-            if (myGamePiece.crashWith(myObstacles[i])) {
-                crashSound.play();
-                gameOver = true; // Set game over flag on crash
-                myGameArea.stop(); // Stop updating the game
-                break;
-            } 
-        }
-
-        // Update the game frame count and add obstacles
-        if (!gameOver) {
-            myGameArea.frameNo += 1;
-
-            if (myGameArea.frameNo == 1 || everyinterval(150)) {
-                x = myGameArea.canvas.width;
-                minHeight = 20;
-                maxHeight = 200;
-                height = Math.floor(Math.random() * (maxHeight - minHeight + 1) + minHeight);
-                minGap = 50;
-                maxGap = 200;
-                gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
-
-                myObstacles.push(new component(10, height, "pole.png", x, 0, "image"));
-                myObstacles.push(new component(10, x - height - gap, "pole.png", x, height + gap, "image"));
-            }
-
-            // Move existing obstacles
-            for (i = 0; i < myObstacles.length; i += 1) {
-                myObstacles[i].x += -1;
-                myObstacles[i].update();
-            }
-
-            // Update the position of the game piece (character)
-            myGamePiece.newPos();
-        }
+    for (i = 0; i < myObstacles.length; i += 1) {
+        if (myGamePiece.crashWith(myObstacles[i])) {
+            crashSound.play();  
+            return;
+        } 
     }
+    myGameArea.clear();
+    myGameArea.frameNo += 1;
+    if (myGameArea.frameNo == 1 || everyinterval(150)) {
+        x = myGameArea.canvas.width;
+        minHeight = 20;
+        maxHeight = 200;
+        height = Math.floor(Math.random()*(maxHeight-minHeight+1)+minHeight);
+        minGap = 50;
+        maxGap = 200;
+        gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
 
-    // Update the score and game piece even after game over
-    myScore.text = "SCORE: " + myGameArea.frameNo;
+        // Create poles as images instead of green bars
+        myObstacles.push(new component(10, height, "pole.png", x, 0, "image"));  // Top pole
+        myObstacles.push(new component(10, x - height - gap, "pole.png", x, height + gap, "image"));  // Bottom pole
+    }
+    for (i = 0; i < myObstacles.length; i += 1) {
+        myObstacles[i].x += -1;
+        myObstacles[i].update();
+    }
+    myScore.text="SCORE: " + myGameArea.frameNo;
     myScore.update();
+    myGamePiece.newPos();
     myGamePiece.update();
 }
 
@@ -193,41 +169,49 @@ function everyinterval(n) {
 }
 
 function moveKey(e) {
-    if (!gameOver) {
-        switch(e.key) {
-            case 'ArrowUp':
-                myGamePiece.speedY = -2;
-                break;
-            case 'ArrowDown':
-                myGamePiece.speedY = 2;
-                break;
-            case 'ArrowLeft':
-                myGamePiece.speedX = -2;
-                break;
-            case 'ArrowRight':
-                myGamePiece.speedX = 2;
-                break;
-        }
+    switch(e.key) {
+        case 'ArrowUp':
+            myGamePiece.speedY = -2;
+            break;
+        case 'ArrowDown':
+            myGamePiece.speedY = 2;
+            break;
+        case 'ArrowLeft':
+            myGamePiece.speedX = -2;
+            break;
+        case 'ArrowRight':
+            myGamePiece.speedX = 2;
+            break;
+    }
 
-        if (!musicStarted) {
-            backgroundMusic.play();
-            musicStarted = true;
-        }
+    if (!musicStarted) {
+        backgroundMusic.play();
+        musicStarted = true;
     }
 }
 
 function stopMove(e) {
-    if (!gameOver) {
-        switch(e.key) {
-            case 'ArrowUp':
-            case 'ArrowDown':
-                myGamePiece.speedY = 0;
-                break;
-            case 'ArrowLeft':
-            case 'ArrowRight':
-                myGamePiece.speedX = 0;
-                break;
-        }
+    switch(e.key) {
+        case 'ArrowUp':
+        case 'ArrowDown':
+            myGamePiece.speedY = 0;
+            break;
+        case 'ArrowLeft':
+        case 'ArrowRight':
+            myGamePiece.speedX = 0;
+            break;
+    }
+}
+
+function togglePauseGame() {
+    if (gamePaused) {
+        myGameArea.interval = setInterval(updateGameArea, 20);
+        gamePaused = false;
+        document.getElementById('pauseButton').textContent = "Pause";
+    } else {
+        clearInterval(myGameArea.interval);
+        gamePaused = true;
+        document.getElementById('pauseButton').textContent = "Continue";
     }
 }
 
@@ -235,6 +219,10 @@ function stopMove(e) {
 
 <!-- Buttons for starting and pausing the game -->
 <button onclick="startGame()">Start Game</button>
+<button id="pauseButton" onclick="togglePauseGame()">Pause</button>
 
 <br>
-<p>Use arrow keys to control the character.</p>
+<p>Use arrow keys to control the character, or use the accelerate button to adjust gravity</p>
+
+</body>
+</html>
