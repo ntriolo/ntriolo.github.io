@@ -14,7 +14,7 @@ var gameOver = false; // Add this flag for game over
 function startGame() {
     if (!gameRunning) {
         // Initialize everything
-        myGamePiece = new component(30, 30, "character.png", 10, 120, "image");
+        myGamePiece = new component(30, 30, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/Army%20man.jpeg", 10, 120, "image");
         myGamePiece.gravity = 0.05;
         myScore = new component("30px", "Consolas", "black", 280, 40, "text");
 
@@ -24,7 +24,7 @@ function startGame() {
         backgroundMusic.loop = true;
 
         // Load background image
-        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "background.png", 0, 0, "background");
+        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/run down city background.webp ", 0, 0, "background");
 
         myGameArea.start();
         gameRunning = true;
