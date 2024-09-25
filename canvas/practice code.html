@@ -98,22 +98,27 @@ function component(width, height, color, x, y, type) {
         this.y += this.speedY;
     }
 
+    // Adjust hitbox margins for a tighter collision detection
     this.crashWith = function(otherobj) {
-        var myleft = this.x;
-        var myright = this.x + this.width;
-        var mytop = this.y;
-        var mybottom = this.y + this.height;
+        var myleft = this.x + 2; // Adjust for the wall's width for better hit detection
+        var myright = this.x + this.width - 2; // Adjust for the wall's width
+        var mytop = this.y + 2; // Adjust for the wall's height
+        var mybottom = this.y + this.height - 2; // Adjust for the wall's height
         var otherleft = otherobj.x;
         var otherright = otherobj.x + otherobj.width;
         var othertop = otherobj.y;
         var otherbottom = otherobj.y + otherobj.height;
-        return !((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright));
+
+        return !((mybottom < othertop) || 
+                  (mytop > otherbottom) || 
+                  (myright < otherleft) || 
+                  (myleft > otherright));
     }
 }
 
 function createWall(pillarX, topHeight, bottomHeight) {
     var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - 25; // Center wall between pillars
-    var wall = new component(10, 50, "red", pillarX, wallY, "wall"); // Wall properties
+    var wall = new component(10, 50, "red", pillarX - 5, wallY, "wall"); // Move wall slightly to the left for better alignment
     wall.lifetime = wallLifetime; // Set its lifetime
     breakableWalls.push(wall); // Add to the wall array
 }
@@ -150,40 +155,38 @@ function updateGameArea() {
 
             myObstacles.push(new component(10, height, "green", x, 0));  // Top pole
             myObstacles.push(new component(10, myGameArea.canvas.height - height - gap, "green", x, height + gap));  // Bottom pole
-
-            // Create a wall between the new pillars
-            createWall(x, height, myGameArea.canvas.height - height - gap); // Create wall between top and bottom pillars
+            
+            // Create breakable wall between pillars
+            createWall(x, height, myGameArea.canvas.height - height - gap);
         }
 
-        // Move obstacles
+        // Move obstacles and walls
         for (var i = 0; i < myObstacles.length; i++) {
             myObstacles[i].x += -2;  // Make sure obstacles move at a reasonable speed
             myObstacles[i].update();
         }
 
-        // Update breakable walls
-        for (var i = breakableWalls.length - 1; i >= 0; i--) {
-            breakableWalls[i].lifetime--;
+        // Move walls
+        for (var i = 0; i < breakableWalls.length; i++) {
+            breakableWalls[i].x += -2; // Move the wall
+            breakableWalls[i].update();
 
-            // Check for collisions with projectiles
-            for (var j = myProjectiles.length - 1; j >= 0; j--) {
-                if (breakableWalls[i].crashWith(myProjectiles[j])) {
-                    myProjectiles.splice(j, 1); // Remove the projectile
-                    breakableWalls.splice(i, 1); // Remove the wall
-                    break; // Exit the loop to prevent modifying the array during iteration
-                }
-            }
+            // Reduce wall lifetime
+            breakableWalls[i].lifetime -= 1;
 
-            // If lifetime is over, end the game
-            if (breakableWalls[i].lifetime <= 0) {
+            // Check for collision with player
+            if (myGamePiece.crashWith(breakableWalls[i])) {
+                crashSound.play();
                 gameOver = true;
                 myGameArea.stop();
                 break;
             }
 
-            // Move and update the wall
-            breakableWalls[i].x -= 2; // Move the wall to the left
-            breakableWalls[i].update(); // Draw the wall
+            // Remove the wall if its lifetime is over
+            if (breakableWalls[i].lifetime <= 0) {
+                breakableWalls.splice(i, 1);
+                i--; // Adjust index after removal
+            }
         }
 
         // Update the position of the game piece (character)
