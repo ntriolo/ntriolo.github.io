@@ -14,7 +14,6 @@ canvas {
 
 var myGamePiece;
 var myObstacles = [];
-var myProjectiles = []; // Array to hold projectiles
 var myScore;
 var crashSound;
 var backgroundMusic;
@@ -174,27 +173,7 @@ function updateGameArea() {
                 myObstacles[i].x += -1;
                 myObstacles[i].update();
             }
-            // Move projectiles and detect collisions
-        for (i = 0; i < myProjectiles.length; i++) {
-            myProjectiles[i].x += 5; // Move the projectile to the right
-            myProjectiles[i].update();
-
-            // Remove projectile if it goes off-screen
-            if (myProjectiles[i].x > myGameArea.canvas.width) {
-                myProjectiles.splice(i, 1);
-                i--;
-            }
-
-            // Check for collision with obstacles
-            for (j = 0; j < myObstacles.length; j++) {
-                if (myProjectiles[i] && myProjectiles[i].crashWith(myObstacles[j])) {
-                    myObstacles.splice(j, 1); // Remove the obstacle
-                    myProjectiles.splice(i, 1); // Remove the projectile
-                    i--;
-                    break;
-                }
-            }
-        }
+           
 
         myGamePiece.newPos();
     }
