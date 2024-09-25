@@ -52,7 +52,8 @@ var myGameArea = {
     }
 }
 
-function component(width, height, color, x, y, type) {
+    
+    function component(width, height, color, x, y, type) {
     this.type = type;
     this.width = width;
     this.height = height;
@@ -74,13 +75,17 @@ function component(width, height, color, x, y, type) {
             ctx.font = this.width + " " + this.height;
             ctx.fillStyle = color;
             ctx.fillText(this.text, this.x, this.y);
-        } else if (this.type == "image" || this.type == "background") {
-            ctx.drawImage(this.image, this.x, this.y, this.width, this.height); // Draw image or background
+        } else if (this.type == "image") {
+            ctx.drawImage(this.image, this.x, this.y, this.width, this.height); // Draw image
+        } else if (this.type == "background") {
+            // Make the background fill the entire canvas
+            ctx.drawImage(this.image, 0, 0, myGameArea.canvas.width, myGameArea.canvas.height); 
         } else {
             ctx.fillStyle = color;
             ctx.fillRect(this.x, this.y, this.width, this.height);
         }
     }
+}
 
     this.newPos = function() {
         if (!gameOver) { // Allow movement only if the game is not over
