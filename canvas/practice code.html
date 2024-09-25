@@ -111,9 +111,11 @@ function component(width, height, color, x, y, type) {
 
 // Function to create breakable walls
 function createWall(x, topHeight, bottomHeight) {
-    var wall = new component(10, 20, "red", x - 5, topHeight + 5, "wall");
-    wall.lifetime = 300; // Wall lifetime
-    breakableWalls.push(wall);
+    var wallHeight = bottomHeight - topHeight; // Calculate the height of the wall
+    if (wallHeight > 0) {
+        var wall = new component(10, wallHeight, "red", x - 5, topHeight + 5, "wall");
+        breakableWalls.push(wall);
+    }
 }
 
 // Function to check for projectile collisions with walls
@@ -186,12 +188,6 @@ function updateGameArea() {
                 gameOver = true;
                 myGameArea.stop();
                 break;
-            }
-
-            // Remove the wall if its lifetime is over
-            if (breakableWalls[i].lifetime <= 0) {
-                breakableWalls.splice(i, 1);
-                i--; // Adjust index after removal
             }
         }
 
