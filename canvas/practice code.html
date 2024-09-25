@@ -131,11 +131,13 @@ function updateGameArea() {
 
         // Check for collisions with breakable walls and projectiles
         for (var i = 0; i < breakableWalls.length; i++) {
-            for (var j = 0; j < myProjectiles.length; j++) {
-                if (myProjectiles[j].crashWith(breakableWalls[i])) {
-                    breakableWalls[i].isDestroyed = true;  // Destroy wall
-                    myProjectiles.splice(j, 1);  // Remove projectile
-                    break;
+            if (!breakableWalls[i].isDestroyed) {
+                for (var j = 0; j < myProjectiles.length; j++) {
+                    if (myProjectiles[j].crashWith(breakableWalls[i])) {
+                        breakableWalls[i].isDestroyed = true;  // Destroy wall
+                        myProjectiles.splice(j, 1);  // Remove projectile
+                        break;
+                    }
                 }
             }
 
@@ -252,4 +254,7 @@ function shootProjectile() {
 <button onclick="startGame()">Start Game</button>
 
 <br>
-<p>Use arrow keys to control the character and space bar to
+<p>Use arrow keys to control the character and space bar to shoot.</p>
+
+</body>
+</html>
