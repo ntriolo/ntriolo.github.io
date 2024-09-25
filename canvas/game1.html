@@ -173,10 +173,7 @@ function updateGameArea() {
                 myObstacles[i].x += -1;
                 myObstacles[i].update();
             }
-                // Always update obstacles on the screen, even if the game is over
-        for (i = 0; i < myObstacles.length; i += 1) {
-        myObstacles[i].update(); // Draw obstacles but don't move them if the game is over
-            // Update the position of the game piece (character)
+        
             myGamePiece.newPos();
         }
     }
