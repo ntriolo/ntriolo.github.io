@@ -14,6 +14,7 @@ canvas {
 
 var myGamePiece;
 var myObstacles = [];
+var myProjectiles = []; // Array to hold projectiles
 var myScore;
 var crashSound;
 var backgroundMusic;
@@ -173,17 +174,50 @@ function updateGameArea() {
                 myObstacles[i].x += -1;
                 myObstacles[i].update();
             }
-        
-            myGamePiece.newPos();
+            // Move projectiles and detect collisions
+        for (i = 0; i < myProjectiles.length; i++) {
+            myProjectiles[i].x += 5; // Move the projectile to the right
+            myProjectiles[i].update();
+
+            // Remove projectile if it goes off-screen
+            if (myProjectiles[i].x > myGameArea.canvas.width) {
+                myProjectiles.splice(i, 1);
+                i--;
+            }
+
+            // Check for collision with obstacles
+            for (j = 0; j < myObstacles.length; j++) {
+                if (myProjectiles[i] && myProjectiles[i].crashWith(myObstacles[j])) {
+                    myObstacles.splice(j, 1); // Remove the obstacle
+                    myProjectiles.splice(i, 1); // Remove the projectile
+                    i--;
+                    break;
+                }
+            }
         }
+
+        myGamePiece.newPos();
     }
 
-    // Update the score and game piece even after game over
+    for (i = 0; i < myObstacles.length; i++) {
+        myObstacles[i].update();
+    }
+
     myScore.text = "SCORE: " + myGameArea.frameNo;
     myScore.update();
     myGamePiece.update();
-    
 }
+
+// Function to shoot a projectile
+function shootProjectile() {
+    if (!gameOver) {
+        shootSound.play();
+        var projectile = new component(10, 10, "red", myGamePiece.x + myGamePiece.width, myGamePiece.y + myGamePiece.height / 2, "rectangle");
+        myProjectiles.push(projectile);
+    }
+}
+        
+    
 
 function everyinterval(n) {
     if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
@@ -205,7 +239,12 @@ function moveKey(e) {
             case 'ArrowRight':
                 myGamePiece.speedX = 2;
                 break;
+
+            case ' ': // Spacebar for shooting
+            shootProjectile();
+            break;
         }
+        
 
         if (!musicStarted) {
             backgroundMusic.play();
