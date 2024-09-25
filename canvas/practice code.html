@@ -113,7 +113,7 @@ function component(width, height, color, x, y, type) {
 
 function createWall(pillarX, topHeight, bottomHeight) {
     var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - 25; // Center wall between pillars
-    var wall = new component(10, 50, "red", pillarX + 10, wallY, "wall"); // Move wall's x position further to the left
+    var wall = new component(10, 50, "red", pillarX + 20, wallY, "wall"); // Move wall's x position further to the left
     wall.lifetime = wallLifetime; // Set its lifetime
     breakableWalls.push(wall); // Add to the wall array
 }
