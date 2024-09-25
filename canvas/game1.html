@@ -1,3 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    border:1px solid #d3d3d3;
+    background-color: #f1f1f1;
+}
+</style>
+</head>
+<body>
 <script>
 
 var myGamePiece;
@@ -9,34 +21,34 @@ var backgroundImage;
 var musicStarted = false;
 var gamePaused = false;
 var gameRunning = false;
-var gameOver = false; // Add this flag for game over
+var gameOver = false;
 
 function startGame() {
     if (!gameRunning) {
         // Initialize everything
         myGamePiece = new component(30, 30, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/Army%20man.jpeg", 10, 120, "image");
         myGamePiece.gravity = 0.05;
-        myScore = new component("30px", "Consolas", "black", 280, 40, "text");
+        myScore = new component("30px", "Consolas", "black", window.innerWidth - 200, 40, "text");
 
         // Initialize audio effects
         crashSound = new Audio('crash.mp3'); 
         backgroundMusic = new Audio('background.mp3');
         backgroundMusic.loop = true;
 
-        // Load background image
-        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/run down city background.webp ", 0, 0, "background");
+        // Load background image and set its dimensions to the canvas
+        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/run down city background.webp", 0, 0, "background");
 
         myGameArea.start();
         gameRunning = true;
-        gameOver = false; // Reset game over flag when starting
+        gameOver = false;
     }
 }
 
 var myGameArea = {
     canvas : document.createElement("canvas"),
     start : function() {
-        this.canvas.width = 480;
-        this.canvas.height = 270;
+        this.canvas.width = window.innerWidth;  // Set canvas width to window width
+        this.canvas.height = window.innerHeight; // Set canvas height to window height
         this.context = this.canvas.getContext("2d");
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.frameNo = 0;
@@ -83,7 +95,7 @@ function component(width, height, color, x, y, type) {
     }
 
     this.newPos = function() {
-        if (!gameOver) { // Allow movement only if the game is not over
+        if (!gameOver) {
             this.gravitySpeed += this.gravity;
             this.x += this.speedX;
             this.y += this.speedY + this.gravitySpeed;
@@ -123,15 +135,17 @@ function updateGameArea() {
         // Clear the game area first if the game is still running
         myGameArea.clear();
 
-        // Draw background image
+        // Update the background image to fit the full canvas size
+        backgroundImage.width = myGameArea.canvas.width;
+        backgroundImage.height = myGameArea.canvas.height;
         backgroundImage.update();
 
         // Check for crashes
         for (i = 0; i < myObstacles.length; i += 1) {
             if (myGamePiece.crashWith(myObstacles[i])) {
                 crashSound.play();
-                gameOver = true; // Set game over flag on crash
-                myGameArea.stop(); // Stop updating the game
+                gameOver = true;
+                myGameArea.stop(); 
                 break;
             } 
         }
@@ -221,3 +235,6 @@ function stopMove(e) {
 
 <br>
 <p>Use arrow keys to control the character.</p>
+
+</body>
+</html>
