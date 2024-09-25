@@ -25,7 +25,7 @@ var gameOver = false;
 
 function startGame() {
     if (!gameRunning) {
-        // Initialize everything
+        // Initialize the game character
         myGamePiece = new component(30, 30, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/Army%20man.jpeg", 10, 120, "image");
         myGamePiece.gravity = 0.05;
         myScore = new component("30px", "Consolas", "black", 280, 40, "text");
@@ -35,7 +35,7 @@ function startGame() {
         backgroundMusic = new Audio('background.mp3');
         backgroundMusic.loop = true;
 
-        // Load background image and set its dimensions to the game area
+        // Load background image
         backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/run down city background.webp", 0, 0, "background");
 
         myGameArea.start();
@@ -47,9 +47,8 @@ function startGame() {
 var myGameArea = {
     canvas : document.createElement("canvas"),
     start : function() {
-        // Set specific dimensions for the game area
-        this.canvas.width = 480;  // Adjust game width
-        this.canvas.height = 270; // Adjust game height
+        this.canvas.width = 480;  // Set game width
+        this.canvas.height = 270; // Set game height
         this.context = this.canvas.getContext("2d");
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.frameNo = 0;
@@ -78,7 +77,7 @@ function component(width, height, color, x, y, type) {
 
     if (this.type == "image" || this.type == "background") {
         this.image = new Image();
-        this.image.src = color;  // Color becomes the image source for images
+        this.image.src = color;
     }
 
     this.update = function() {
@@ -88,10 +87,10 @@ function component(width, height, color, x, y, type) {
             ctx.fillStyle = color;
             ctx.fillText(this.text, this.x, this.y);
         } else if (this.type == "image" || this.type == "background") {
-            ctx.drawImage(this.image, this.x, this.y, this.width, this.height); // Draw image or background
+            ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
         } else {
             ctx.fillStyle = color;
-            ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.fillRect(this.x, this.y, this.width, this.height); // Draw colored obstacles
         }
     }
 
@@ -114,13 +113,13 @@ function component(width, height, color, x, y, type) {
 
     this.crashWith = function(otherobj) {
         var myleft = this.x;
-        var myright = this.x + (this.width);
+        var myright = this.x + this.width;
         var mytop = this.y;
-        var mybottom = this.y + (this.height);
+        var mybottom = this.y + this.height;
         var otherleft = otherobj.x;
-        var otherright = otherobj.x + (otherobj.width);
+        var otherright = otherobj.x + otherobj.width;
         var othertop = otherobj.y;
-        var otherbottom = otherobj.y + (otherobj.height);
+        var otherbottom = otherobj.y + otherobj.height;
         var crash = true;
         if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
             crash = false;
@@ -133,10 +132,10 @@ function updateGameArea() {
     var x, height, gap, minHeight, maxHeight, minGap, maxGap;
 
     if (!gameOver) {
-        // Clear the game area first if the game is still running
+        // Clear the game area
         myGameArea.clear();
 
-        // Update the background image to fit the game area size
+        // Update background
         backgroundImage.width = myGameArea.canvas.width;
         backgroundImage.height = myGameArea.canvas.height;
         backgroundImage.update();
@@ -146,31 +145,32 @@ function updateGameArea() {
             if (myGamePiece.crashWith(myObstacles[i])) {
                 crashSound.play();
                 gameOver = true;
-                myGameArea.stop(); 
+                myGameArea.stop();
                 break;
             } 
         }
 
-        // Update the game frame count and add obstacles
+        // Generate new obstacles every 150 frames
         if (!gameOver) {
             myGameArea.frameNo += 1;
 
             if (myGameArea.frameNo == 1 || everyinterval(150)) {
                 x = myGameArea.canvas.width;
-                minHeight = 20;
-                maxHeight = 200;
+                minHeight = 50;  // Adjusted to ensure visibility
+                maxHeight = 150; // Adjusted max height for obstacles
                 height = Math.floor(Math.random() * (maxHeight - minHeight + 1) + minHeight);
                 minGap = 50;
-                maxGap = 200;
+                maxGap = 150;
                 gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
 
-                myObstacles.push(new component(10, height, "https://github.com/ntriolo/ntriolo.github.io/edit/main/canvas/sandbag:barbwire%20pillars.jpeg", x, 0, "image"));
-                myObstacles.push(new component(10, x - height - gap, "https://github.com/ntriolo/ntriolo.github.io/edit/main/canvas/sandbag:barbwire%20pillars.jpeg", x, height + gap, "image"));
+                // Adding visible obstacle poles
+                myObstacles.push(new component(10, height, "green", x, 0));  // Top pole
+                myObstacles.push(new component(10, myGameArea.canvas.height - height - gap, "green", x, height + gap));  // Bottom pole
             }
 
-            // Move existing obstacles
+            // Move obstacles and make them visible
             for (i = 0; i < myObstacles.length; i += 1) {
-                myObstacles[i].x += -1;
+                myObstacles[i].x += -2;  // Make sure obstacles move at a reasonable speed
                 myObstacles[i].update();
             }
 
@@ -179,14 +179,14 @@ function updateGameArea() {
         }
     }
 
-    // Update the score and game piece even after game over
+    // Update the score and game piece
     myScore.text = "SCORE: " + myGameArea.frameNo;
     myScore.update();
     myGamePiece.update();
 }
 
 function everyinterval(n) {
-    if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
+    if ((myGameArea.frameNo / n) % 1 == 0) { return true; }
     return false;
 }
 
