@@ -266,10 +266,18 @@ function stopMove(e) {
 }
 
 function shootProjectile() {
-    var projectile = new component(10, 10, "blue", myGamePiece.x + myGamePiece.width, myGamePiece.y + (myGamePiece.height / 2 - 5));
-    myProjectiles.push(projectile);
+    var projectile = new component(10, 10, "blue", myGamePiece.x + myGamePiece.width, myGamePiece.y + (myGamePiece.height / 2 - 5), "projectile");
+    projectile.speedX = 5; // Projectile speed
+    myProjectiles.push(projectile); // Add each new projectile to the array
 }
 
 </script>
+
+<!-- Buttons for starting and pausing the game -->
+<button onclick="startGame()">Start Game</button>
+
+<br>
+<p>Use arrow keys to control the character and space bar to shoot projectiles.</p>
+
 </body>
 </html>
