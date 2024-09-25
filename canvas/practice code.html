@@ -22,9 +22,7 @@ var backgroundImage;
 var musicStarted = false;
 var gameRunning = false;
 var gameOver = false;
-
-var breakableWalls = [];
-var wallLifetime = 150; // Frames until the wall breaks if not shot
+var breakableWalls = []; // Array to hold breakable walls
 
 function startGame() {
     if (!gameRunning) {
@@ -98,31 +96,42 @@ function component(width, height, color, x, y, type) {
         this.y += this.speedY;
     }
 
-    // Adjust hitbox margins for a tighter collision detection
     this.crashWith = function(otherobj) {
-        var myleft = this.x + 2; // Adjust for the wall's width for better hit detection
-        var myright = this.x + this.width - 2; // Adjust for the wall's width
-        var mytop = this.y + 2; // Adjust for the wall's height
-        var mybottom = this.y + this.height - 2; // Adjust for the wall's height
+        var myleft = this.x;
+        var myright = this.x + this.width;
+        var mytop = this.y;
+        var mybottom = this.y + this.height;
         var otherleft = otherobj.x;
         var otherright = otherobj.x + otherobj.width;
         var othertop = otherobj.y;
         var otherbottom = otherobj.y + otherobj.height;
-
-        return !((mybottom < othertop) || 
-                  (mytop > otherbottom) || 
-                  (myright < otherleft) || 
-                  (myleft > otherright));
+        return !((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright));
     }
 }
 
-function createWall(pillarX, topHeight, bottomHeight) {
-    var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - 25; // Center wall between pillars
-    var wall = new component(10, 50, "red", pillarX - 5, wallY, "wall"); // Move wall slightly to the left for better alignment
-    wall.lifetime = wallLifetime; // Set its lifetime
-    breakableWalls.push(wall); // Add to the wall array
+// Function to create breakable walls
+function createWall(x, topHeight, bottomHeight) {
+    var wall = new component(10, 20, "red", x - 5, topHeight + 5, "wall");
+    wall.lifetime = 300; // Wall lifetime
+    breakableWalls.push(wall);
 }
 
+// Function to check for projectile collisions with walls
+function checkProjectileCollision() {
+    for (var i = 0; i < myProjectiles.length; i++) {
+        for (var j = 0; j < breakableWalls.length; j++) {
+            if (myProjectiles[i].crashWith(breakableWalls[j])) {
+                // Remove the wall and the projectile upon collision
+                breakableWalls.splice(j, 1);
+                myProjectiles.splice(i, 1);
+                i--; // Adjust index after removal
+                break; // Exit inner loop to avoid double removal
+            }
+        }
+    }
+}
+
+// Update the game area
 function updateGameArea() {
     if (!gameOver) {
         myGameArea.clear();
@@ -160,7 +169,7 @@ function updateGameArea() {
             createWall(x, height, myGameArea.canvas.height - height - gap);
         }
 
-        // Move obstacles and walls
+        // Move obstacles
         for (var i = 0; i < myObstacles.length; i++) {
             myObstacles[i].x += -2;  // Make sure obstacles move at a reasonable speed
             myObstacles[i].update();
@@ -170,9 +179,6 @@ function updateGameArea() {
         for (var i = 0; i < breakableWalls.length; i++) {
             breakableWalls[i].x += -2; // Move the wall
             breakableWalls[i].update();
-
-            // Reduce wall lifetime
-            breakableWalls[i].lifetime -= 1;
 
             // Check for collision with player
             if (myGamePiece.crashWith(breakableWalls[i])) {
@@ -192,6 +198,9 @@ function updateGameArea() {
         // Update the position of the game piece (character)
         myGamePiece.newPos();
         myGamePiece.update();
+
+        // Check for projectile collisions with walls
+        checkProjectileCollision();
 
         // Update projectiles
         for (var i = 0; i < myProjectiles.length; i++) {
@@ -257,18 +266,10 @@ function stopMove(e) {
 }
 
 function shootProjectile() {
-    var projectile = new component(5, 5, "blue", myGamePiece.x + 30, myGamePiece.y + 12, "projectile");
-    projectile.speedX = 5; // Projectile speed
-    myProjectiles.push(projectile); // Add each new projectile to the array
+    var projectile = new component(10, 10, "blue", myGamePiece.x + myGamePiece.width, myGamePiece.y + (myGamePiece.height / 2 - 5));
+    myProjectiles.push(projectile);
 }
 
 </script>
-
-<!-- Buttons for starting and pausing the game -->
-<button onclick="startGame()">Start Game</button>
-
-<br>
-<p>Use arrow keys to control the character and space bar to shoot projectiles.</p>
-
 </body>
 </html>
