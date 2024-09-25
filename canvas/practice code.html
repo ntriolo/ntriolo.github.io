@@ -15,6 +15,7 @@
 var myGamePiece;
 var myObstacles = [];
 var myProjectiles = [];
+var breakableWalls = [];
 var myScore;
 var crashSound;
 var backgroundMusic;
@@ -70,6 +71,7 @@ function component(width, height, color, x, y, type) {
     this.y = y;
     this.gravity = 0;
     this.gravitySpeed = 0;
+    this.isDestroyed = false; // Used for breakable walls
 
     if (this.type == "image" || this.type == "background") {
         this.image = new Image();
@@ -77,6 +79,7 @@ function component(width, height, color, x, y, type) {
     }
 
     this.update = function() {
+        if (this.isDestroyed) return;  // Don't draw if destroyed
         ctx = myGameArea.context;
         if (this.type == "text") {
             ctx.font = this.width + " " + this.height;
@@ -86,7 +89,7 @@ function component(width, height, color, x, y, type) {
             ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
         } else {
             ctx.fillStyle = color;
-            ctx.fillRect(this.x, this.y, this.width, this.height); // Draw colored obstacles
+            ctx.fillRect(this.x, this.y, this.width, this.height); // Draw colored obstacles and walls
         }
     }
 
@@ -126,7 +129,23 @@ function updateGameArea() {
             } 
         }
 
-        // Generate new obstacles every 150 frames
+        // Check for collisions with breakable walls and projectiles
+        for (var i = 0; i < breakableWalls.length; i++) {
+            for (var j = 0; j < myProjectiles.length; j++) {
+                if (myProjectiles[j].crashWith(breakableWalls[i])) {
+                    breakableWalls[i].isDestroyed = true;  // Destroy wall
+                    myProjectiles.splice(j, 1);  // Remove projectile
+                    break;
+                }
+            }
+
+            if (!breakableWalls[i].isDestroyed) {
+                breakableWalls[i].newPos();
+                breakableWalls[i].update();
+            }
+        }
+
+        // Generate new obstacles and breakable walls every 150 frames
         myGameArea.frameNo += 1;
 
         if (myGameArea.frameNo == 1 || everyinterval(150)) {
@@ -138,13 +157,19 @@ function updateGameArea() {
             var maxGap = 150;
             var gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
 
+            // Add top and bottom pillars
             myObstacles.push(new component(10, height, "green", x, 0));  // Top pole
             myObstacles.push(new component(10, myGameArea.canvas.height - height - gap, "green", x, height + gap));  // Bottom pole
+
+            // Add breakable wall between the pillars
+            var wallHeight = 20;  // Set height for the breakable wall
+            var wallY = height + (gap / 2) - (wallHeight / 2);
+            breakableWalls.push(new component(10, wallHeight, "red", x, wallY, "wall"));
         }
 
         // Move obstacles
         for (var i = 0; i < myObstacles.length; i++) {
-            myObstacles[i].x += -2;  // Make sure obstacles move at a reasonable speed
+            myObstacles[i].x += -2;  // Move obstacles at a reasonable speed
             myObstacles[i].update();
         }
 
@@ -223,11 +248,8 @@ function shootProjectile() {
 
 </script>
 
-<!-- Buttons for starting and pausing the game -->
+<!-- Buttons for starting the game -->
 <button onclick="startGame()">Start Game</button>
 
 <br>
-<p>Use arrow keys to control the character and space bar to shoot projectiles.</p>
-
-</body>
-</html>
+<p>Use arrow keys to control the character and space bar to
