@@ -112,12 +112,9 @@ function component(width, height, color, x, y, type) {
 }
 
 function createWall(pillarX, topHeight, bottomHeight) {
-    // Center wall vertically between top and bottom pillars
-    var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - 25; // Original calculation
-    var wall = new component(10, 50, "red", pillarX, wallY, "wall"); // Wall properties
+    var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - 25; // Center wall between pillars
+    var wall = new component(10, 50, "red", pillarX - 5, wallY, "wall"); // Move wall's x position slightly to the left
     wall.lifetime = wallLifetime; // Set its lifetime
-    wall.topY = wallY; // Store the top Y position for collision detection
-    wall.bottomY = wallY + wall.height; // Calculate the bottom Y position for collision detection
     breakableWalls.push(wall); // Add to the wall array
 }
 
@@ -136,7 +133,7 @@ function updateGameArea() {
                 gameOver = true;
                 myGameArea.stop();
                 break;
-            }
+            } 
         }
 
         // Generate new obstacles every 150 frames
@@ -167,9 +164,6 @@ function updateGameArea() {
         // Update breakable walls
         for (var i = breakableWalls.length - 1; i >= 0; i--) {
             breakableWalls[i].lifetime--;
-
-            // Update wall's bottom Y position
-            breakableWalls[i].bottomY = breakableWalls[i].y + breakableWalls[i].height;
 
             // Check for collisions with projectiles
             for (var j = myProjectiles.length - 1; j >= 0; j--) {
@@ -260,8 +254,9 @@ function stopMove(e) {
 }
 
 function shootProjectile() {
-    var projectile = new component(10, 10, "blue", myGamePiece.x + myGamePiece.width, myGamePiece.y + (myGamePiece.height / 2 - 5), "projectile");
-    myProjectiles.push(projectile);
+    var projectile = new component(5, 5, "blue", myGamePiece.x + 30, myGamePiece.y + 12, "projectile");
+    projectile.speedX = 5; // Projectile speed
+    myProjectiles.push(projectile); // Add each new projectile to the array
 }
 
 </script>
