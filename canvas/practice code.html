@@ -163,12 +163,10 @@ function updateGameArea() {
             myObstacles.push(new component(10, height, "green", x, 0));  // Top pole
             myObstacles.push(new component(10, myGameArea.canvas.height - height - gap, "green", x, height + gap));  // Bottom pole
 
-           
             // Add breakable wall between the pillars
-var wallHeight = 50;  // Increased height for better visibility
-var wallY = height + (gap / 2) - (wallHeight / 2);
-breakableWalls.push(new component(30, wallHeight, "blue", x, wallY, "wall"));  // Increased width, changed color to blue
-
+            var wallHeight = 20;  // Set height for the breakable wall
+            var wallY = height + (gap / 2) - (wallHeight / 2);
+            breakableWalls.push(new component(10, wallHeight, "blue", x, wallY, "wall"));  // Wall between pillars
         }
 
         // Move obstacles
@@ -245,9 +243,9 @@ function stopMove(e) {
 }
 
 function shootProjectile() {
-    var projectile = new component(5, 5, "blue", myGamePiece.x + 30, myGamePiece.y + 12, "projectile");
+    var projectile = new component(10, 5, "black", myGamePiece.x + myGamePiece.width, myGamePiece.y + myGamePiece.height / 2);
     projectile.speedX = 5; // Projectile speed
-    myProjectiles.push(projectile); // Add each new projectile to the array
+    myProjectiles.push(projectile);
 }
 
 </script>
