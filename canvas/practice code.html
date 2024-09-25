@@ -15,7 +15,6 @@
 var myGamePiece;
 var myObstacles = [];
 var myProjectiles = [];
-var myWall;
 var myScore;
 var crashSound;
 var backgroundMusic;
@@ -38,9 +37,6 @@ function startGame() {
         myGameArea.start();
         gameRunning = true;
         gameOver = false;
-
-        // Initialize the wall
-        myWall = new component(50, myGameArea.canvas.height, "red", 240, 0); // Wall in between the pillars
     }
 }
 
@@ -130,15 +126,6 @@ function updateGameArea() {
             } 
         }
 
-        // Check for projectile collisions with the wall
-        for (var i = 0; i < myProjectiles.length; i++) {
-            if (myProjectiles[i].crashWith(myWall)) {
-                myWall = null; // Destroy the wall
-                myProjectiles.splice(i, 1); // Remove the projectile that hit the wall
-                break;
-            }
-        }
-
         // Generate new obstacles every 150 frames
         myGameArea.frameNo += 1;
 
@@ -164,11 +151,6 @@ function updateGameArea() {
         // Update the position of the game piece (character)
         myGamePiece.newPos();
         myGamePiece.update();
-        
-        // Update the wall if it exists
-        if (myWall) {
-            myWall.update();
-        }
 
         // Update projectiles
         for (var i = 0; i < myProjectiles.length; i++) {
