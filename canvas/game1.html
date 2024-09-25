@@ -1,15 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<style>
-canvas {
-    border:1px solid #d3d3d3;
-    background-color: #f1f1f1;
-}
-</style>
-</head>
-<body>
 <script>
 
 var myGamePiece;
@@ -21,11 +9,12 @@ var backgroundImage;
 var musicStarted = false;
 var gamePaused = false;
 var gameRunning = false;
+var gameOver = false; // Add this flag for game over
 
 function startGame() {
     if (!gameRunning) {
-        // Create the game character (image instead of red square)
-        myGamePiece = new component(30, 30, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/Army%20man.jpeg ", 10, 120, "image"); // Replace "character.png" with your image path
+        // Initialize everything
+        myGamePiece = new component(30, 30, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/Army%20man.jpeg ", 10, 120, "image");
         myGamePiece.gravity = 0.05;
         myScore = new component("30px", "Consolas", "black", 280, 40, "text");
 
@@ -35,10 +24,11 @@ function startGame() {
         backgroundMusic.loop = true;
 
         // Load background image
-        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/run down city background.webp ", 0, 0, "background"); // Replace "background.png" with your image path
+        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/run down city background.webp ", 0, 0, "background");
 
         myGameArea.start();
-        gameRunning = true; 
+        gameRunning = true;
+        gameOver = false; // Reset game over flag when starting
     }
 }
 
@@ -93,10 +83,12 @@ function component(width, height, color, x, y, type) {
     }
 
     this.newPos = function() {
-        this.gravitySpeed += this.gravity;
-        this.x += this.speedX;
-        this.y += this.speedY + this.gravitySpeed;
-        this.hitBottom();
+        if (!gameOver) { // Allow movement only if the game is not over
+            this.gravitySpeed += this.gravity;
+            this.x += this.speedX;
+            this.y += this.speedY + this.gravitySpeed;
+            this.hitBottom();
+        }
     }
 
     this.hitBottom = function() {
@@ -127,51 +119,54 @@ function component(width, height, color, x, y, type) {
 function updateGameArea() {
     var x, height, gap, minHeight, maxHeight, minGap, maxGap;
 
-    // Clear the game area first
-    myGameArea.clear();
+    if (!gameOver) {
+        // Clear the game area first if the game is still running
+        myGameArea.clear();
 
-    // Draw background image
-    backgroundImage.update();
+        // Draw background image
+        backgroundImage.update();
 
-    // Check for crashes
-    for (i = 0; i < myObstacles.length; i += 1) {
-        if (myGamePiece.crashWith(myObstacles[i])) {
-            crashSound.play();
-            myGameArea.stop(); // Stop the game on crash
-            return; // Stop further processing
-        } 
+        // Check for crashes
+        for (i = 0; i < myObstacles.length; i += 1) {
+            if (myGamePiece.crashWith(myObstacles[i])) {
+                crashSound.play();
+                gameOver = true; // Set game over flag on crash
+                myGameArea.stop(); // Stop updating the game
+                break;
+            } 
+        }
+
+        // Update the game frame count and add obstacles
+        if (!gameOver) {
+            myGameArea.frameNo += 1;
+
+            if (myGameArea.frameNo == 1 || everyinterval(150)) {
+                x = myGameArea.canvas.width;
+                minHeight = 20;
+                maxHeight = 200;
+                height = Math.floor(Math.random() * (maxHeight - minHeight + 1) + minHeight);
+                minGap = 50;
+                maxGap = 200;
+                gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
+
+                myObstacles.push(new component(10, height, "pole.png", x, 0, "image"));
+                myObstacles.push(new component(10, x - height - gap, "pole.png", x, height + gap, "image"));
+            }
+
+            // Move existing obstacles
+            for (i = 0; i < myObstacles.length; i += 1) {
+                myObstacles[i].x += -1;
+                myObstacles[i].update();
+            }
+
+            // Update the position of the game piece (character)
+            myGamePiece.newPos();
+        }
     }
 
-    // Update the game frame count
-    myGameArea.frameNo += 1;
-
-    // Add new obstacles every 150 frames
-    if (myGameArea.frameNo == 1 || everyinterval(150)) {
-        x = myGameArea.canvas.width;
-        minHeight = 20;
-        maxHeight = 200;
-        height = Math.floor(Math.random() * (maxHeight - minHeight + 1) + minHeight);
-        minGap = 50;
-        maxGap = 200;
-        gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
-
-        // Add new obstacle poles (images instead of green bars)
-        myObstacles.push(new component(10, height, "pole.png", x, 0, "image"));  // Top pole
-        myObstacles.push(new component(10, x - height - gap, "pole.png", x, height + gap, "image"));  // Bottom pole
-    }
-
-    // Update and move existing obstacles
-    for (i = 0; i < myObstacles.length; i += 1) {
-        myObstacles[i].x += -1;
-        myObstacles[i].update();
-    }
-
-    // Update the score
+    // Update the score and game piece even after game over
     myScore.text = "SCORE: " + myGameArea.frameNo;
     myScore.update();
-
-    // Update the position of the game piece (character)
-    myGamePiece.newPos();
     myGamePiece.update();
 }
 
@@ -181,37 +176,41 @@ function everyinterval(n) {
 }
 
 function moveKey(e) {
-    switch(e.key) {
-        case 'ArrowUp':
-            myGamePiece.speedY = -2;
-            break;
-        case 'ArrowDown':
-            myGamePiece.speedY = 2;
-            break;
-        case 'ArrowLeft':
-            myGamePiece.speedX = -2;
-            break;
-        case 'ArrowRight':
-            myGamePiece.speedX = 2;
-            break;
-    }
+    if (!gameOver) {
+        switch(e.key) {
+            case 'ArrowUp':
+                myGamePiece.speedY = -2;
+                break;
+            case 'ArrowDown':
+                myGamePiece.speedY = 2;
+                break;
+            case 'ArrowLeft':
+                myGamePiece.speedX = -2;
+                break;
+            case 'ArrowRight':
+                myGamePiece.speedX = 2;
+                break;
+        }
 
-    if (!musicStarted) {
-        backgroundMusic.play();
-        musicStarted = true;
+        if (!musicStarted) {
+            backgroundMusic.play();
+            musicStarted = true;
+        }
     }
 }
 
 function stopMove(e) {
-    switch(e.key) {
-        case 'ArrowUp':
-        case 'ArrowDown':
-            myGamePiece.speedY = 0;
-            break;
-        case 'ArrowLeft':
-        case 'ArrowRight':
-            myGamePiece.speedX = 0;
-            break;
+    if (!gameOver) {
+        switch(e.key) {
+            case 'ArrowUp':
+            case 'ArrowDown':
+                myGamePiece.speedY = 0;
+                break;
+            case 'ArrowLeft':
+            case 'ArrowRight':
+                myGamePiece.speedX = 0;
+                break;
+        }
     }
 }
 
@@ -222,6 +221,3 @@ function stopMove(e) {
 
 <br>
 <p>Use arrow keys to control the character.</p>
-
-</body>
-</html>
