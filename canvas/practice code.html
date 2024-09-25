@@ -111,10 +111,9 @@ function component(width, height, color, x, y, type) {
     }
 }
 
-function createWall() {
-    var x = myGameArea.canvas.width; // Starting x position for the wall
-    var y = Math.random() * (myGameArea.canvas.height - 50); // Random y position
-    var wall = new component(10, 50, "red", x, y, "wall"); // Wall properties
+function createWall(pillarX, topHeight, bottomHeight) {
+    var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - 25; // Center wall between pillars
+    var wall = new component(10, 50, "red", pillarX, wallY, "wall"); // Wall properties
     wall.lifetime = wallLifetime; // Set its lifetime
     breakableWalls.push(wall); // Add to the wall array
 }
@@ -152,7 +151,8 @@ function updateGameArea() {
             myObstacles.push(new component(10, height, "green", x, 0));  // Top pole
             myObstacles.push(new component(10, myGameArea.canvas.height - height - gap, "green", x, height + gap));  // Bottom pole
 
-            createWall(); // Create a wall every 150 frames as well
+            // Create a wall between the new pillars
+            createWall(x, height, myGameArea.canvas.height - height - gap); // Create wall between top and bottom pillars
         }
 
         // Move obstacles
