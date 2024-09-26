@@ -47,8 +47,6 @@ var pillarHeight = 100; // Height of the pillar image
 var wallWidth = 10; // Width of the wall image
 var wallHeight = 50; // Height of the wall image
 
-// Add the wall image URL here
-var wallImageURL = "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/barbed wire_processed.jpeg"; // Replace with the URL of the wall image
 
 function startGame() {
     if (!gameRunning) {
@@ -143,7 +141,7 @@ function component(width, height, color, x, y, type) {
 
 function createWall(pillarX, topHeight, bottomHeight) {
     var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - wallHeight / 2; // Center wall between pillars
-    var wall = new component(wallWidth, wallHeight, wallImageURL, pillarX - 10, wallY, "image"); // Create wall as an image
+    var wall = new component(wallWidth, wallHeight, "red", pillarX - wallWidth, wallY, "rect"); // Create wall as a red rectangle
     wall.lifetime = wallLifetime; // Set its lifetime
     breakableWalls.push(wall); // Add to the wall array
 }
