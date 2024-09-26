@@ -28,14 +28,14 @@ var wallLifetime = 150; // Frames until the wall breaks if not shot
 
 function startGame() {
     if (!gameRunning) {
-        myGamePiece = new component(30, 30, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/Army%20man.jpeg", 10, 120, "image");
+        myGamePiece = new component(30, 30, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/toy man_processed.jpeg", 10, 120, "image");
         myScore = new component("30px", "Consolas", "black", 280, 40, "text");
 
         crashSound = new Audio('crash.mp3'); 
         backgroundMusic = new Audio('background.mp3');
         backgroundMusic.loop = true;
 
-        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/run down city background.webp", 0, 0, "background");
+        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/blue background", 0, 0, "background");
 
         myGameArea.start();
         gameRunning = true;
@@ -113,7 +113,7 @@ function component(width, height, color, x, y, type) {
 
 function createWall(pillarX, topHeight, bottomHeight) {
     var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - 25; // Center wall between pillars
-    var wall = new component(10, 50, "red", pillarX + 20, wallY, "wall"); // Move wall's x position further to the left
+    var wall = new component(10, 50, "red", pillarX, wallY, "wall"); // Wall properties
     wall.lifetime = wallLifetime; // Set its lifetime
     breakableWalls.push(wall); // Add to the wall array
 }
