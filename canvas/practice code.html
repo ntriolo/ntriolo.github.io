@@ -138,6 +138,29 @@ function createWall(pillarX, topHeight, bottomHeight) {
     wall.lifetime = wallLifetime; // Set its lifetime
     breakableWalls.push(wall); // Add to the wall array
 }
+// Replace the green pillars with bullet image and adjust size
+function createPillars() {
+    var x = myGameArea.canvas.width;
+    var minHeight = 50;
+    var maxHeight = 150;
+    var height = Math.floor(Math.random() * (maxHeight - minHeight + 1) + minHeight);
+    var minGap = 50;
+    var maxGap = 150;
+    var gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
+
+    // Use bullet image for the top and bottom pillars
+    var bulletImage = "bullet.png";  // Replace with your image URL
+
+    // Adjust the size of the image (change width and height based on the image aspect ratio)
+    var bulletWidth = 30; // Adjust width
+    var bulletHeight = 70; // Adjust height
+
+    // Top pillar (bullet)
+    myObstacles.push(new component(bulletWidth, height, bulletImage, x, 0, "image"));
+
+    // Bottom pillar (bullet)
+    myObstacles.push(new component(bulletWidth, myGameArea.canvas.height - height - gap, bulletImage, x, height + gap, "image"));
+}
 
 function updateGameArea() {
     if (!gameOver) {
