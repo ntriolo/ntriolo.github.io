@@ -7,6 +7,20 @@
             border: 1px solid #d3d3d3;
             background-color: #f1f1f1;
         }
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            font-family: 'Consolas';
+            color: black;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border: 2px solid #d3d3d3;
+        }
     </style>
 </head>
 <body>
@@ -25,9 +39,24 @@ var gameOver = false;
 
 var breakableWalls = [];
 var wallLifetime = 150; // Frames until the wall breaks if not shot
+var score = 0; // Initialize score
+
+// Pillar and wall image sizes
+var pillarWidth = 50; // Width of the pillar image
+var pillarHeight = 150; // Height of the pillar image
+var wallWidth = 10; // Width of the wall image
+var wallHeight = 50; // Height of the wall image
+
+// Add the wall image URL here
+var wallImageURL = "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/barbed wire_processed.jpeg"; // Replace with the URL of the wall image
 
 function startGame() {
     if (!gameRunning) {
+        document.getElementById("game-over").style.display = "none"; // Hide the game over screen
+        myObstacles = []; // Reset obstacles
+        myProjectiles = []; // Reset projectiles
+        breakableWalls = []; // Reset breakable walls
+        score = 0; // Reset score
         myGamePiece = new component(30, 30, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/toy man_processed.jpeg", 10, 120, "image");
         myScore = new component("30px", "Consolas", "black", 280, 40, "text");
 
@@ -35,11 +64,12 @@ function startGame() {
         backgroundMusic = new Audio('background.mp3');
         backgroundMusic.loop = true;
 
-        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/blue background", 0, 0, "background");
+        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/desert background.jpeg", 0, 0, "background");
 
         myGameArea.start();
         gameRunning = true;
         gameOver = false;
+        musicStarted = false; // Reset music state
     }
 }
 
@@ -112,8 +142,8 @@ function component(width, height, color, x, y, type) {
 }
 
 function createWall(pillarX, topHeight, bottomHeight) {
-    var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - 25; // Center wall between pillars
-    var wall = new component(10, 50, "red", pillarX, wallY, "wall"); // Wall properties
+    var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - wallHeight / 2; // Center wall between pillars
+    var wall = new component(wallWidth, wallHeight, wallImageURL, pillarX - 10, wallY, "image"); // Create wall as an image
     wall.lifetime = wallLifetime; // Set its lifetime
     breakableWalls.push(wall); // Add to the wall array
 }
@@ -130,9 +160,8 @@ function updateGameArea() {
         for (var i = 0; i < myObstacles.length; i++) {
             if (myGamePiece.crashWith(myObstacles[i])) {
                 crashSound.play();
-                gameOver = true;
-                myGameArea.stop();
-                break;
+                endGame();
+                return;
             } 
         }
 
@@ -148,16 +177,18 @@ function updateGameArea() {
             var maxGap = 150;
             var gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
 
-            myObstacles.push(new component(10, height, "green", x, 0));  // Top pole
-            myObstacles.push(new component(10, myGameArea.canvas.height - height - gap, "green", x, height + gap));  // Bottom pole
+            // Use an image for the top and bottom pillars with the specified size
+            var pillarImage = "american flag_processed.jpeg"; // Replace with your image URL
+            myObstacles.push(new component(pillarWidth, pillarHeight, pillarImage, x, 0, "image"));  // Top pillar
+            myObstacles.push(new component(pillarWidth, pillarHeight, pillarImage, x, height + gap, "image"));  // Bottom pillar
 
             // Create a wall between the new pillars
-            createWall(x, height, myGameArea.canvas.height - height - gap); // Create wall between top and bottom pillars
+            createWall(x, height, myGameArea.canvas.height - height - gap);
         }
 
         // Move obstacles
         for (var i = 0; i < myObstacles.length; i++) {
-            myObstacles[i].x += -2;  // Make sure obstacles move at a reasonable speed
+            myObstacles[i].x += -2;  // Move obstacles to the left
             myObstacles[i].update();
         }
 
@@ -168,22 +199,22 @@ function updateGameArea() {
             // Check for collisions with projectiles
             for (var j = myProjectiles.length - 1; j >= 0; j--) {
                 if (breakableWalls[i].crashWith(myProjectiles[j])) {
-                    myProjectiles.splice(j, 1); // Remove the projectile
-                    breakableWalls.splice(i, 1); // Remove the wall
-                    break; // Exit the loop to prevent modifying the array during iteration
+                    myProjectiles.splice(j, 1); // Remove projectile
+                    breakableWalls.splice(i, 1); // Remove wall
+                    score += 1; // Increase score for breaking the wall
+                    break;
                 }
             }
 
             // If lifetime is over, end the game
             if (breakableWalls[i].lifetime <= 0) {
-                gameOver = true;
-                myGameArea.stop();
-                break;
+                endGame();
+                return;
             }
 
             // Move and update the wall
-            breakableWalls[i].x -= 2; // Move the wall to the left
-            breakableWalls[i].update(); // Draw the wall
+            breakableWalls[i].x -= 2;
+            breakableWalls[i].update();
         }
 
         // Update the position of the game piece (character)
@@ -196,15 +227,32 @@ function updateGameArea() {
             myProjectiles[i].update();
         }
 
-        // Remove projectiles that go off screen
-        myProjectiles = myProjectiles.filter(function(projectile) {
+        // Remove projectiles that go off-screen
+        myProjectiles = myProjectiles.filter(function (projectile) {
             return projectile.x < myGameArea.canvas.width;
         });
-    }
 
-    // Update the score
-    myScore.text = "SCORE: " + myGameArea.frameNo;
-    myScore.update();
+        // Update the score for passing pillars
+        for (var i = 0; i < myObstacles.length; i += 2) {
+            if (myObstacles[i].x + myObstacles[i].width < myGamePiece.x && !myObstacles[i].scored) {
+                score += 1; // Gain a point for passing a pillar
+                myObstacles[i].scored = true; // Mark pillar as passed
+            }
+        }
+
+        // Update the score display
+        myScore.text = "SCORE: " + score;
+        myScore.update();
+    }
+}
+
+// End the game and display the Game Over screen
+function endGame() {
+    gameOver = true;
+    gameRunning = false;
+    myGameArea.stop();
+    document.getElementById("final-score").textContent = score; // Display final score
+    document.getElementById("game-over").style.display = "block"; // Show game over screen
 }
 
 function everyinterval(n) {
@@ -254,7 +302,7 @@ function stopMove(e) {
 }
 
 function shootProjectile() {
-    var projectile = new component(5, 5, "blue", myGamePiece.x + 30, myGamePiece.y + 12, "projectile");
+    var projectile = new component(5, 5, "green", myGamePiece.x + 30, myGamePiece.y + 12, "projectile");
     projectile.speedX = 5; // Projectile speed
     myProjectiles.push(projectile); // Add each new projectile to the array
 }
@@ -264,8 +312,16 @@ function shootProjectile() {
 <!-- Buttons for starting and pausing the game -->
 <button onclick="startGame()">Start Game</button>
 
+<div id="game-over">
+    <p>Game Over!</p>
+    <p>Your Score: <span id="final-score"></span></p>
+    <button onclick="startGame()">Restart</button>
+</div>
+
 <br>
 <p>Use arrow keys to control the character and space bar to shoot projectiles.</p>
+<p>Shoot the wall between the pillars before you pass through!</p>
+<p>You will be rewarded a point for each wall you break and each pillar you pass.</p>
 
 </body>
 </html>
