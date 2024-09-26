@@ -292,7 +292,21 @@ function everyinterval(n) {
 
 </script>
 
-<div id="game-over">GAME OVER<br>Press any key to restart</div>
+<!-- Buttons for starting and pausing the game -->
 <button onclick="startGame()">Start Game</button>
+
+<div id="game-over">
+    <p>Game Over!</p>
+    <p>Your Score: <span id="final-score"></span></p>
+    <button onclick="startGame()">Restart</button>
+</div>
+
+<br>
+<p>Use arrow keys to control the character and space bar to shoot projectiles.</p>
+<p>Shoot the wall between the pillars before you pass through!</p>
+<p>You will be rewarded a point for each wall you break and each pillar you pass.</p>
+
+
+
 </body>
 </html>
