@@ -141,8 +141,8 @@ function createWall(pillarX, topHeight, bottomHeight) {
 // Replace the green pillars with bullet image and adjust size
 function createPillars() {
     var x = myGameArea.canvas.width;
-    var minHeight = 100;
-    var maxHeight = 300;
+    var minHeight = 50;
+    var maxHeight = 100;
     var height = Math.floor(Math.random() * (maxHeight - minHeight + 1) + minHeight);
     var minGap = 50;
     var maxGap = 150;
@@ -152,8 +152,8 @@ function createPillars() {
     var bulletImage = "bullet.png";  // Replace with your image URL
 
     // Adjust the size of the image (change width and height based on the image aspect ratio)
-    var bulletWidth = 30; // Adjust width
-    var bulletHeight = 70; // Adjust height
+    var bulletWidth = 75; // Adjust width
+    var bulletHeight = 250; // Adjust height
 
     // Top pillar (bullet)
     myObstacles.push(new component(bulletWidth, height, bulletImage, x, 0, "image"));
