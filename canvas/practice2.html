@@ -42,10 +42,10 @@ var wallLifetime = 150; // Frames until the wall breaks if not shot
 var score = 0; // Initialize score
 
 // Pillar and wall image sizes
-var pillarWidth = 50; // Width of the pillar image
-var pillarHeight = 100; // Height of the pillar image
+var pillarWidth = 60; // Width of the pillar image
+var pillarHeight = 75; // Height of the pillar image
 var wallWidth = 10; // Width of the wall image
-var wallHeight = 50; // Height of the wall image
+var wallHeight = 75; // Height of the wall image
 
 
 function startGame() {
@@ -58,8 +58,8 @@ function startGame() {
         myGamePiece = new component(30, 30, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/toy man_processed.jpeg", 10, 120, "image");
         myScore = new component("30px", "Consolas", "black", 280, 40, "text");
 
-        crashSound = new Audio('crash.mp3'); 
-        backgroundMusic = new Audio('background.mp3');
+        crashSound = new Audio('canvas_mixkit-8-bit-bomb-explosion-2811 (1).mp3'); 
+        backgroundMusic = new Audio('in-the-spotlight-war-213850.mp3');
         backgroundMusic.loop = true;
 
         backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/desert background.jpeg", 0, 0, "background");
