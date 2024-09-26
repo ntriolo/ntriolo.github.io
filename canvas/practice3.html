@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+\<!DOCTYPE html>
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -41,14 +41,9 @@ var breakableWalls = [];
 var wallLifetime = 150; // Frames until the wall breaks if not shot
 var score = 0; // Initialize score
 
-// Pillar and wall image sizes
+// Pillar image size
 var pillarWidth = 50; // Width of the pillar image
 var pillarHeight = 150; // Height of the pillar image
-var wallWidth = 10; // Width of the wall image
-var wallHeight = 50; // Height of the wall image
-
-// Add the wall image URL here
-var wallImageURL = "barbed wire_processed.jpeg"; // Replace with the URL of the wall image
 
 function startGame() {
     if (!gameRunning) {
@@ -64,7 +59,7 @@ function startGame() {
         backgroundMusic = new Audio('background.mp3');
         backgroundMusic.loop = true;
 
-        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/desert background.jpeg", 0, 0, "background");
+        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/blue background", 0, 0, "background");
 
         myGameArea.start();
         gameRunning = true;
@@ -142,8 +137,8 @@ function component(width, height, color, x, y, type) {
 }
 
 function createWall(pillarX, topHeight, bottomHeight) {
-    var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - wallHeight / 2; // Center wall between pillars
-    var wall = new component(wallWidth, wallHeight, wallImageURL, pillarX - 10, wallY, "image"); // Create wall as an image
+    var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - 25; // Center wall between pillars
+    var wall = new component(10, 50, "red", pillarX - 10, wallY, "wall"); // Move wall's x position further to the left
     wall.lifetime = wallLifetime; // Set its lifetime
     breakableWalls.push(wall); // Add to the wall array
 }
@@ -178,7 +173,7 @@ function updateGameArea() {
             var gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
 
             // Use an image for the top and bottom pillars with the specified size
-            var pillarImage = "american flag_processed.jpeg"; // Replace with your image URL
+            var pillarImage = "american flag.jpeg"; // Replace with your image URL
             myObstacles.push(new component(pillarWidth, pillarHeight, pillarImage, x, 0, "image"));  // Top pillar
             myObstacles.push(new component(pillarWidth, pillarHeight, pillarImage, x, height + gap, "image"));  // Bottom pillar
 
@@ -227,8 +222,8 @@ function updateGameArea() {
             myProjectiles[i].update();
         }
 
-        // Remove projectiles that go off-screen
-        myProjectiles = myProjectiles.filter(function (projectile) {
+        // Remove projectiles that go off screen
+        myProjectiles = myProjectiles.filter(function(projectile) {
             return projectile.x < myGameArea.canvas.width;
         });
 
