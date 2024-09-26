@@ -175,8 +175,8 @@ function updateGameArea() {
             var maxGap = 150;
             var gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
 
-            // Use an image for the top and bottom pillars with the specified size
-            var pillarImage = "american flag_processed.jpeg"; // Replace with your image URL
+            // Using an image for the top and bottom pillars with the specified size
+            var pillarImage = "american flag_processed.jpeg"; // Replace with my image URL
             myObstacles.push(new component(pillarWidth, pillarHeight, pillarImage, x, 0, "image"));  // Top pillar
             myObstacles.push(new component(pillarWidth, pillarHeight, pillarImage, x, height + gap, "image"));  // Bottom pillar
 
@@ -215,7 +215,7 @@ function updateGameArea() {
             breakableWalls[i].update();
         }
 
-        // Update the position of the game piece (character)
+        // Update the position of the game piece 
         myGamePiece.newPos();
         myGamePiece.update();
 
@@ -309,7 +309,7 @@ function shootProjectile() {
 
 </script>
 
-<!-- Buttons for starting and pausing the game -->
+<!-- Buttons for starting and pausing the game --!>
 <button onclick="startGame()">Start Game</button>
 
 <div id="game-over">
