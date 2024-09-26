@@ -64,7 +64,7 @@ function startGame() {
         backgroundMusic = new Audio('background.mp3');
         backgroundMusic.loop = true;
 
-        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/blue background", 0, 0, "background");
+        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/desert background.jpeg", 0, 0, "background");
 
         myGameArea.start();
         gameRunning = true;
@@ -178,7 +178,7 @@ function updateGameArea() {
             var gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
 
             // Use an image for the top and bottom pillars with the specified size
-            var pillarImage = "american flag.jpeg"; // Replace with your image URL
+            var pillarImage = "american flag_processed.jpeg"; // Replace with your image URL
             myObstacles.push(new component(pillarWidth, pillarHeight, pillarImage, x, 0, "image"));  // Top pillar
             myObstacles.push(new component(pillarWidth, pillarHeight, pillarImage, x, height + gap, "image"));  // Bottom pillar
 
