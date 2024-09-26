@@ -1,4 +1,4 @@
-\<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -41,9 +41,11 @@ var breakableWalls = [];
 var wallLifetime = 150; // Frames until the wall breaks if not shot
 var score = 0; // Initialize score
 
-// Pillar image size
+// Pillar and wall image sizes
 var pillarWidth = 50; // Width of the pillar image
-var pillarHeight = 150; // Height of the pillar image
+var pillarHeight = 100; // Height of the pillar image
+var wallWidth = 10; // Width of the wall
+var wallHeight = 50; // Height of the wall
 
 function startGame() {
     if (!gameRunning) {
@@ -112,7 +114,7 @@ function component(width, height, color, x, y, type) {
             ctx.fillText(this.text, this.x, this.y);
         } else if (this.type == "image" || this.type == "background") {
             ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
-        } else {
+        } else if (this.type == "rectangle") { // Handle rectangle type
             ctx.fillStyle = color;
             ctx.fillRect(this.x, this.y, this.width, this.height); // Draw colored obstacles
         }
@@ -137,8 +139,8 @@ function component(width, height, color, x, y, type) {
 }
 
 function createWall(pillarX, topHeight, bottomHeight) {
-    var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - 25; // Center wall between pillars
-    var wall = new component(10, 50, "red", pillarX - 10, wallY, "wall"); // Move wall's x position further to the left
+    var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - wallHeight / 2; // Center wall between pillars
+    var wall = new component(wallWidth, wallHeight, "red", pillarX - 10, wallY, "rectangle"); // Create wall as a red rectangle
     wall.lifetime = wallLifetime; // Set its lifetime
     breakableWalls.push(wall); // Add to the wall array
 }
@@ -222,101 +224,68 @@ function updateGameArea() {
             myProjectiles[i].update();
         }
 
-        // Remove projectiles that go off screen
-        myProjectiles = myProjectiles.filter(function(projectile) {
+        // Remove projectiles that go off-screen
+        myProjectiles = myProjectiles.filter(function (projectile) {
             return projectile.x < myGameArea.canvas.width;
         });
 
-        // Update the score for passing pillars
-        for (var i = 0; i < myObstacles.length; i += 2) {
-            if (myObstacles[i].x + myObstacles[i].width < myGamePiece.x && !myObstacles[i].scored) {
-                score += 1; // Gain a point for passing a pillar
-                myObstacles[i].scored = true; // Mark pillar as passed
-            }
-        }
-
-        // Update the score display
-        myScore.text = "SCORE: " + score;
+        // Update score display
+        myScore.text = "Score: " + score; // Update score text
         myScore.update();
+
+        // Start background music when the game is running
+        if (!musicStarted) {
+            backgroundMusic.play();
+            musicStarted = true; // Prevent music from restarting
+        }
     }
 }
 
-// End the game and display the Game Over screen
-function endGame() {
-    gameOver = true;
-    gameRunning = false;
-    myGameArea.stop();
-    document.getElementById("final-score").textContent = score; // Display final score
-    document.getElementById("game-over").style.display = "block"; // Show game over screen
-}
-
-function everyinterval(n) {
-    return (myGameArea.frameNo / n) % 1 === 0;
-}
-
 function moveKey(e) {
-    if (!gameOver) {
-        switch(e.key) {
-            case 'ArrowUp':
-                myGamePiece.speedY = -2;
-                break;
-            case 'ArrowDown':
-                myGamePiece.speedY = 2;
-                break;
-            case 'ArrowLeft':
-                myGamePiece.speedX = -2;
-                break;
-            case 'ArrowRight':
-                myGamePiece.speedX = 2;
-                break;
-            case ' ': // Space bar to shoot
-                shootProjectile();
-                break;
-        }
-
-        if (!musicStarted) {
-            backgroundMusic.play();
-            musicStarted = true;
-        }
+    switch (e.keyCode) {
+        case 37: // Left arrow key
+            myGamePiece.speedX = -3;
+            break;
+        case 39: // Right arrow key
+            myGamePiece.speedX = 3;
+            break;
+        case 32: // Spacebar to shoot
+            shootProjectile();
+            break;
     }
 }
 
 function stopMove(e) {
-    if (!gameOver) {
-        switch(e.key) {
-            case 'ArrowUp':
-            case 'ArrowDown':
-                myGamePiece.speedY = 0;
-                break;
-            case 'ArrowLeft':
-            case 'ArrowRight':
-                myGamePiece.speedX = 0;
-                break;
-        }
+    switch (e.keyCode) {
+        case 37: // Left arrow key
+        case 39: // Right arrow key
+            myGamePiece.speedX = 0;
+            break;
     }
 }
 
 function shootProjectile() {
-    var projectile = new component(5, 5, "green", myGamePiece.x + 30, myGamePiece.y + 12, "projectile");
-    projectile.speedX = 5; // Projectile speed
-    myProjectiles.push(projectile); // Add each new projectile to the array
+    var projectile = new component(10, 5, "black", myGamePiece.x + myGamePiece.width, myGamePiece.y + myGamePiece.height / 2 - 2.5, "rectangle");
+    myProjectiles.push(projectile);
+}
+
+function everyinterval(n) {
+    if ((myGameArea.frameNo / n) % 1 === 0) {return true;}
+    return false;
+}
+
+function endGame() {
+    clearInterval(myGameArea.interval);
+    gameRunning = false;
+    gameOver = true;
+    document.getElementById("game-over").style.display = "block"; // Show game over screen
+    backgroundMusic.pause(); // Stop background music
+    crashSound.play(); // Play crash sound
 }
 
 </script>
 
-<!-- Buttons for starting and pausing the game -->
-<button onclick="startGame()">Start Game</button>
-
-<div id="game-over">
-    <p>Game Over!</p>
-    <p>Your Score: <span id="final-score"></span></p>
-    <button onclick="startGame()">Restart</button>
-</div>
-
-<br>
-<p>Use arrow keys to control the character and space bar to shoot projectiles.</p>
-<p>Shoot the wall between the pillars before you pass through!</p>
-<p>You will be rewarded a point for each wall you break and each pillar you pass.</p>
+<div id="game-over">Game Over! <br> Your score: <span id="final-score"></span></div>
 
 </body>
 </html>
