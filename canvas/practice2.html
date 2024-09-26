@@ -41,9 +41,14 @@ var breakableWalls = [];
 var wallLifetime = 150; // Frames until the wall breaks if not shot
 var score = 0; // Initialize score
 
-// Pillar image size
+// Pillar and wall image sizes
 var pillarWidth = 50; // Width of the pillar image
 var pillarHeight = 100; // Height of the pillar image
+var wallWidth = 10; // Width of the wall image
+var wallHeight = 50; // Height of the wall image
+
+// Add the wall image URL here
+var wallImageURL = "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/barbed wire_processed.jpeg"; // Replace with the URL of the wall image
 
 function startGame() {
     if (!gameRunning) {
@@ -137,8 +142,8 @@ function component(width, height, color, x, y, type) {
 }
 
 function createWall(pillarX, topHeight, bottomHeight) {
-    var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - 25; // Center wall between pillars
-    var wall = new component(10, 50, "red", pillarX - 10, wallY, "wall"); // Move wall's x position further to the left
+    var wallY = topHeight + ((myGameArea.canvas.height - topHeight - bottomHeight) / 2) - wallHeight / 2; // Center wall between pillars
+    var wall = new component(wallWidth, wallHeight, wallImageURL, pillarX - 10, wallY, "image"); // Create wall as an image
     wall.lifetime = wallLifetime; // Set its lifetime
     breakableWalls.push(wall); // Add to the wall array
 }
@@ -222,8 +227,8 @@ function updateGameArea() {
             myProjectiles[i].update();
         }
 
-        // Remove projectiles that go off screen
-        myProjectiles = myProjectiles.filter(function(projectile) {
+        // Remove projectiles that go off-screen
+        myProjectiles = myProjectiles.filter(function (projectile) {
             return projectile.x < myGameArea.canvas.width;
         });
 
