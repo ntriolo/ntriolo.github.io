@@ -28,14 +28,14 @@ var wallLifetime = 150; // Frames until the wall breaks if not shot
 
 function startGame() {
     if (!gameRunning) {
-        myGamePiece = new component(30, 30, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/Army%20man.jpeg", 10, 120, "image");
+        myGamePiece = new component(30, 30, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/toy man_processed.jpeg.jpeg", 10, 120, "image");
         myScore = new component("30px", "Consolas", "black", 280, 40, "text");
 
         crashSound = new Audio('crash.mp3'); 
         backgroundMusic = new Audio('background.mp3');
         backgroundMusic.loop = true;
 
-        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/run down city background.webp", 0, 0, "background");
+        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/blue background", 0, 0, "background");
 
         myGameArea.start();
         gameRunning = true;
