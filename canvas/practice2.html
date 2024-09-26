@@ -41,6 +41,10 @@ var breakableWalls = [];
 var wallLifetime = 150; // Frames until the wall breaks if not shot
 var score = 0; // Initialize score
 
+// Pillar image size
+var pillarWidth = 50; // Width of the pillar image
+var pillarHeight = 100; // Height of the pillar image
+
 function startGame() {
     if (!gameRunning) {
         document.getElementById("game-over").style.display = "none"; // Hide the game over screen
@@ -55,7 +59,7 @@ function startGame() {
         backgroundMusic = new Audio('background.mp3');
         backgroundMusic.loop = true;
 
-        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/blue background", 0, 0, "background");
+        backgroundImage = new component(myGameArea.canvas.width, myGameArea.canvas.height, "https://github.com/ntriolo/ntriolo.github.io/raw/refs/heads/main/canvas/desert background.jpeg", 0, 0, "background");
 
         myGameArea.start();
         gameRunning = true;
@@ -168,10 +172,10 @@ function updateGameArea() {
             var maxGap = 150;
             var gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
 
-            // Use an image for the top and bottom pillars
-            var pillarImage = "american flag.jpeg"; // Replace with your image URL
-            myObstacles.push(new component(10, height, pillarImage, x, 0, "image"));  // Top pole
-            myObstacles.push(new component(10, myGameArea.canvas.height - height - gap, pillarImage, x, height + gap, "image"));  // Bottom pole
+            // Use an image for the top and bottom pillars with the specified size
+            var pillarImage = "american flag_processed.jpeg"; // Replace with your image URL
+            myObstacles.push(new component(pillarWidth, pillarHeight, pillarImage, x, 0, "image"));  // Top pillar
+            myObstacles.push(new component(pillarWidth, pillarHeight, pillarImage, x, height + gap, "image"));  // Bottom pillar
 
             // Create a wall between the new pillars
             createWall(x, height, myGameArea.canvas.height - height - gap);
@@ -313,8 +317,6 @@ function shootProjectile() {
 <p>Use arrow keys to control the character and space bar to shoot projectiles.</p>
 <p>Shoot the wall between the pillars before you pass through!</p>
 <p>You will be rewarded a point for each wall you break and each pillar you pass.</p>
-
-
 
 </body>
 </html>
