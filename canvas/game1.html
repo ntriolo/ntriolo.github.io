@@ -249,6 +249,8 @@ function endGame() {
     gameOver = true;
     gameRunning = false;
     myGameArea.stop();
+    backgroundMusic.pause(); // Stop the background music
+    backgroundMusic.currentTime = 0; // Reset music to start
     document.getElementById("final-score").textContent = score; // Display final score
     document.getElementById("game-over").style.display = "block"; // Show game over screen
 }
