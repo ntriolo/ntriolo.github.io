@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chess Game with Alternating Turns</title>
+  <title>Chess Game with Check Mechanic</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone@7.10.3/babel.min.js" crossorigin></script>
@@ -80,6 +80,8 @@
       const [selectedSquare, setSelectedSquare] = React.useState(null);
       const [isWhiteTurn, setIsWhiteTurn] = React.useState(true);
       const [gameOver, setGameOver] = React.useState(false);
+      const [inCheck, setInCheck] = React.useState(false);
+      const [checkedKingPosition, setCheckedKingPosition] = React.useState(null);
 
       // Start or restart the game
       function startRestartGame() {
@@ -87,6 +89,8 @@
         setSelectedSquare(null);
         setIsWhiteTurn(true);
         setGameOver(false);
+        setInCheck(false);
+        setCheckedKingPosition(null);
       }
 
       // Handle square click for moving pieces
@@ -100,13 +104,10 @@
           const selectedPiece = game[selectedRow][selectedCol];
           const targetPiece = game[row][col];
 
-          // Ensure the player can only move their pieces
           if (selectedPiece && isPlayerPiece(selectedPiece, isWhiteTurn)) {
-            // Move the piece if it's a valid move
             if (targetPiece === '' || isOpponentPiece(selectedPiece, targetPiece)) {
               const newGame = game.map(row => row.slice());
 
-              // If the king is captured, end the game
               if (targetPiece.toLowerCase() === 'k') {
                 setGameOver(true);
                 alert(`Game Over! ${currentPlayer} wins by capturing the King.`);
@@ -117,7 +118,18 @@
                 newGame[selectedRow][selectedCol] = '';
                 setGame(newGame);
                 setSelectedSquare(null);
-                setIsWhiteTurn(!isWhiteTurn);  // Alternate the turn after a move
+                setIsWhiteTurn(!isWhiteTurn);
+
+                // Check if the opponent's king is now in check
+                const opponentKingPos = findKing(newGame, isWhiteTurn ? 'k' : 'K');
+                if (isKingInCheck(newGame, opponentKingPos, !isWhiteTurn)) {
+                  setInCheck(true);
+                  setCheckedKingPosition(opponentKingPos);
+                  alert(`${currentPlayer} has placed the opponent's King in check!`);
+                } else {
+                  setInCheck(false);
+                  setCheckedKingPosition(null);
+                }
               } else {
                 setSelectedSquare(null);
               }
@@ -128,80 +140,69 @@
             setSelectedSquare(null);
           }
         } else {
-          // Select the square if it's the player's piece
           if (game[row][col] && isPlayerPiece(game[row][col], isWhiteTurn)) {
             setSelectedSquare([row, col]);
           }
         }
       }
 
-      // Check if a piece belongs to the current player
       function isPlayerPiece(piece, isWhiteTurn) {
         return isWhiteTurn ? piece === piece.toUpperCase() : piece === piece.toLowerCase();
       }
 
-      // Check if a piece belongs to the opponent
       function isOpponentPiece(piece, target) {
         return (piece.toUpperCase() === piece && target.toLowerCase() === target) || 
                (piece.toLowerCase() === piece && target.toUpperCase() === target);
       }
 
-      // Validate the move based on the piece type
       function isValidMove(piece, startRow, startCol, targetRow, targetCol, newGame) {
         const rowDiff = targetRow - startRow;
         const colDiff = targetCol - startCol;
 
         switch (piece.toLowerCase()) {
           case 'p':
-            // Pawn movement logic
             const direction = isWhiteTurn ? -1 : 1;
-            const startRowForPawn = isWhiteTurn ? 6 : 1; // Start row for white and black
+            const startRowForPawn = isWhiteTurn ? 6 : 1;
             if (colDiff === 0 && rowDiff === direction && newGame[targetRow][targetCol] === '') {
-              return true; // Move forward
+              return true;
             }
             if (colDiff === 0 && rowDiff === 2 * direction && startRow === startRowForPawn && newGame[targetRow][targetCol] === '' && newGame[startRow + direction][startCol] === '') {
-              return true; // Double move
+              return true;
             }
             if (Math.abs(colDiff) === 1 && rowDiff === direction && newGame[targetRow][targetCol] !== '') {
-              return true; // Capture
+              return true;
             }
             return false;
 
           case 'r':
-            // Rook movement logic
             if (colDiff === 0 || rowDiff === 0) {
               return !isPathBlocked(startRow, startCol, targetRow, targetCol);
             }
             return false;
 
           case 'n':
-            // Knight movement logic
             return (Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) || (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2);
 
           case 'b':
-            // Bishop movement logic
             if (Math.abs(rowDiff) === Math.abs(colDiff)) {
               return !isPathBlocked(startRow, startCol, targetRow, targetCol);
             }
             return false;
 
           case 'q':
-            // Queen movement logic
             if (Math.abs(rowDiff) === Math.abs(colDiff) || colDiff === 0 || rowDiff === 0) {
               return !isPathBlocked(startRow, startCol, targetRow, targetCol);
             }
             return false;
 
           case 'k':
-            // King movement logic
             return Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1;
 
           default:
-            return false; // Invalid piece
+            return false;
         }
       }
 
-      // Check if the path is blocked for rooks, bishops, and queens
       function isPathBlocked(startRow, startCol, targetRow, targetCol) {
         const rowStep = targetRow > startRow ? 1 : targetRow < startRow ? -1 : 0;
         const colStep = targetCol > startCol ? 1 : targetCol < startCol ? -1 : 0;
@@ -211,12 +212,39 @@
 
         while (row !== targetRow || col !== targetCol) {
           if (game[row][col] !== '') {
-            return true; // Path is blocked
+            return true;
           }
           row += rowStep;
           col += colStep;
         }
-        return false; // Path is clear
+        return false;
+      }
+
+      function findKing(game, king) {
+        for (let row = 0; row < 8; row++) {
+          for (let col = 0; col < 8; col++) {
+            if (game[row][col] === king) {
+              return [row, col];
+            }
+          }
+        }
+        return null;
+      }
+
+      function isKingInCheck(game, kingPos, isWhiteKing) {
+        const [kingRow, kingCol] = kingPos;
+
+        for (let row = 0; row < 8; row++) {
+          for (let col = 0; col < 8; col++) {
+            const piece = game[row][col];
+            if (piece && isPlayerPiece(piece, !isWhiteKing)) {
+              if (isValidMove(piece, row, col, kingRow, kingCol, game)) {
+                return true;
+              }
+            }
+          }
+        }
+        return false;
       }
 
       return (
@@ -225,6 +253,7 @@
             <button onClick={startRestartGame}>{gameOver ? "Start Game" : "Start/Restart Game"}</button>
           </div>
           <h2 className="turn-info">{isWhiteTurn ? "White's Turn" : "Black's Turn"}</h2>
+          {inCheck && <h2 style={{ color: 'red', textAlign: 'center' }}>Check!</h2>}
           <div className="board-container">
             <Board game={game} onSquareClick={handleClick} selectedSquare={selectedSquare} />
           </div>
@@ -233,7 +262,7 @@
       );
     }
 
-    // View: Board and buttons reflecting the game state
+    // Board component
     function Board({ game, onSquareClick, selectedSquare }) {
       return (
         <div>
@@ -254,6 +283,7 @@
       );
     }
 
+    // Square component
     function Square({ value, onClick, isLight, isSelected }) {
       const squareStyle = {
         width: '80px',
