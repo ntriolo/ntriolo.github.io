@@ -1,6 +1,8 @@
 <p id="demo"></p>
+
 <table>
-<tr>
+  
+<tr = "table1">
   <td> 1 </td>
    <td> 1 </td>
    <td> 1 </td>
@@ -11,6 +13,7 @@
    <td> 1 </td>
    <td> 1 </td>
 </tr>
+  
 <tr>
  <td> 1 </td>
    <td> 1 </td>
@@ -27,6 +30,14 @@
 
 
 <script>
+  document.getElementById("demo").innerHTML = "Hello Oneonta!";
+  tableref = document.getElementById("table1")
+  // Create an empty <tr> element and add it to the 1st position of the table:
+var row = tableref.insertRow(0);
 
-  document.getElementById("demo").innerHTML = "Hello World!";
+ for(col=1; col<16; col++) 
+   {
+    var cellref=row.insertCell(0)
+    cellref.innerHTML=col 
+   }
 </script>
