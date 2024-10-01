@@ -98,11 +98,10 @@
       const [selectedSquare, setSelectedSquare] = React.useState(null);
       const [isWhiteTurn, setIsWhiteTurn] = React.useState(true);
       const [gameOver, setGameOver] = React.useState(false);
-      const [gameStarted, setGameStarted] = React.useState(false);
 
       // Handle square click for moving pieces
       function handleClick(row, col) {
-        if (gameOver || !gameStarted) return;
+        if (gameOver) return;
 
         const currentPlayer = isWhiteTurn ? 'White' : 'Black';
 
@@ -154,29 +153,27 @@
                (piece.toLowerCase() === piece && target.toUpperCase() === target);
       }
 
+      // Start a new game
       function startGame() {
-        setGameStarted(true);
         setGame(initialGameState);
         setGameOver(false);
         setIsWhiteTurn(true);
       }
 
+      // Restart the game
       function restartGame() {
-        setGame(initialGameState);
-        setSelectedSquare(null);
-        setGameOver(false);
-        setIsWhiteTurn(true);
+        startGame();
       }
 
       return (
         <div>
-          <h2 className="turn-info">{gameStarted ? (isWhiteTurn ? "White's Turn" : "Black's Turn") : 'Press Start to Begin'}</h2>
+          <h2 className="turn-info">{isWhiteTurn ? "White's Turn" : "Black's Turn"}</h2>
           <div className="board-container">
             <Board game={game} onSquareClick={handleClick} selectedSquare={selectedSquare} />
           </div>
           <div className="button-container">
-            {!gameStarted && <button onClick={startGame}>Start Game</button>}
-            {gameStarted && <button onClick={restartGame}>Restart Game</button>}
+            <button onClick={startGame}>Start Game</button>
+            <button onClick={restartGame} disabled={gameOver}>Restart Game</button>
           </div>
           {gameOver && <h2 style={{ color: 'red', textAlign: 'center' }}>Game Over</h2>}
         </div>
@@ -212,7 +209,7 @@
         justifyContent: 'center',
         alignItems: 'center',
         cursor: 'pointer',
-        backgroundColor: isSelected ? '#ffeb3b' : (isLight ? '#f0d9b5' : '#b58863'),
+        backgroundColor: isSelected ? '#ffeb3b' : (isLight ? '#8ebf42' : '#2b8a3e'),
         border: '1px solid #999'
       };
 
