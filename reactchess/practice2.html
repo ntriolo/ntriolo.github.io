@@ -112,8 +112,8 @@
 
           // Ensure the player can only move their pieces
           if (selectedPiece && isPlayerPiece(selectedPiece, isWhiteTurn)) {
-            // Move the piece if it's a valid move
-            if (targetPiece === '' || isOpponentPiece(selectedPiece, targetPiece)) {
+            // Check if the move is valid for the selected piece
+            if (isValidMove(selectedPiece, selectedRow, selectedCol, row, col)) {
               const newGame = game.map(row => row.slice());
 
               // If the king is captured, end the game
@@ -147,37 +147,87 @@
         return isWhiteTurn ? piece === piece.toUpperCase() : piece === piece.toLowerCase();
       }
 
-      // Check if a piece belongs to the opponent
-      function isOpponentPiece(piece, target) {
-        return (piece.toUpperCase() === piece && target.toLowerCase() === target) || 
-               (piece.toLowerCase() === piece && target.toUpperCase() === target);
+      // Validate the move according to the piece type
+      function isValidMove(piece, startRow, startCol, targetRow, targetCol) {
+        const rowDiff = targetRow - startRow;
+        const colDiff = targetCol - startCol;
+
+        switch (piece.toLowerCase()) {
+          case 'p':
+            // Pawns: can only move forward and capture diagonally
+            if (piece === 'P') {
+              return (colDiff === 0 && rowDiff === -1 && game[targetRow][targetCol] === '') || // Move forward
+                     (Math.abs(colDiff) === 1 && rowDiff === -1 && game[targetRow][targetCol] && game[targetRow][targetCol].toLowerCase() === 'p'); // Capture
+            } else {
+              return (colDiff === 0 && rowDiff === 1 && game[targetRow][targetCol] === '') || // Move forward
+                     (Math.abs(colDiff) === 1 && rowDiff === 1 && game[targetRow][targetCol] && game[targetRow][targetCol].toUpperCase() === 'P'); // Capture
+            }
+          case 'r':
+            // Rooks: can move horizontally or vertically
+            return (colDiff === 0 || rowDiff === 0) && !isPathBlocked(startRow, startCol, targetRow, targetCol);
+          case 'n':
+            // Knights: can move in an L-shape
+            return (Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) || (Math.abs(colDiff) === 2 && Math.abs(rowDiff) === 1);
+          case 'b':
+            // Bishops: can move diagonally
+            return Math.abs(rowDiff) === Math.abs(colDiff) && !isPathBlocked(startRow, startCol, targetRow, targetCol);
+          case 'q':
+            // Queens: can move like both a rook and a bishop
+            return ((colDiff === 0 || rowDiff === 0) || (Math.abs(rowDiff) === Math.abs(colDiff))) && !isPathBlocked(startRow, startCol, targetRow, targetCol);
+          case 'k':
+            // Kings: can move one square in any direction
+            return Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1;
+          default:
+            return false;
+        }
       }
 
-      // Start a new game
-      function startGame() {
-        setGame(initialGameState);
-        setGameOver(false);
-        setIsWhiteTurn(true);
-      }
+      // Check if there is a piece blocking the path of movement
+      function isPathBlocked(startRow, startCol, targetRow, targetCol) {
+        const rowStep = Math.sign(targetRow - startRow);
+        const colStep = Math.sign(targetCol - startCol);
+        let row = startRow + rowStep;
+        let col = startCol + colStep;
 
-      // Restart the game
-      function restartGame() {
-        startGame();
+        while (row !== targetRow || col !== targetCol) {
+          if (game[row][col] !== '') {
+            return true; // Path is blocked by another piece
+          }
+          row += rowStep;
+          col += colStep;
+        }
+        return false; // Path is clear
       }
 
       return (
         <div>
           <h2 className="turn-info">{isWhiteTurn ? "White's Turn" : "Black's Turn"}</h2>
-          <div className="board-container">
-            <Board game={game} onSquareClick={handleClick} selectedSquare={selectedSquare} />
-          </div>
           <div className="button-container">
             <button onClick={startGame}>Start Game</button>
-            <button onClick={restartGame} disabled={gameOver}>Restart Game</button>
+            <button onClick={restartGame} disabled={!gameOver}>Restart Game</button>
+          </div>
+          <div className="board-container">
+            <Board game={game} onSquareClick={handleClick} selectedSquare={selectedSquare} />
           </div>
           {gameOver && <h2 style={{ color: 'red', textAlign: 'center' }}>Game Over</h2>}
         </div>
       );
+    }
+
+    // Start the game
+    function startGame() {
+      setGame(initialGameState);
+      setIsWhiteTurn(true);
+      setGameOver(false);
+      setSelectedSquare(null);
+    }
+
+    // Restart the game
+    function restartGame() {
+      setGame(initialGameState);
+      setIsWhiteTurn(true);
+      setGameOver(false);
+      setSelectedSquare(null);
     }
 
     // View: Board and buttons reflecting the game state
