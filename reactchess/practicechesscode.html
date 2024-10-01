@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chess Game with Alternating Turns</title>
+  <title>Chess Game with Start and Restart</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone@7.10.3/babel.min.js" crossorigin></script>
@@ -27,11 +27,26 @@
       box-shadow: 0px 4px 30px rgba(0, 0, 0, 0.5);
     }
 
-    .turn-info {
+    .turn-info, .button-container {
       color: white;
       font-size: 18px;
       margin-bottom: 15px;
       text-align: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    button:hover {
+      background-color: #45a049;
     }
   </style>
 </head>
@@ -70,10 +85,11 @@
       const [selectedSquare, setSelectedSquare] = React.useState(null);
       const [isWhiteTurn, setIsWhiteTurn] = React.useState(true);
       const [gameOver, setGameOver] = React.useState(false);
+      const [gameStarted, setGameStarted] = React.useState(false); // New state for game start
 
       // Handle square click for moving pieces
       function handleClick(row, col) {
-        if (gameOver) return;
+        if (gameOver || !gameStarted) return;
 
         const currentPlayer = isWhiteTurn ? 'White' : 'Black';
 
@@ -125,11 +141,33 @@
                (piece.toLowerCase() === piece && target.toUpperCase() === target);
       }
 
+      // Function to start the game
+      function startGame() {
+        setGameStarted(true);
+        setGame(initialGameState);
+        setGameOver(false);
+        setIsWhiteTurn(true);
+      }
+
+      // Function to restart the game
+      function restartGame() {
+        setGame(initialGameState);
+        setSelectedSquare(null);
+        setGameOver(false);
+        setIsWhiteTurn(true);
+        setGameStarted(true);  // Automatically start after restart
+      }
+
       return (
         <div>
-          <h2 className="turn-info">{isWhiteTurn ? "White's Turn" : "Black's Turn"}</h2>
+          {!gameStarted && <h2 className="turn-info">Press "Start" to begin the game</h2>}
+          {gameStarted && <h2 className="turn-info">{isWhiteTurn ? "White's Turn" : "Black's Turn"}</h2>}
           <Board game={game} onSquareClick={handleClick} selectedSquare={selectedSquare} />
           {gameOver && <h2 style={{ color: 'red', textAlign: 'center' }}>Game Over</h2>}
+          <div className="button-container">
+            {!gameStarted && <button onClick={startGame}>Start Game</button>}
+            {gameStarted && <button onClick={restartGame}>Restart Game</button>}
+          </div>
         </div>
       );
     }
@@ -163,7 +201,7 @@
         justifyContent: 'center',
         alignItems: 'center',
         cursor: 'pointer',
-        backgroundColor: isSelected ? '#ffeb3b' : (isLight ? '#8ebf42' : '#2b8a3e'),
+        backgroundColor: isSelected ? '#ffeb3b' : (isLight ? '#f0d9b5' : '#b58863'),
         border: '1px solid #999'
       };
 
