@@ -8,12 +8,29 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone@7.10.3/babel.min.js" crossorigin></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(45deg, #283048, #859398); /* Gradient background */
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #root {
+      background-color: rgba(255, 255, 255, 0.1); /* Slight transparency */
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 30px rgba(0, 0, 0, 0.5);
+    }
+  </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel" data-presets="react,stage-3">
-    // Model: Starting state of the chessboard in 2D array
     const initialGameState = [
       ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
       ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
@@ -25,7 +42,6 @@
       ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
     ];
 
-    // Mapping of chess pieces to their respective image URLs
     const pieceImages = {
       'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
       'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
@@ -45,13 +61,11 @@
       const [game, setGame] = React.useState(initialGameState);
       const [selectedSquare, setSelectedSquare] = React.useState(null);
 
-      // Handle square click for moving pieces
       function handleClick(row, col) {
         if (selectedSquare) {
           const newGame = game.map(row => row.slice());
           const [selectedRow, selectedCol] = selectedSquare;
 
-          // Move the piece to the new location
           newGame[row][col] = newGame[selectedRow][selectedCol];
           newGame[selectedRow][selectedCol] = '';
           setGame(newGame);
@@ -70,7 +84,6 @@
       );
     }
 
-    // View: Board and buttons reflecting the game state
     function Board({ game, onSquareClick, selectedSquare }) {
       return (
         <div>
@@ -99,11 +112,10 @@
         justifyContent: 'center',
         alignItems: 'center',
         cursor: 'pointer',
-        backgroundColor: isSelected ? '#ffeb3b' : (isLight ? '#f0d9b5' : '#b58863'),
+        backgroundColor: isSelected ? '#ffeb3b' : (isLight ? '#8ebf42' : '#2b8a3e'), /* Vibrant green colors */
         border: '1px solid #999'
       };
 
-      // Display the piece image or an empty square
       const pieceDisplay = () => {
         if (value) {
           return <img src={pieceImages[value]} alt={value} style={{ width: '70px', height: '70px' }} />;
