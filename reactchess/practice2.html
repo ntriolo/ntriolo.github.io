@@ -99,6 +99,19 @@
       const [isWhiteTurn, setIsWhiteTurn] = React.useState(true);
       const [gameOver, setGameOver] = React.useState(false);
 
+      // Start the game
+      function startGame() {
+        setGame(initialGameState);
+        setIsWhiteTurn(true);
+        setGameOver(false);
+        setSelectedSquare(null);
+      }
+
+      // Restart the game
+      function restartGame() {
+        startGame(); // Use the startGame function to reset the game
+      }
+
       // Handle square click for moving pieces
       function handleClick(row, col) {
         if (gameOver) return;
@@ -178,14 +191,14 @@
             // Kings: can move one square in any direction
             return Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1;
           default:
-            return false;
+            return false; // Invalid piece
         }
       }
 
-      // Check if there is a piece blocking the path of movement
+      // Check if the path is blocked for rooks, bishops, and queens
       function isPathBlocked(startRow, startCol, targetRow, targetCol) {
-        const rowStep = Math.sign(targetRow - startRow);
-        const colStep = Math.sign(targetCol - startCol);
+        const rowStep = targetRow > startRow ? 1 : (targetRow < startRow ? -1 : 0);
+        const colStep = targetCol > startCol ? 1 : (targetCol < startCol ? -1 : 0);
         let row = startRow + rowStep;
         let col = startCol + colStep;
 
@@ -212,22 +225,6 @@
           {gameOver && <h2 style={{ color: 'red', textAlign: 'center' }}>Game Over</h2>}
         </div>
       );
-    }
-
-    // Start the game
-    function startGame() {
-      setGame(initialGameState);
-      setIsWhiteTurn(true);
-      setGameOver(false);
-      setSelectedSquare(null);
-    }
-
-    // Restart the game
-    function restartGame() {
-      setGame(initialGameState);
-      setIsWhiteTurn(true);
-      setGameOver(false);
-      setSelectedSquare(null);
     }
 
     // View: Board and buttons reflecting the game state
