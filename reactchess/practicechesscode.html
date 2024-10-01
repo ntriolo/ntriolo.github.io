@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chessboard with Piece Images</title>
+  <title>Chess Game with Piece Movement</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone@7.10.3/babel.min.js" crossorigin></script>
@@ -12,7 +12,7 @@
     body {
       margin: 0;
       padding: 0;
-      background: linear-gradient(45deg, #283048, #859398); /* Gradient background */
+      background: linear-gradient(45deg, #283048, #859398);
       height: 100vh;
       display: flex;
       justify-content: center;
@@ -20,7 +20,7 @@
     }
 
     #root {
-      background-color: rgba(255, 255, 255, 0.1); /* Slight transparency */
+      background-color: rgba(255, 255, 255, 0.1);
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0px 4px 30px rgba(0, 0, 0, 0.5);
@@ -60,16 +60,35 @@
     function Game() {
       const [game, setGame] = React.useState(initialGameState);
       const [selectedSquare, setSelectedSquare] = React.useState(null);
+      const [gameOver, setGameOver] = React.useState(false);
 
+      // Handle square click for moving pieces
       function handleClick(row, col) {
-        if (selectedSquare) {
-          const newGame = game.map(row => row.slice());
-          const [selectedRow, selectedCol] = selectedSquare;
+        if (gameOver) return;
 
-          newGame[row][col] = newGame[selectedRow][selectedCol];
-          newGame[selectedRow][selectedCol] = '';
-          setGame(newGame);
-          setSelectedSquare(null);
+        if (selectedSquare) {
+          const [selectedRow, selectedCol] = selectedSquare;
+          const selectedPiece = game[selectedRow][selectedCol];
+          const targetPiece = game[row][col];
+
+          // Move the piece only if it's a valid move (non-empty to empty or capture)
+          if (selectedPiece && (targetPiece === '' || isOpponentPiece(selectedPiece, targetPiece))) {
+            const newGame = game.map(row => row.slice());
+
+            // If the king is captured, end the game
+            if (targetPiece.toLowerCase() === 'k') {
+              setGameOver(true);
+              alert('Game Over! King captured.');
+            }
+
+            newGame[row][col] = selectedPiece;
+            newGame[selectedRow][selectedCol] = '';
+
+            setGame(newGame);
+            setSelectedSquare(null);
+          } else {
+            setSelectedSquare(null);
+          }
         } else {
           if (game[row][col]) {
             setSelectedSquare([row, col]);
@@ -77,13 +96,21 @@
         }
       }
 
+      // Check if a piece belongs to the opponent
+      function isOpponentPiece(piece, target) {
+        return (piece.toUpperCase() === piece && target.toLowerCase() === target) || 
+               (piece.toLowerCase() === piece && target.toUpperCase() === target);
+      }
+
       return (
         <div>
           <Board game={game} onSquareClick={handleClick} selectedSquare={selectedSquare} />
+          {gameOver && <h2 style={{ color: 'red' }}>Game Over</h2>}
         </div>
       );
     }
 
+    // View: Board and buttons reflecting the game state
     function Board({ game, onSquareClick, selectedSquare }) {
       return (
         <div>
@@ -112,7 +139,7 @@
         justifyContent: 'center',
         alignItems: 'center',
         cursor: 'pointer',
-        backgroundColor: isSelected ? '#ffeb3b' : (isLight ? '#8ebf42' : '#2b8a3e'), /* Vibrant green colors */
+        backgroundColor: isSelected ? '#ffeb3b' : (isLight ? '#8ebf42' : '#2b8a3e'),
         border: '1px solid #999'
       };
 
@@ -135,4 +162,3 @@
   </script>
 </body>
 </html>
-
