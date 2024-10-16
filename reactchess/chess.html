@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chess Game with Check Mechanic</title>
+  <title>Chess Game with TTS</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone@7.10.3/babel.min.js" crossorigin></script>
@@ -75,6 +75,12 @@
       'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
     };
 
+    // Function to use the text-to-speech (TTS) feature
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(utterance);
+    }
+
     function Game() {
       const [game, setGame] = React.useState(initialGameState);
       const [selectedSquare, setSelectedSquare] = React.useState(null);
@@ -91,6 +97,7 @@
         setGameOver(false);
         setInCheck(false);
         setCheckedKingPosition(null);
+        speak("Game started. White's turn.");
       }
 
       // Handle square click for moving pieces
@@ -110,6 +117,7 @@
 
               if (targetPiece.toLowerCase() === 'k') {
                 setGameOver(true);
+                speak(`Game Over! ${currentPlayer} wins by capturing the King.`);
                 alert(`Game Over! ${currentPlayer} wins by capturing the King.`);
               }
 
@@ -125,6 +133,7 @@
                 if (isKingInCheck(newGame, opponentKingPos, !isWhiteTurn)) {
                   setInCheck(true);
                   setCheckedKingPosition(opponentKingPos);
+                  speak(`${currentPlayer} has placed the opponent's King in check.`);
                   alert(`${currentPlayer} has placed the opponent's King in check!`);
                 } else {
                   setInCheck(false);
@@ -184,10 +193,7 @@
             return (Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) || (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2);
 
           case 'b':
-            if (Math.abs(rowDiff) === Math.abs(colDiff)) {
-              return !isPathBlocked(startRow, startCol, targetRow, targetCol);
-            }
-            return false;
+            return Math.abs(rowDiff) === Math.abs(colDiff) && !isPathBlocked(startRow, startCol, targetRow, targetCol);
 
           case 'q':
             if (Math.abs(rowDiff) === Math.abs(colDiff) || colDiff === 0 || rowDiff === 0) {
