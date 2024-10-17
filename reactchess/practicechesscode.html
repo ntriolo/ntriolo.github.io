@@ -158,11 +158,6 @@
                   setInCheck(false);
                   setCheckedKingPosition(null);
                 }
-
-                // If the next player is Black, let the CPU make a move
-                if (!isWhiteTurn) {
-                  makeCPUMove(newGame);
-                }
               } else {
                 setSelectedSquare(null);
               }
@@ -179,68 +174,82 @@
         }
       }
 
-      function makeCPUMove(newGame) {
-        // Simple CPU move: find the first valid move for a black piece
-        for (let row = 0; row < newGame.length; row++) {
-          for (let col = 0; col < newGame[row].length; col++) {
-            const piece = newGame[row][col];
-            if (isPlayerPiece(piece, false)) { // Check for black pieces
-              for (let targetRow = 0; targetRow < newGame.length; targetRow++) {
-                for (let targetCol = 0; targetCol < newGame[targetRow].length; targetCol++) {
-                  if (isValidMove(piece, row, col, targetRow, targetCol, newGame)) {
-                    // Perform the move
-                    newGame[targetRow][targetCol] = piece;
-                    newGame[row][col] = '';
-                    setGame(newGame);
-                    setSelectedSquare(null);
-                    setIsWhiteTurn(true); // Switch back to white's turn
-                    announceTurn("White"); // Announce white's turn
-
-                    // Check if the opponent's king is now in check
-                    const opponentKingPos = findKing(newGame, 'K');
-                    if (isKingInCheck(newGame, opponentKingPos, false)) {
-                      setInCheck(true);
-                      setCheckedKingPosition(opponentKingPos);
-                      announceCheck("White");
-                      alert("Black has placed your King in check!");
-                    } else {
-                      setInCheck(false);
-                      setCheckedKingPosition(null);
-                    }
-                    return; // Exit after making the move
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // Determine if the piece belongs to the current player
       function isPlayerPiece(piece, isWhiteTurn) {
-        return (isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase());
+        return isWhiteTurn ? piece === piece.toUpperCase() : piece === piece.toLowerCase();
       }
 
-      // Determine if the piece belongs to the opponent
-      function isOpponentPiece(selectedPiece, targetPiece) {
-        return (selectedPiece === selectedPiece.toUpperCase() && targetPiece === targetPiece.toLowerCase()) ||
-               (selectedPiece === selectedPiece.toLowerCase() && targetPiece === targetPiece.toUpperCase());
+      function isOpponentPiece(piece, target) {
+        return (piece.toUpperCase() === piece && target.toLowerCase() === target) || 
+               (piece.toLowerCase() === piece && target.toUpperCase() === target);
       }
 
-      // Valid move logic for each piece (simplified for demonstration)
-      function isValidMove(piece, fromRow, fromCol, toRow, toCol, newGame) {
-        // Basic implementation: only allows moving to an empty square or capturing an opponent piece
-        if (newGame[toRow][toCol] === '' || isOpponentPiece(piece, newGame[toRow][toCol])) {
-          return true; // Move is valid
+      function isValidMove(piece, startRow, startCol, targetRow, targetCol, newGame) {
+        const rowDiff = targetRow - startRow;
+        const colDiff = targetCol - startCol;
+
+        switch (piece.toLowerCase()) {
+          case 'p':
+            const direction = isWhiteTurn ? -1 : 1;
+            const startRowForPawn = isWhiteTurn ? 6 : 1;
+            if (colDiff === 0 && rowDiff === direction && newGame[targetRow][targetCol] === '') {
+              return true;
+            }
+            if (colDiff === 0 && rowDiff === 2 * direction && startRow === startRowForPawn && newGame[targetRow][targetCol] === '' && newGame[startRow + direction][startCol] === '') {
+              return true;
+            }
+            if (Math.abs(colDiff) === 1 && rowDiff === direction && newGame[targetRow][targetCol] !== '') {
+              return true;
+            }
+            break;
+          case 'r':
+            if (colDiff === 0 || rowDiff === 0) {
+              return isPathClear(startRow, startCol, targetRow, targetCol, newGame);
+            }
+            break;
+          case 'n':
+            if ((Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) || (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2)) {
+              return true;
+            }
+            break;
+          case 'b':
+            if (Math.abs(rowDiff) === Math.abs(colDiff)) {
+              return isPathClear(startRow, startCol, targetRow, targetCol, newGame);
+            }
+            break;
+          case 'q':
+            if (Math.abs(rowDiff) === Math.abs(colDiff) || colDiff === 0 || rowDiff === 0) {
+              return isPathClear(startRow, startCol, targetRow, targetCol, newGame);
+            }
+            break;
+          case 'k':
+            if (Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1) {
+              return true;
+            }
+            break;
         }
-        return false; // Invalid move
+        return false;
       }
 
-      // Function to find the position of the king
-      function findKing(game, kingPiece) {
+      function isPathClear(startRow, startCol, targetRow, targetCol, newGame) {
+        const rowStep = Math.sign(targetRow - startRow);
+        const colStep = Math.sign(targetCol - startCol);
+        let row = startRow + rowStep;
+        let col = startCol + colStep;
+
+        while (row !== targetRow || col !== targetCol) {
+          if (newGame[row][col] !== '') {
+            return false;
+          }
+          row += rowStep;
+          col += colStep;
+        }
+        return true;
+      }
+
+      function findKing(game, king) {
         for (let row = 0; row < game.length; row++) {
           for (let col = 0; col < game[row].length; col++) {
-            if (game[row][col] === kingPiece) {
+            if (game[row][col].toLowerCase() === king) {
               return [row, col];
             }
           }
@@ -248,56 +257,49 @@
         return null;
       }
 
-      // Function to check if a king is in check
-      function isKingInCheck(game, kingPosition, isWhiteTurn) {
-        // Check all opponent pieces to see if any can attack the king
-        for (let row = 0; row < game.length; row++) {
-          for (let col = 0; col < game[row].length; col++) {
-            const piece = game[row][col];
-            if (isOpponentPiece(piece, isWhiteTurn ? 'K' : 'k')) {
-              // Check if this piece can reach the king's position
-              if (isValidMove(piece, row, col, kingPosition[0], kingPosition[1], game)) {
-                return true; // King is in check
+      function isKingInCheck(game, kingPosition, isOpponentTurn) {
+        const opponentPieces = isOpponentTurn ? ['P', 'R', 'N', 'B', 'Q', 'K'] : ['p', 'r', 'n', 'b', 'q', 'k'];
+        for (const piece of opponentPieces) {
+          for (let row = 0; row < game.length; row++) {
+            for (let col = 0; col < game[row].length; col++) {
+              if (game[row][col] === piece && isValidMove(piece, row, col, kingPosition[0], kingPosition[1], game)) {
+                return true;
               }
             }
           }
         }
-        return false; // King is safe
+        return false;
       }
 
       return (
         <div>
           <div className="turn-info">
-            {gameOver ? "Game Over!" : `${isWhiteTurn ? "White" : "Black"}'s Turn`}
-            {inCheck && checkedKingPosition && (
-              <div>Check on the {isWhiteTurn ? 'Black' : 'White'} King!</div>
-            )}
+            {gameOver ? 'Game Over!' : `Current Turn: ${isWhiteTurn ? 'White' : 'Black'}`}
+            {inCheck && <span> {isWhiteTurn ? 'Black King is in check!' : 'White King is in check!'}</span>}
           </div>
           <div className="button-container">
-            <button onClick={startRestartGame}>Start/Restart Game</button>
-            <button onClick={toggleTTS}>
-              {isTTSEnabled ? "Disable TTS" : "Enable TTS"}
-            </button>
+            <button onClick={startRestartGame}>{gameOver ? 'Restart Game' : 'Start/Restart Game'}</button>
+            <button onClick={toggleTTS}>{isTTSEnabled ? 'Disable TTS' : 'Enable TTS'}</button>
           </div>
           <div className="board-container">
-            <div className="chessboard" style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 50px)' }}>
-              {game.map((row, rowIndex) => row.map((piece, colIndex) => (
-                <div
-                  key={`${rowIndex}-${colIndex}`}
-                  onClick={() => handleClick(rowIndex, colIndex)}
-                  style={{
-                    width: '50px',
-                    height: '50px',
-                    backgroundColor: (rowIndex + colIndex) % 2 === 0 ? '#eee' : '#555',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {piece && <img src={pieceImages[piece]} alt={piece} style={{ width: '100%', height: '100%' }} />}
-                </div>
-              )))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 80px)' }}>
+              {game.map((row, rowIndex) => 
+                row.map((piece, colIndex) => 
+                  <div 
+                    key={`${rowIndex}-${colIndex}`} 
+                    onClick={() => handleClick(rowIndex, colIndex)} 
+                    style={{ 
+                      width: '80px', height: '80px', 
+                      backgroundColor: (rowIndex + colIndex) % 2 === 0 ? '#eee' : '#ccc', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                      cursor: 'pointer', 
+                      border: selectedSquare && selectedSquare[0] === rowIndex && selectedSquare[1] === colIndex ? '2px solid red' : 'none' 
+                    }}
+                  >
+                    {piece && <img src={pieceImages[piece]} alt={piece} style={{ width: '70%', height: '70%' }} />}
+                  </div>
+                )
+              )}
             </div>
           </div>
         </div>
