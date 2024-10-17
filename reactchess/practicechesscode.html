@@ -82,14 +82,12 @@
       const [gameOver, setGameOver] = React.useState(false);
       const [inCheck, setInCheck] = React.useState(false);
       const [checkedKingPosition, setCheckedKingPosition] = React.useState(null);
-      const [isTTSEnabled, setIsTTSEnabled] = React.useState(true); // State to manage TTS
+      const [isTTSEnabled, setIsTTSEnabled] = React.useState(true);
 
-      // Function to toggle TTS on or off
       function toggleTTS() {
         setIsTTSEnabled(!isTTSEnabled);
       }
 
-      // Function to announce the current player's turn using speech synthesis
       function announceTurn(player) {
         if (isTTSEnabled) {
           const utterance = new SpeechSynthesisUtterance(`${player}'s turn`);
@@ -97,7 +95,6 @@
         }
       }
 
-      // Function to announce when a king is in check
       function announceCheck(player) {
         if (isTTSEnabled) {
           const utterance = new SpeechSynthesisUtterance(`${player} King is in check!`);
@@ -105,7 +102,6 @@
         }
       }
 
-      // Start or restart the game
       function startRestartGame() {
         setGame(initialGameState);
         setSelectedSquare(null);
@@ -113,12 +109,11 @@
         setGameOver(false);
         setInCheck(false);
         setCheckedKingPosition(null);
-        announceTurn("White"); // Announce white's turn at the beginning of the game
+        announceTurn("White");
       }
 
-      // Handle square click for moving pieces
       function handleClick(row, col) {
-        if (gameOver || !isWhiteTurn) return; // Prevent user from clicking during CPU's turn
+        if (gameOver || !isWhiteTurn) return;
 
         const currentPlayer = isWhiteTurn ? 'White' : 'Black';
 
@@ -134,6 +129,7 @@
               if (targetPiece.toLowerCase() === 'k') {
                 setGameOver(true);
                 alert(`Game Over! ${currentPlayer} wins by capturing the King.`);
+                return; // Stop further execution
               }
 
               if (isValidMove(selectedPiece, selectedRow, selectedCol, row, col, newGame)) {
@@ -142,24 +138,20 @@
                 setGame(newGame);
                 setSelectedSquare(null);
                 setIsWhiteTurn(false);
+                announceTurn("Black");
 
-                // Announce the next player's turn after a move
-                const nextPlayer = "Black";
-                announceTurn(nextPlayer);
-
-                // Check if the opponent's king is now in check
                 const opponentKingPos = findKing(newGame, 'k');
                 if (isKingInCheck(newGame, opponentKingPos, false)) {
                   setInCheck(true);
                   setCheckedKingPosition(opponentKingPos);
-                  announceCheck("Black"); // Announce check for the opponent's king
+                  announceCheck("Black");
                   alert(`${currentPlayer} has placed the opponent's King in check!`);
                 } else {
                   setInCheck(false);
                   setCheckedKingPosition(null);
                 }
 
-                setTimeout(cpuMove, 500); // CPU moves after a short delay
+                setTimeout(cpuMove, 500); 
               } else {
                 setSelectedSquare(null);
               }
@@ -176,12 +168,10 @@
         }
       }
 
-      // Function to handle CPU's move (simple random move generator)
       function cpuMove() {
         const newGame = game.map(row => row.slice());
         const cpuMoves = [];
 
-        // Collect all valid moves for the CPU (black pieces)
         for (let row = 0; row < newGame.length; row++) {
           for (let col = 0; col < newGame[row].length; col++) {
             const piece = newGame[row][col];
@@ -202,11 +192,9 @@
           const [fromRow, fromCol] = randomMove.from;
           const [toRow, toCol] = randomMove.to;
 
-          // Move the piece
           newGame[toRow][toCol] = randomMove.piece;
           newGame[fromRow][fromCol] = '';
 
-          // Check for checkmate condition
           const whiteKingPos = findKing(newGame, 'K');
           if (isKingInCheck(newGame, whiteKingPos, true)) {
             setGameOver(true);
@@ -214,36 +202,30 @@
           }
 
           setGame(newGame);
-          setIsWhiteTurn(true); // Switch back to white's turn
-          announceTurn("White"); // Announce white's turn
+          setIsWhiteTurn(true); 
+          announceTurn("White");
         }
       }
 
-      // Check if the piece belongs to the player
       function isPlayerPiece(piece, isWhite) {
         return (isWhite && piece === piece.toUpperCase()) || (!isWhite && piece === piece.toLowerCase());
       }
 
-      // Check if the piece is an opponent's piece
       function isOpponentPiece(selectedPiece, targetPiece) {
         return (selectedPiece === selectedPiece.toUpperCase() && targetPiece === targetPiece.toLowerCase()) ||
                (selectedPiece === selectedPiece.toLowerCase() && targetPiece === targetPiece.toUpperCase());
       }
 
-      // Validate if the move is legal
       function isValidMove(piece, fromRow, fromCol, toRow, toCol, newGame) {
-        // Add basic validation for different pieces (simplified for demonstration)
         const targetPiece = newGame[toRow][toCol];
         const direction = isUpperCase(piece) ? 1 : -1;
 
         if (piece.toLowerCase() === 'p') { // Pawn
-          const moveForward = (fromRow + direction === toRow && fromCol === toCol);
+          const moveForward = (fromRow + direction === toRow && fromCol === toCol && targetPiece === '');
           const moveCapture = (fromRow + direction === toRow && Math.abs(fromCol - toCol) === 1 && targetPiece !== '');
           return moveForward || moveCapture;
         }
 
-        // Add validation for other pieces (Rook, Knight, Bishop, Queen, King)
-        // For now, we'll just allow simple horizontal/vertical movement for rooks
         if (piece.toLowerCase() === 'r') { // Rook
           const sameRow = fromRow === toRow;
           const sameCol = fromCol === toCol;
@@ -251,11 +233,9 @@
           return (sameRow || sameCol) && pathClear;
         }
 
-        // For simplicity, assume other pieces cannot move for now
         return false;
       }
 
-      // Check if a given path is clear for rook movement
       function isPathClear(fromRow, fromCol, toRow, toCol, newGame) {
         const rowStep = fromRow === toRow ? 0 : (toRow > fromRow ? 1 : -1);
         const colStep = fromCol === toCol ? 0 : (toCol > fromCol ? 1 : -1);
@@ -271,11 +251,9 @@
         return true;
       }
 
-      // Check if the king of the current player is in check
       function isKingInCheck(game, kingPosition, isWhite) {
         const kingPiece = isWhite ? 'K' : 'k';
 
-        // Check all opponent's pieces for attacking moves
         for (let row = 0; row < game.length; row++) {
           for (let col = 0; col < game[row].length; col++) {
             const piece = game[row][col];
@@ -289,7 +267,6 @@
         return false;
       }
 
-      // Find the position of the king for the given color
       function findKing(game, kingPiece) {
         for (let row = 0; row < game.length; row++) {
           for (let col = 0; col < game[row].length; col++) {
@@ -309,6 +286,7 @@
         <div>
           <div className="turn-info">
             {gameOver ? "Game Over" : `${isWhiteTurn ? "White" : "Black"}'s Turn`}
+            {inCheck && !gameOver && ` (${isWhiteTurn ? "White" : "Black"} King is in check!)`}
           </div>
           <div className="button-container">
             <button onClick={startRestartGame}>Start/Restart Game</button>
