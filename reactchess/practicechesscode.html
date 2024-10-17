@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chess Game with Check Mechanic</title>
+  <title>Chess Game with CPU</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone@7.10.3/babel.min.js" crossorigin></script>
@@ -118,16 +118,16 @@
 
       // Handle square click for moving pieces
       function handleClick(row, col) {
-        if (gameOver) return;
+        if (gameOver || !isWhiteTurn) return; // Player can only move if it's White's turn
 
-        const currentPlayer = isWhiteTurn ? 'White' : 'Black';
+        const currentPlayer = 'White'; // Only human player is White
 
         if (selectedSquare) {
           const [selectedRow, selectedCol] = selectedSquare;
           const selectedPiece = game[selectedRow][selectedCol];
           const targetPiece = game[row][col];
 
-          if (selectedPiece && isPlayerPiece(selectedPiece, isWhiteTurn)) {
+          if (selectedPiece && isPlayerPiece(selectedPiece, true)) {
             if (targetPiece === '' || isOpponentPiece(selectedPiece, targetPiece)) {
               const newGame = game.map(row => row.slice());
 
@@ -141,23 +141,12 @@
                 newGame[selectedRow][selectedCol] = '';
                 setGame(newGame);
                 setSelectedSquare(null);
-                setIsWhiteTurn(!isWhiteTurn);
+                setIsWhiteTurn(false);
 
-                // Announce the next player's turn after a move
-                const nextPlayer = isWhiteTurn ? "Black" : "White";
-                announceTurn(nextPlayer);
+                // Announce Black's turn (CPU turn)
+                announceTurn("Black");
 
-                // Check if the opponent's king is now in check
-                const opponentKingPos = findKing(newGame, isWhiteTurn ? 'k' : 'K');
-                if (isKingInCheck(newGame, opponentKingPos, !isWhiteTurn)) {
-                  setInCheck(true);
-                  setCheckedKingPosition(opponentKingPos);
-                  announceCheck(isWhiteTurn ? "Black" : "White"); // Announce check for the opponent's king
-                  alert(`${currentPlayer} has placed the opponent's King in check!`);
-                } else {
-                  setInCheck(false);
-                  setCheckedKingPosition(null);
-                }
+                setTimeout(cpuMove, 500); // Delay the CPU move slightly
               } else {
                 setSelectedSquare(null);
               }
@@ -168,7 +157,7 @@
             setSelectedSquare(null);
           }
         } else {
-          if (game[row][col] && isPlayerPiece(game[row][col], isWhiteTurn)) {
+          if (game[row][col] && isPlayerPiece(game[row][col], true)) {
             setSelectedSquare([row, col]);
           }
         }
@@ -241,40 +230,53 @@
         return false;
       }
 
-      function findKing(newGame, king) {
-        for (let row = 0; row < newGame.length; row++) {
-          for (let col = 0; col < newGame[row].length; col++) {
-            if (newGame[row][col] === king) {
-              return [row, col];
-            }
-          }
-        }
-        return null;
-      }
+      // Function for the CPU (Black) to make a move
+      function cpuMove() {
+        const newGame = game.map(row => row.slice());
+        const availableMoves = [];
 
-      function isKingInCheck(newGame, kingPosition, isWhiteTurn) {
-        const opponentMoves = [];
-        for (let row = 0; row < newGame.length; row++) {
-          for (let col = 0; col < newGame[row].length; col++) {
-            const piece = newGame[row][col];
-            if (piece !== '' && isPlayerPiece(piece, !isWhiteTurn)) {
-              for (let targetRow = 0; targetRow < newGame.length; targetRow++) {
-                for (let targetCol = 0; targetCol < newGame[targetRow].length; targetCol++) {
+        // Find all possible moves for the CPU
+        for (let row = 0; row < game.length; row++) {
+          for (let col = 0; col < game[row].length; col++) {
+            const piece = game[row][col];
+            if (piece !== '' && !isPlayerPiece(piece, true)) { // CPU's pieces (Black)
+              for (let targetRow = 0; targetRow < game.length; targetRow++) {
+                for (let targetCol = 0; targetCol < game[targetRow].length; targetCol++) {
                   if (isValidMove(piece, row, col, targetRow, targetCol, newGame)) {
-                    opponentMoves.push([targetRow, targetCol]);
+                    availableMoves.push({ piece, startRow: row, startCol: col, targetRow, targetCol });
                   }
                 }
               }
             }
           }
         }
-        return opponentMoves.some(([r, c]) => r === kingPosition[0] && c === kingPosition[1]);
+
+        if (availableMoves.length === 0) {
+          setGameOver(true);
+          alert("Game Over! White wins.");
+          return;
+        }
+
+        // Randomly choose one of the available moves
+        const randomMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+        newGame[randomMove.targetRow][randomMove.targetCol] = randomMove.piece;
+        newGame[randomMove.startRow][randomMove.startCol] = '';
+        setGame(newGame);
+        setIsWhiteTurn(true);
+
+        // Check if CPU captures the White King
+        if (randomMove.piece.toLowerCase() === 'k') {
+          setGameOver(true);
+          alert("Game Over! Black wins by capturing the King.");
+        } else {
+          announceTurn("White"); // Announce White's turn
+        }
       }
 
       return (
         <div>
           <div className="turn-info">
-            {gameOver ? "Game Over!" : `Current Turn: ${isWhiteTurn ? 'White' : 'Black'}`}
+            {gameOver ? "Game Over!" : `Current Turn: ${isWhiteTurn ? 'White' : 'Black (CPU)'}`}
           </div>
           <div className="button-container">
             <button onClick={startRestartGame}>{gameOver ? 'Restart Game' : 'Start/Restart Game'}</button>
