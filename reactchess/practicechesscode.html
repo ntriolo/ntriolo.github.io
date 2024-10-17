@@ -168,6 +168,7 @@
             setSelectedSquare(null);
           }
         } else {
+          // Check if the piece belongs to the current player
           if (game[row][col] && isPlayerPiece(game[row][col], isWhiteTurn)) {
             setSelectedSquare([row, col]);
           }
@@ -194,7 +195,7 @@
             if (colDiff === 0 && rowDiff === direction && newGame[targetRow][targetCol] === '') {
               return true;
             }
-            if (colDiff === 0 && rowDiff === 2 * direction && startRow === startRowForPawn && newGame[targetRow][targetCol] === '' && newGame[startRow + direction][startCol] === '') {
+            if (colDiff === 0 && rowDiff === 2 * direction && startRow === startRowForPawn && newGame[startRow + direction][targetCol] === '' && newGame[targetRow][targetCol] === '') {
               return true;
             }
             if (Math.abs(colDiff) === 1 && rowDiff === direction && newGame[targetRow][targetCol] !== '') {
