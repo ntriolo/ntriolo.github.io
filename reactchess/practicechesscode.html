@@ -33,7 +33,7 @@
       margin-bottom: 15px;
       text-align: center;
     }
-    
+
     .button-container {
       margin-bottom: 15px;
       text-align: center;
@@ -42,30 +42,6 @@
     .board-container {
       display: flex;
       justify-content: center;
-    }
-
-    table {
-      border-collapse: collapse;
-    }
-
-    td {
-      width: 60px;
-      height: 60px;
-      text-align: center;
-      vertical-align: middle;
-      cursor: pointer;
-    }
-
-    .white-square {
-      background-color: #f0d9b5;
-    }
-
-    .black-square {
-      background-color: #b58863;
-    }
-
-    .selected {
-      background-color: lightblue;
     }
   </style>
 </head>
@@ -104,16 +80,64 @@
       const [selectedSquare, setSelectedSquare] = React.useState(null);
       const [isWhiteTurn, setIsWhiteTurn] = React.useState(true);
       const [gameOver, setGameOver] = React.useState(false);
+      const [inCheck, setInCheck] = React.useState(false);
+      const [checkedKingPosition, setCheckedKingPosition] = React.useState(null);
 
-      function startRestartGame() {
-        setGame(initialGameState);
-        setSelectedSquare(null);
-        setIsWhiteTurn(true);
-        setGameOver(false);
+      // Bot logic
+      React.useEffect(() => {
+        if (!isWhiteTurn && !gameOver) {
+          // Add a delay to simulate thinking time for the bot
+          setTimeout(() => {
+            const move = makeBotMove(game);
+            if (move) {
+              const { from, to } = move;
+              handleMove(from[0], from[1], to[0], to[1]);
+            }
+          }, 1000); // 1 second delay for the bot's move
+        }
+      }, [isWhiteTurn, gameOver]);
+
+      // Bot selects a random valid move for the black pieces
+      function makeBotMove(currentGame) {
+        const validMoves = [];
+        for (let row = 0; row < currentGame.length; row++) {
+          for (let col = 0; col < currentGame[row].length; col++) {
+            const piece = currentGame[row][col];
+            if (piece !== '' && piece === piece.toLowerCase()) { // Black pieces
+              for (let targetRow = 0; targetRow < currentGame.length; targetRow++) {
+                for (let targetCol = 0; targetCol < currentGame[targetRow].length; targetCol++) {
+                  if (isValidMove(piece, row, col, targetRow, targetCol, currentGame)) {
+                    validMoves.push({ from: [row, col], to: [targetRow, targetCol] });
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Pick a random move from valid moves
+        if (validMoves.length > 0) {
+          return validMoves[Math.floor(Math.random() * validMoves.length)];
+        }
+        return null;
       }
 
+      // Function to handle moves (both player and bot)
+      function handleMove(startRow, startCol, targetRow, targetCol) {
+        const piece = game[startRow][startCol];
+        const newGame = game.map(row => row.slice());
+        newGame[targetRow][targetCol] = piece;
+        newGame[startRow][startCol] = '';
+        setGame(newGame);
+        setSelectedSquare(null);
+        setIsWhiteTurn(!isWhiteTurn);
+      }
+
+      // Handle square click for human player's move
       function handleClick(row, col) {
-        if (gameOver) return;
+        if (gameOver || !isWhiteTurn) return;
+
+        const currentPlayer = isWhiteTurn ? 'White' : 'Black';
 
         if (selectedSquare) {
           const [selectedRow, selectedCol] = selectedSquare;
@@ -121,16 +145,11 @@
           const targetPiece = game[row][col];
 
           if (selectedPiece && isPlayerPiece(selectedPiece, isWhiteTurn)) {
-            if (isValidMove(selectedPiece, selectedRow, selectedCol, row, col, game)) {
-              const newGame = game.map(row => row.slice());
-              newGame[row][col] = selectedPiece;
-              newGame[selectedRow][selectedCol] = '';
-              setGame(newGame);
-              setSelectedSquare(null);
-              setIsWhiteTurn(!isWhiteTurn);
-
-              if (!isWhiteTurn) {
-                setTimeout(() => cpuMove(newGame), 500); // Let the bot move after a short delay
+            if (targetPiece === '' || isOpponentPiece(selectedPiece, targetPiece)) {
+              if (isValidMove(selectedPiece, selectedRow, selectedCol, row, col, game)) {
+                handleMove(selectedRow, selectedCol, row, col);
+              } else {
+                setSelectedSquare(null);
               }
             } else {
               setSelectedSquare(null);
@@ -149,70 +168,107 @@
         return isWhiteTurn ? piece === piece.toUpperCase() : piece === piece.toLowerCase();
       }
 
-      function isValidMove(piece, startRow, startCol, targetRow, targetCol, game) {
-        // Simplified move validation for demo purposes (extend as needed)
-        return true; // Allow all moves for now (remove this once rules are applied)
+      function isOpponentPiece(piece, target) {
+        return (piece.toUpperCase() === piece && target.toLowerCase() === target) || 
+               (piece.toLowerCase() === piece && target.toUpperCase() === target);
       }
 
-      function cpuMove(game) {
-        let validMoves = [];
+      function isValidMove(piece, startRow, startCol, targetRow, targetCol, newGame) {
+        const rowDiff = targetRow - startRow;
+        const colDiff = targetCol - startCol;
 
-        // Collect all valid moves for the bot
-        for (let i = 0; i < game.length; i++) {
-          for (let j = 0; j < game[i].length; j++) {
-            const piece = game[i][j];
-            if (piece && piece === piece.toLowerCase()) { // Bot controls lowercase pieces
-              for (let row = 0; row < game.length; row++) {
-                for (let col = 0; col < game[row].length; col++) {
-                  if (isValidMove(piece, i, j, row, col, game)) {
-                    validMoves.push([[i, j], [row, col]]);
-                  }
-                }
-              }
+        switch (piece.toLowerCase()) {
+          case 'p':
+            const direction = isWhiteTurn ? -1 : 1;
+            const startRowForPawn = isWhiteTurn ? 6 : 1;
+            if (colDiff === 0 && rowDiff === direction && newGame[targetRow][targetCol] === '') {
+              return true;
             }
-          }
+            if (colDiff === 0 && rowDiff === 2 * direction && startRow === startRowForPawn && newGame[targetRow][targetCol] === '' && newGame[startRow + direction][startCol] === '') {
+              return true;
+            }
+            if (Math.abs(colDiff) === 1 && rowDiff === direction && newGame[targetRow][targetCol] !== '' && isOpponentPiece(piece, newGame[targetRow][targetCol])) {
+              return true;
+            }
+            break;
+          case 'r':
+            return isClearPath(startRow, startCol, targetRow, targetCol, newGame) && (rowDiff === 0 || colDiff === 0);
+          case 'n':
+            return Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1 || Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2;
+          case 'b':
+            return isClearPath(startRow, startCol, targetRow, targetCol, newGame) && Math.abs(rowDiff) === Math.abs(colDiff);
+          case 'q':
+            return isClearPath(startRow, startCol, targetRow, targetCol, newGame) && (rowDiff === 0 || colDiff === 0 || Math.abs(rowDiff) === Math.abs(colDiff));
+          case 'k':
+            return Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1;
+          default:
+            return false;
         }
+        return false;
+      }
 
-        if (validMoves.length > 0) {
-          const [[startRow, startCol], [targetRow, targetCol]] = validMoves[Math.floor(Math.random() * validMoves.length)];
-          const newGame = game.map(row => row.slice());
-          newGame[targetRow][targetCol] = newGame[startRow][startCol];
-          newGame[startRow][startCol] = '';
-          setGame(newGame);
-          setIsWhiteTurn(true);
+      function isClearPath(startRow, startCol, targetRow, targetCol, newGame) {
+        const rowDirection = targetRow - startRow > 0 ? 1 : -1;
+        const colDirection = targetCol - startCol > 0 ? 1 : -1;
+        let currentRow = startRow + rowDirection;
+        let currentCol = startCol + colDirection;
+        while (currentRow !== targetRow || currentCol !== targetCol) {
+          if (newGame[currentRow][currentCol] !== '') {
+            return false;
+          }
+          if (currentRow !== targetRow) currentRow += rowDirection;
+          if (currentCol !== targetCol) currentCol += colDirection;
         }
+        return true;
+      }
+
+      function resetGame() {
+        setGame(initialGameState);
+        setIsWhiteTurn(true);
+        setGameOver(false);
+        setInCheck(false);
+        setCheckedKingPosition(null);
       }
 
       return (
         <div>
-          <div className="turn-info">{isWhiteTurn ? "White's turn" : "Black's turn (Bot)"}</div>
+          <div className="turn-info">Current Turn: {isWhiteTurn ? 'White' : 'Black'} {gameOver && ' - Game Over!'}</div>
           <div className="button-container">
-            <button onClick={startRestartGame}>{gameOver ? "Restart Game" : "Start Game"}</button>
+            <button onClick={resetGame}>{gameOver ? 'Restart Game' : 'Start/Restart Game'}</button>
           </div>
           <div className="board-container">
-            <table>
-              <tbody>
-                {game.map((row, rowIndex) => (
-                  <tr key={rowIndex}>
-                    {row.map((piece, colIndex) => {
-                      const isSelected = selectedSquare && selectedSquare[0] === rowIndex && selectedSquare[1] === colIndex;
-                      const squareColor = (rowIndex + colIndex) % 2 === 0 ? 'white-square' : 'black-square';
-                      return (
-                        <td
-                          key={colIndex}
-                          onClick={() => handleClick(rowIndex, colIndex)}
-                          className={`${squareColor} ${isSelected ? 'selected' : ''}`}
-                        >
-                          {piece ? <img src={pieceImages[piece]} alt={piece} style={{ width: '50px', height: '50px' }} /> : null}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <ChessBoard game={game} onClick={handleClick} selectedSquare={selectedSquare} />
           </div>
         </div>
+      );
+    }
+
+    function ChessBoard({ game, onClick, selectedSquare }) {
+      return (
+        <table>
+          <tbody>
+            {game.map((row, rowIndex) => (
+              <tr key={rowIndex}>
+                {row.map((piece, colIndex) => (
+                  <td
+                    key={colIndex}
+                    onClick={() => onClick(rowIndex, colIndex)}
+                    style={{
+                      width: 60,
+                      height: 60,
+                      backgroundColor: (rowIndex + colIndex) % 2 === 0 ? '#EEE' : '#666',
+                      textAlign: 'center',
+                      border: selectedSquare && selectedSquare[0] === rowIndex && selectedSquare[1] === colIndex ? '2px solid red' : 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {piece && <img src={pieceImages[piece]} alt={piece} style={{ width: '100%', height: '100%' }} />}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       );
     }
 
