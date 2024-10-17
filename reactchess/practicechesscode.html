@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chess Game with Check Mechanic</title>
+  <title>Chess Game with Automatic Turns</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone@7.10.3/babel.min.js" crossorigin></script>
@@ -158,6 +158,11 @@
                   setInCheck(false);
                   setCheckedKingPosition(null);
                 }
+
+                // If it's now Black's turn, make a random move for Black
+                if (!isWhiteTurn) {
+                  setTimeout(() => makeRandomMove(newGame), 1000); // Delay for 1 second before AI move
+                }
               } else {
                 setSelectedSquare(null);
               }
@@ -175,27 +180,71 @@
         }
       }
 
-      function isPlayerPiece(piece, isWhiteTurn) {
-        return isWhiteTurn ? piece === piece.toUpperCase() : piece === piece.toLowerCase();
+      // Function to make a random move for black
+      function makeRandomMove(newGame) {
+        const validMoves = [];
+        for (let row = 0; row < newGame.length; row++) {
+          for (let col = 0; col < newGame[row].length; col++) {
+            const piece = newGame[row][col];
+            if (isPlayerPiece(piece, false)) { // Check for black pieces
+              for (let targetRow = 0; targetRow < newGame.length; targetRow++) {
+                for (let targetCol = 0; targetCol < newGame[targetRow].length; targetCol++) {
+                  if (isValidMove(piece, row, col, targetRow, targetCol, newGame)) {
+                    validMoves.push({ from: [row, col], to: [targetRow, targetCol] });
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        // If there are valid moves, make one
+        if (validMoves.length > 0) {
+          const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+          const [fromRow, fromCol] = randomMove.from;
+          const [toRow, toCol] = randomMove.to;
+          const movedPiece = newGame[fromRow][fromCol];
+
+          // Move the piece
+          newGame[toRow][toCol] = movedPiece;
+          newGame[fromRow][fromCol] = '';
+          setGame(newGame);
+          setIsWhiteTurn(true); // Switch back to white's turn
+
+          // Check if the black king is in check after the move
+          const blackKingPos = findKing(newGame, 'K');
+          if (isKingInCheck(newGame, blackKingPos, true)) {
+            setInCheck(true);
+            setCheckedKingPosition(blackKingPos);
+            announceCheck("Black"); // Announce check for black king
+          } else {
+            setInCheck(false);
+            setCheckedKingPosition(null);
+          }
+        }
       }
 
-      function isOpponentPiece(piece, target) {
-        return (piece.toUpperCase() === piece && target.toLowerCase() === target) || 
-               (piece.toLowerCase() === piece && target.toUpperCase() === target);
+      function isPlayerPiece(piece, isWhite) {
+        return (isWhite && piece === piece.toUpperCase()) || (!isWhite && piece === piece.toLowerCase());
+      }
+
+      function isOpponentPiece(selectedPiece, targetPiece) {
+        return (selectedPiece === selectedPiece.toUpperCase() && targetPiece === targetPiece.toLowerCase()) ||
+               (selectedPiece === selectedPiece.toLowerCase() && targetPiece === targetPiece.toUpperCase());
       }
 
       function isValidMove(piece, startRow, startCol, targetRow, targetCol, newGame) {
         const rowDiff = targetRow - startRow;
         const colDiff = targetCol - startCol;
+        const direction = piece.toLowerCase() === 'p' ? (piece === 'p' ? 1 : -1) : 0;
 
         switch (piece.toLowerCase()) {
           case 'p':
-            const direction = isWhiteTurn ? -1 : 1;
-            const startRowForPawn = isWhiteTurn ? 6 : 1;
             if (colDiff === 0 && rowDiff === direction && newGame[targetRow][targetCol] === '') {
               return true;
             }
-            if (colDiff === 0 && rowDiff === 2 * direction && startRow === startRowForPawn && newGame[startRow + direction][targetCol] === '' && newGame[targetRow][targetCol] === '') {
+            if (colDiff === 0 && rowDiff === direction * 2 && startRow === (piece === 'p' ? 1 : 6) &&
+              newGame[targetRow][targetCol] === '' && newGame[startRow + direction][targetCol] === '') {
               return true;
             }
             if (Math.abs(colDiff) === 1 && rowDiff === direction && newGame[targetRow][targetCol] !== '') {
