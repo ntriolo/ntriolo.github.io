@@ -104,42 +104,16 @@
       const [selectedSquare, setSelectedSquare] = React.useState(null);
       const [isWhiteTurn, setIsWhiteTurn] = React.useState(true);
       const [gameOver, setGameOver] = React.useState(false);
-      const [inCheck, setInCheck] = React.useState(false);
-      const [checkedKingPosition, setCheckedKingPosition] = React.useState(null);
-      const [isTTSEnabled, setIsTTSEnabled] = React.useState(true);
-
-      function toggleTTS() {
-        setIsTTSEnabled(!isTTSEnabled);
-      }
-
-      function announceTurn(player) {
-        if (isTTSEnabled) {
-          const utterance = new SpeechSynthesisUtterance(`${player}'s turn`);
-          window.speechSynthesis.speak(utterance);
-        }
-      }
-
-      function announceCheck(player) {
-        if (isTTSEnabled) {
-          const utterance = new SpeechSynthesisUtterance(`${player} King is in check!`);
-          window.speechSynthesis.speak(utterance);
-        }
-      }
 
       function startRestartGame() {
         setGame(initialGameState);
         setSelectedSquare(null);
         setIsWhiteTurn(true);
         setGameOver(false);
-        setInCheck(false);
-        setCheckedKingPosition(null);
-        announceTurn("White");
       }
 
       function handleClick(row, col) {
         if (gameOver) return;
-
-        const currentPlayer = isWhiteTurn ? 'White' : 'Black';
 
         if (selectedSquare) {
           const [selectedRow, selectedCol] = selectedSquare;
@@ -147,40 +121,16 @@
           const targetPiece = game[row][col];
 
           if (selectedPiece && isPlayerPiece(selectedPiece, isWhiteTurn)) {
-            if (targetPiece === '' || isOpponentPiece(selectedPiece, targetPiece)) {
+            if (isValidMove(selectedPiece, selectedRow, selectedCol, row, col, game)) {
               const newGame = game.map(row => row.slice());
+              newGame[row][col] = selectedPiece;
+              newGame[selectedRow][selectedCol] = '';
+              setGame(newGame);
+              setSelectedSquare(null);
+              setIsWhiteTurn(!isWhiteTurn);
 
-              if (targetPiece.toLowerCase() === 'k') {
-                setGameOver(true);
-                alert(`Game Over! ${currentPlayer} wins by capturing the King.`);
-                return;
-              }
-
-              if (isValidMove(selectedPiece, selectedRow, selectedCol, row, col, newGame)) {
-                newGame[row][col] = selectedPiece;
-                newGame[selectedRow][selectedCol] = '';
-                setGame(newGame);
-                setSelectedSquare(null);
-                setIsWhiteTurn(!isWhiteTurn);
-                const nextPlayer = isWhiteTurn ? "Black" : "White";
-                announceTurn(nextPlayer);
-                const opponentKingPos = findKing(newGame, isWhiteTurn ? 'k' : 'K');
-                if (isKingInCheck(newGame, opponentKingPos, !isWhiteTurn)) {
-                  setInCheck(true);
-                  setCheckedKingPosition(opponentKingPos);
-                  announceCheck(isWhiteTurn ? "Black" : "White");
-                  alert(`${currentPlayer} has placed the opponent's King in check!`);
-                } else {
-                  setInCheck(false);
-                  setCheckedKingPosition(null);
-                }
-
-                // If it's Black's turn, let the bot make a move
-                if (!isWhiteTurn) {
-                  cpuMove(newGame);
-                }
-              } else {
-                setSelectedSquare(null);
+              if (!isWhiteTurn) {
+                setTimeout(() => cpuMove(newGame), 500); // Let the bot move after a short delay
               }
             } else {
               setSelectedSquare(null);
@@ -199,101 +149,9 @@
         return isWhiteTurn ? piece === piece.toUpperCase() : piece === piece.toLowerCase();
       }
 
-      function isOpponentPiece(piece, target) {
-        return (piece.toUpperCase() === piece && target.toLowerCase() === target) || 
-               (piece.toLowerCase() === piece && target.toUpperCase() === target);
-      }
-
-      function isValidMove(piece, startRow, startCol, targetRow, targetCol, newGame) {
-        const rowDiff = targetRow - startRow;
-        const colDiff = targetCol - startCol;
-
-        switch (piece.toLowerCase()) {
-          case 'p':
-            const direction = isWhiteTurn ? -1 : 1;
-            const startRowForPawn = isWhiteTurn ? 6 : 1;
-            if (colDiff === 0 && rowDiff === direction && newGame[targetRow][targetCol] === '') {
-              return true;
-            }
-            if (colDiff === 0 && rowDiff === 2 * direction && startRow === startRowForPawn && newGame[targetRow][targetCol] === '' && newGame[startRow + direction][startCol] === '') {
-              return true;
-            }
-            if (Math.abs(colDiff) === 1 && rowDiff === direction && newGame[targetRow][targetCol] !== '') {
-              return true;
-            }
-            break;
-          case 'r':
-            if (rowDiff === 0 || colDiff === 0) {
-              const stepRow = rowDiff === 0 ? 0 : rowDiff / Math.abs(rowDiff);
-              const stepCol = colDiff === 0 ? 0 : colDiff / Math.abs(colDiff);
-              for (let i = 1; i < Math.max(Math.abs(rowDiff), Math.abs(colDiff)); i++) {
-                if (newGame[startRow + i * stepRow][startCol + i * stepCol] !== '') {
-                  return false;
-                }
-              }
-              return true;
-            }
-            break;
-          case 'n':
-            if ((Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) || (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2)) {
-              return true;
-            }
-            break;
-          case 'b':
-            if (Math.abs(rowDiff) === Math.abs(colDiff)) {
-              const step = rowDiff / Math.abs(rowDiff);
-              for (let i = 1; i < Math.abs(rowDiff); i++) {
-                if (newGame[startRow + i * step][startCol + i * step] !== '') {
-                  return false;
-                }
-              }
-              return true;
-            }
-            break;
-          case 'q':
-            if (rowDiff === 0 || colDiff === 0 || Math.abs(rowDiff) === Math.abs(colDiff)) {
-              const stepRow = rowDiff === 0 ? 0 : rowDiff / Math.abs(rowDiff);
-              const stepCol = colDiff === 0 ? 0 : colDiff / Math.abs(colDiff);
-              for (let i = 1; i < Math.max(Math.abs(rowDiff), Math.abs(colDiff)); i++) {
-                if (newGame[startRow + i * stepRow][startCol + i * stepCol] !== '') {
-                  return false;
-                }
-              }
-              return true;
-            }
-            break;
-          case 'k':
-            if (Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1) {
-              return true;
-            }
-            break;
-        }
-        return false;
-      }
-
-      function findKing(game, king) {
-        for (let i = 0; i < game.length; i++) {
-          for (let j = 0; j < game[i].length; j++) {
-            if (game[i][j].toLowerCase() === king) {
-              return [i, j];
-            }
-          }
-        }
-        return null;
-      }
-
-      function isKingInCheck(game, kingPos, isWhite) {
-        for (let i = 0; i < game.length; i++) {
-          for (let j = 0; j < game[i].length; j++) {
-            const piece = game[i][j];
-            if (isOpponentPiece(piece, isWhite ? 'K' : 'k')) {
-              if (isValidMove(piece, i, j, kingPos[0], kingPos[1], game)) {
-                return true;
-              }
-            }
-          }
-        }
-        return false;
+      function isValidMove(piece, startRow, startCol, targetRow, targetCol, game) {
+        // Simplified move validation for demo purposes (extend as needed)
+        return true; // Allow all moves for now (remove this once rules are applied)
       }
 
       function cpuMove(game) {
@@ -303,7 +161,7 @@
         for (let i = 0; i < game.length; i++) {
           for (let j = 0; j < game[i].length; j++) {
             const piece = game[i][j];
-            if (isOpponentPiece(piece, 'K')) {
+            if (piece && piece === piece.toLowerCase()) { // Bot controls lowercase pieces
               for (let row = 0; row < game.length; row++) {
                 for (let col = 0; col < game[row].length; col++) {
                   if (isValidMove(piece, i, j, row, col, game)) {
@@ -322,28 +180,14 @@
           newGame[startRow][startCol] = '';
           setGame(newGame);
           setIsWhiteTurn(true);
-          announceTurn("White");
-
-          // Check if the opponent's king is now in check
-          const opponentKingPos = findKing(newGame, 'K');
-          if (isKingInCheck(newGame, opponentKingPos, true)) {
-            setInCheck(true);
-            setCheckedKingPosition(opponentKingPos);
-            announceCheck("White");
-            alert(`Black has placed the White King in check!`);
-          } else {
-            setInCheck(false);
-            setCheckedKingPosition(null);
-          }
         }
       }
 
       return (
         <div>
-          <div className="turn-info">{isWhiteTurn ? "White's turn" : "Black's turn"}</div>
+          <div className="turn-info">{isWhiteTurn ? "White's turn" : "Black's turn (Bot)"}</div>
           <div className="button-container">
             <button onClick={startRestartGame}>{gameOver ? "Restart Game" : "Start Game"}</button>
-            <button onClick={toggleTTS}>{isTTSEnabled ? "Disable TTS" : "Enable TTS"}</button>
           </div>
           <div className="board-container">
             <table>
