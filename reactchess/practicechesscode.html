@@ -89,6 +89,12 @@
         window.speechSynthesis.speak(utterance);
       }
 
+      // Function to announce when a king is in check
+      function announceCheck(player) {
+        const utterance = new SpeechSynthesisUtterance(`${player} King is in check!`);
+        window.speechSynthesis.speak(utterance);
+      }
+
       // Start or restart the game
       function startRestartGame() {
         setGame(initialGameState);
@@ -136,6 +142,7 @@
                 if (isKingInCheck(newGame, opponentKingPos, !isWhiteTurn)) {
                   setInCheck(true);
                   setCheckedKingPosition(opponentKingPos);
+                  announceCheck(isWhiteTurn ? "Black" : "White"); // Announce check for the opponent's king
                   alert(`${currentPlayer} has placed the opponent's King in check!`);
                 } else {
                   setInCheck(false);
@@ -195,13 +202,10 @@
             return (Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) || (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2);
 
           case 'b':
-            if (Math.abs(rowDiff) === Math.abs(colDiff)) {
-              return !isPathBlocked(startRow, startCol, targetRow, targetCol);
-            }
-            return false;
+            return Math.abs(rowDiff) === Math.abs(colDiff) && !isPathBlocked(startRow, startCol, targetRow, targetCol);
 
           case 'q':
-            if (Math.abs(rowDiff) === Math.abs(colDiff) || colDiff === 0 || rowDiff === 0) {
+            if (colDiff === 0 || rowDiff === 0 || Math.abs(rowDiff) === Math.abs(colDiff)) {
               return !isPathBlocked(startRow, startCol, targetRow, targetCol);
             }
             return false;
