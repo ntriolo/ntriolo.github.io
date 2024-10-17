@@ -158,13 +158,14 @@
                   setInCheck(false);
                   setCheckedKingPosition(null);
                 }
+              } else {
+                setSelectedSquare(null);
               }
+            } else {
+              setSelectedSquare(null);
             }
-            setSelectedSquare(null);
           } else {
-            if (game[row][col] && isPlayerPiece(game[row][col], isWhiteTurn)) {
-              setSelectedSquare([row, col]);
-            }
+            setSelectedSquare(null);
           }
         } else {
           if (game[row][col] && isPlayerPiece(game[row][col], isWhiteTurn)) {
@@ -201,8 +202,8 @@
             }
             break;
           case 'r':
-            if (colDiff === 0 || rowDiff === 0) {
-              return !isPathBlocked(startRow, startCol, targetRow, targetCol, newGame);
+            if (rowDiff === 0 || colDiff === 0) {
+              return isPathClear(startRow, startCol, targetRow, targetCol, newGame);
             }
             break;
           case 'n':
@@ -212,12 +213,12 @@
             break;
           case 'b':
             if (Math.abs(rowDiff) === Math.abs(colDiff)) {
-              return !isPathBlocked(startRow, startCol, targetRow, targetCol, newGame);
+              return isPathClear(startRow, startCol, targetRow, targetCol, newGame);
             }
             break;
           case 'q':
-            if (Math.abs(rowDiff) === Math.abs(colDiff) || colDiff === 0 || rowDiff === 0) {
-              return !isPathBlocked(startRow, startCol, targetRow, targetCol, newGame);
+            if (rowDiff === 0 || colDiff === 0 || Math.abs(rowDiff) === Math.abs(colDiff)) {
+              return isPathClear(startRow, startCol, targetRow, targetCol, newGame);
             }
             break;
           case 'k':
@@ -228,29 +229,30 @@
           default:
             break;
         }
+
         return false;
       }
 
-      function isPathBlocked(startRow, startCol, targetRow, targetCol, newGame) {
-        const rowDirection = Math.sign(targetRow - startRow);
-        const colDirection = Math.sign(targetCol - startCol);
-        let currentRow = startRow + rowDirection;
-        let currentCol = startCol + colDirection;
+      function isPathClear(startRow, startCol, targetRow, targetCol, newGame) {
+        const rowStep = Math.sign(targetRow - startRow);
+        const colStep = Math.sign(targetCol - startCol);
+        let currentRow = startRow + rowStep;
+        let currentCol = startCol + colStep;
 
         while (currentRow !== targetRow || currentCol !== targetCol) {
           if (newGame[currentRow][currentCol] !== '') {
-            return true;
+            return false;
           }
-          currentRow += rowDirection;
-          currentCol += colDirection;
+          currentRow += rowStep;
+          currentCol += colStep;
         }
-        return false;
+        return true;
       }
 
-      function findKing(game, king) {
-        for (let row = 0; row < game.length; row++) {
-          for (let col = 0; col < game[row].length; col++) {
-            if (game[row][col] === king) {
+      function findKing(newGame, kingPiece) {
+        for (let row = 0; row < newGame.length; row++) {
+          for (let col = 0; col < newGame[row].length; col++) {
+            if (newGame[row][col] === kingPiece) {
               return [row, col];
             }
           }
@@ -258,15 +260,13 @@
         return null;
       }
 
-      function isKingInCheck(game, kingPosition, isWhite) {
-        const enemyPieces = isWhite ? ['r', 'n', 'b', 'q', 'k', 'p'] : ['R', 'N', 'B', 'Q', 'K', 'P'];
-        for (const piece of enemyPieces) {
-          for (let row = 0; row < game.length; row++) {
-            for (let col = 0; col < game[row].length; col++) {
-              if (game[row][col] === piece) {
-                if (isValidMove(piece, row, col, kingPosition[0], kingPosition[1], game)) {
-                  return true;
-                }
+      function isKingInCheck(newGame, kingPos, isWhiteTurn) {
+        for (let row = 0; row < newGame.length; row++) {
+          for (let col = 0; col < newGame[row].length; col++) {
+            const piece = newGame[row][col];
+            if (piece && isPlayerPiece(piece, !isWhiteTurn)) {
+              if (isValidMove(piece, row, col, kingPos[0], kingPos[1], newGame)) {
+                return true;
               }
             }
           }
@@ -277,7 +277,8 @@
       return (
         <div>
           <div className="turn-info">
-            {gameOver ? "Game Over!" : `${isWhiteTurn ? "White" : "Black"}'s turn`}{inCheck && ` (Check!)`}
+            {gameOver ? "Game Over!" : `Current Turn: ${isWhiteTurn ? 'White' : 'Black'}`}
+            {inCheck && checkedKingPosition && <span> - King in Check!</span>}
           </div>
           <div className="button-container">
             <button onClick={startRestartGame}>Start/Restart Game</button>
@@ -293,13 +294,10 @@
                     style={{
                       width: '60px',
                       height: '60px',
+                      backgroundColor: (rowIndex + colIndex) % 2 === 0 ? '#eee' : '#aaa',
                       display: 'flex',
                       justifyContent: 'center',
-                      alignItems: 'center',
-                      backgroundColor: (rowIndex + colIndex) % 2 === 0 ? '#eee' : '#aaa',
-                      cursor: 'pointer',
-                      fontSize: '24px',
-                      fontWeight: 'bold',
+                      alignItems: 'center'
                     }}
                   >
                     {piece && <img src={pieceImages[piece]} alt={piece} style={{ width: '50px', height: '50px' }} />}
