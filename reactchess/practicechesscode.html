@@ -81,43 +81,31 @@
       const [isWhiteTurn, setIsWhiteTurn] = React.useState(true);
       const [gameOver, setGameOver] = React.useState(false);
       const [inCheck, setInCheck] = React.useState(false);
-      const [checkedKingPosition, setCheckedKingPosition] = React.useState(null);
-      const [isTTSEnabled, setIsTTSEnabled] = React.useState(true); // State to manage TTS
 
-      // Function to toggle TTS on or off
-      function toggleTTS() {
-        setIsTTSEnabled(!isTTSEnabled);
-      }
-
-      // Function to announce the current player's turn using speech synthesis
-      function announceTurn(player) {
-        if (isTTSEnabled) {
-          const utterance = new SpeechSynthesisUtterance(`${player}'s turn`);
-          window.speechSynthesis.speak(utterance);
-        }
-      }
+      // Function to announce a player's turn using speech synthesis
+      const announceTurn = (player) => {
+        const utterance = new SpeechSynthesisUtterance(`${player}'s turn`);
+        window.speechSynthesis.speak(utterance);
+      };
 
       // Function to announce when a king is in check
-      function announceCheck(player) {
-        if (isTTSEnabled) {
-          const utterance = new SpeechSynthesisUtterance(`${player} King is in check!`);
-          window.speechSynthesis.speak(utterance);
-        }
-      }
+      const announceCheck = (player) => {
+        const utterance = new SpeechSynthesisUtterance(`${player} King is in check!`);
+        window.speechSynthesis.speak(utterance);
+      };
 
       // Start or restart the game
-      function startRestartGame() {
+      const startRestartGame = () => {
         setGame(initialGameState);
         setSelectedSquare(null);
         setIsWhiteTurn(true);
         setGameOver(false);
         setInCheck(false);
-        setCheckedKingPosition(null);
         announceTurn("White"); // Announce white's turn at the beginning of the game
-      }
+      };
 
       // Handle square click for moving pieces
-      function handleClick(row, col) {
+      const handleClick = (row, col) => {
         if (gameOver) return;
 
         const currentPlayer = isWhiteTurn ? 'White' : 'Black';
@@ -131,11 +119,6 @@
             if (targetPiece === '' || isOpponentPiece(selectedPiece, targetPiece)) {
               const newGame = game.map(row => row.slice());
 
-              if (targetPiece.toLowerCase() === 'k') {
-                setGameOver(true);
-                alert(`Game Over! ${currentPlayer} wins by capturing the King.`);
-              }
-
               if (isValidMove(selectedPiece, selectedRow, selectedCol, row, col, newGame)) {
                 newGame[row][col] = selectedPiece;
                 newGame[selectedRow][selectedCol] = '';
@@ -143,27 +126,21 @@
                 setSelectedSquare(null);
                 setIsWhiteTurn(!isWhiteTurn);
 
-                // Announce the next player's turn after a move
-                const nextPlayer = isWhiteTurn ? "Black" : "White";
-                announceTurn(nextPlayer);
-
                 // Check if the opponent's king is now in check
                 const opponentKingPos = findKing(newGame, isWhiteTurn ? 'k' : 'K');
                 if (isKingInCheck(newGame, opponentKingPos, !isWhiteTurn)) {
                   setInCheck(true);
-                  setCheckedKingPosition(opponentKingPos);
                   announceCheck(isWhiteTurn ? "Black" : "White"); // Announce check for the opponent's king
                   alert(`${currentPlayer} has placed the opponent's King in check!`);
                 } else {
                   setInCheck(false);
-                  setCheckedKingPosition(null);
                 }
-              } else {
-                setSelectedSquare(null);
+
+                // Announce the next player's turn after a move
+                announceTurn(isWhiteTurn ? "Black" : "White");
               }
-            } else {
-              setSelectedSquare(null);
             }
+            setSelectedSquare(null);
           } else {
             setSelectedSquare(null);
           }
@@ -172,18 +149,18 @@
             setSelectedSquare([row, col]);
           }
         }
-      }
+      };
 
-      function isPlayerPiece(piece, isWhiteTurn) {
+      const isPlayerPiece = (piece, isWhiteTurn) => {
         return isWhiteTurn ? piece === piece.toUpperCase() : piece === piece.toLowerCase();
-      }
+      };
 
-      function isOpponentPiece(piece, target) {
+      const isOpponentPiece = (piece, target) => {
         return (piece.toUpperCase() === piece && target.toLowerCase() === target) || 
                (piece.toLowerCase() === piece && target.toUpperCase() === target);
-      }
+      };
 
-      function isValidMove(piece, startRow, startCol, targetRow, targetCol, newGame) {
+      const isValidMove = (piece, startRow, startCol, targetRow, targetCol, newGame) => {
         const rowDiff = targetRow - startRow;
         const colDiff = targetCol - startCol;
 
@@ -228,9 +205,9 @@
             break;
         }
         return false;
-      }
+      };
 
-      function isPathClear(startRow, startCol, targetRow, targetCol, newGame) {
+      const isPathClear = (startRow, startCol, targetRow, targetCol, newGame) => {
         const rowStep = Math.sign(targetRow - startRow);
         const colStep = Math.sign(targetCol - startCol);
         let row = startRow + rowStep;
@@ -244,9 +221,9 @@
           col += colStep;
         }
         return true;
-      }
+      };
 
-      function findKing(game, king) {
+      const findKing = (game, king) => {
         for (let row = 0; row < game.length; row++) {
           for (let col = 0; col < game[row].length; col++) {
             if (game[row][col].toLowerCase() === king) {
@@ -255,9 +232,9 @@
           }
         }
         return null;
-      }
+      };
 
-      function isKingInCheck(game, kingPosition, isOpponentTurn) {
+      const isKingInCheck = (game, kingPosition, isOpponentTurn) => {
         const opponentPieces = isOpponentTurn ? ['P', 'R', 'N', 'B', 'Q', 'K'] : ['p', 'r', 'n', 'b', 'q', 'k'];
         for (const piece of opponentPieces) {
           for (let row = 0; row < game.length; row++) {
@@ -269,7 +246,7 @@
           }
         }
         return false;
-      }
+      };
 
       return (
         <div>
@@ -279,7 +256,6 @@
           </div>
           <div className="button-container">
             <button onClick={startRestartGame}>{gameOver ? 'Restart Game' : 'Start/Restart Game'}</button>
-            <button onClick={toggleTTS}>{isTTSEnabled ? 'Disable TTS' : 'Enable TTS'}</button>
           </div>
           <div className="board-container">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 80px)' }}>
