@@ -43,6 +43,19 @@
       display: flex;
       justify-content: center;
     }
+
+    td {
+      width: 60px; 
+      height: 60px; 
+      background-color: #eee; 
+      text-align: center; 
+      vertical-align: middle; 
+      cursor: pointer;
+    }
+
+    td:nth-child(even) {
+      background-color: #ddd; 
+    }
   </style>
 </head>
 <body>
@@ -113,7 +126,7 @@
       }
 
       function handleClick(row, col) {
-        if (gameOver || !isWhiteTurn) return;
+        if (gameOver) return;
 
         const currentPlayer = isWhiteTurn ? 'White' : 'Black';
 
@@ -123,13 +136,16 @@
           const targetPiece = game[row][col];
 
           if (selectedPiece && isPlayerPiece(selectedPiece, isWhiteTurn)) {
-            if (targetPiece === '' || isOpponentPiece(selectedPiece, targetPiece)) {
+            // If clicked on a different piece, select it
+            if (targetPiece && isPlayerPiece(targetPiece, isWhiteTurn)) {
+              setSelectedSquare([row, col]);
+            } else {
               const newGame = game.map(row => row.slice());
 
               if (targetPiece.toLowerCase() === 'k') {
                 setGameOver(true);
                 alert(`Game Over! ${currentPlayer} wins by capturing the King.`);
-                return; // Stop further execution
+                return;
               }
 
               if (isValidMove(selectedPiece, selectedRow, selectedCol, row, col, newGame)) {
@@ -137,83 +153,35 @@
                 newGame[selectedRow][selectedCol] = '';
                 setGame(newGame);
                 setSelectedSquare(null);
-                setIsWhiteTurn(false);
-                announceTurn("Black");
+                setIsWhiteTurn(!isWhiteTurn);
+                announceTurn(isWhiteTurn ? "Black" : "White");
 
-                const opponentKingPos = findKing(newGame, 'k');
-                if (isKingInCheck(newGame, opponentKingPos, false)) {
+                const opponentKingPos = findKing(newGame, isWhiteTurn ? 'k' : 'K');
+                if (isKingInCheck(newGame, opponentKingPos, !isWhiteTurn)) {
                   setInCheck(true);
                   setCheckedKingPosition(opponentKingPos);
-                  announceCheck("Black");
+                  announceCheck(isWhiteTurn ? "White" : "Black");
                   alert(`${currentPlayer} has placed the opponent's King in check!`);
                 } else {
                   setInCheck(false);
                   setCheckedKingPosition(null);
                 }
 
-                setTimeout(cpuMove, 500); 
               } else {
-                setSelectedSquare(null);
+                setSelectedSquare(null); // Invalid move, deselect piece
               }
-            } else {
-              setSelectedSquare(null);
             }
-          } else {
-            setSelectedSquare(null);
           }
         } else {
+          // Select a piece
           if (game[row][col] && isPlayerPiece(game[row][col], isWhiteTurn)) {
             setSelectedSquare([row, col]);
           }
         }
       }
 
-      function cpuMove() {
-        const newGame = game.map(row => row.slice());
-        const cpuMoves = [];
-
-        for (let row = 0; row < newGame.length; row++) {
-          for (let col = 0; col < newGame[row].length; col++) {
-            const piece = newGame[row][col];
-            if (piece && isPlayerPiece(piece, false)) {
-              for (let targetRow = 0; targetRow < newGame.length; targetRow++) {
-                for (let targetCol = 0; targetCol < newGame[targetRow].length; targetCol++) {
-                  if (isValidMove(piece, row, col, targetRow, targetCol, newGame)) {
-                    cpuMoves.push({ piece, from: [row, col], to: [targetRow, targetCol] });
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        if (cpuMoves.length > 0) {
-          const randomMove = cpuMoves[Math.floor(Math.random() * cpuMoves.length)];
-          const [fromRow, fromCol] = randomMove.from;
-          const [toRow, toCol] = randomMove.to;
-
-          newGame[toRow][toCol] = randomMove.piece;
-          newGame[fromRow][fromCol] = '';
-
-          const whiteKingPos = findKing(newGame, 'K');
-          if (isKingInCheck(newGame, whiteKingPos, true)) {
-            setGameOver(true);
-            alert('Game Over! Black wins by checkmating White.');
-          }
-
-          setGame(newGame);
-          setIsWhiteTurn(true); 
-          announceTurn("White");
-        }
-      }
-
       function isPlayerPiece(piece, isWhite) {
         return (isWhite && piece === piece.toUpperCase()) || (!isWhite && piece === piece.toLowerCase());
-      }
-
-      function isOpponentPiece(selectedPiece, targetPiece) {
-        return (selectedPiece === selectedPiece.toUpperCase() && targetPiece === targetPiece.toLowerCase()) ||
-               (selectedPiece === selectedPiece.toLowerCase() && targetPiece === targetPiece.toUpperCase());
       }
 
       function isValidMove(piece, fromRow, fromCol, toRow, toCol, newGame) {
@@ -233,7 +201,7 @@
           return (sameRow || sameCol) && pathClear;
         }
 
-        return false;
+        return false; // More piece logic can be added here
       }
 
       function isPathClear(fromRow, fromCol, toRow, toCol, newGame) {
@@ -302,12 +270,7 @@
                         key={colIndex} 
                         onClick={() => handleClick(rowIndex, colIndex)} 
                         style={{ 
-                          width: '60px', 
-                          height: '60px', 
                           backgroundColor: (rowIndex + colIndex) % 2 === 0 ? '#eee' : '#777',
-                          textAlign: 'center',
-                          verticalAlign: 'middle',
-                          cursor: 'pointer'
                         }}
                       >
                         {piece && <img src={pieceImages[piece]} alt={piece} style={{ width: '50px', height: '50px' }} />}
