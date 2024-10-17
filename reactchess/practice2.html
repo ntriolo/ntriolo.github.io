@@ -82,17 +82,27 @@
       const [gameOver, setGameOver] = React.useState(false);
       const [inCheck, setInCheck] = React.useState(false);
       const [checkedKingPosition, setCheckedKingPosition] = React.useState(null);
+      const [isTTSEnabled, setIsTTSEnabled] = React.useState(true); // State to manage TTS
+
+      // Function to toggle TTS on or off
+      function toggleTTS() {
+        setIsTTSEnabled(!isTTSEnabled);
+      }
 
       // Function to announce the current player's turn using speech synthesis
       function announceTurn(player) {
-        const utterance = new SpeechSynthesisUtterance(`${player}'s turn`);
-        window.speechSynthesis.speak(utterance);
+        if (isTTSEnabled) {
+          const utterance = new SpeechSynthesisUtterance(`${player}'s turn`);
+          window.speechSynthesis.speak(utterance);
+        }
       }
 
       // Function to announce when a king is in check
       function announceCheck(player) {
-        const utterance = new SpeechSynthesisUtterance(`${player} King is in check!`);
-        window.speechSynthesis.speak(utterance);
+        if (isTTSEnabled) {
+          const utterance = new SpeechSynthesisUtterance(`${player} King is in check!`);
+          window.speechSynthesis.speak(utterance);
+        }
       }
 
       // Start or restart the game
@@ -187,7 +197,7 @@
             if (colDiff === 0 && rowDiff === 2 * direction && startRow === startRowForPawn && newGame[targetRow][targetCol] === '' && newGame[startRow + direction][startCol] === '') {
               return true;
             }
-            if (Math.abs(colDiff) === 1 && rowDiff === direction && newGame[targetRow][targetCol] !== '') {
+            if (Math.abs(colDiff) === 1 && rowDiff === direction && newGame[targetRow][targetCol] !== '' && isOpponentPiece(piece, newGame[targetRow][targetCol])) {
               return true;
             }
             return false;
@@ -268,6 +278,7 @@
           </div>
           <div className="button-container">
             <button onClick={startRestartGame}>{gameOver ? 'Restart Game' : 'Start/Restart Game'}</button>
+            <button onClick={toggleTTS}>{isTTSEnabled ? 'Disable TTS' : 'Enable TTS'}</button> {/* TTS toggle button */}
           </div>
           <div className="board-container">
             <Board game={game} selectedSquare={selectedSquare} onClick={handleClick} />
