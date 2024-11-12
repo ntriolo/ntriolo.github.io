@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -76,8 +76,8 @@
     };
 
     // Function to use the text-to-speech (TTS) feature
-    function speak(text, isTTSEnabled) {
-      if (isTTSEnabled) {
+    function speak(text) {
+      if (window.isTTSOn) { // Check if TTS is enabled
         const utterance = new SpeechSynthesisUtterance(text);
         window.speechSynthesis.speak(utterance);
       }
@@ -90,7 +90,9 @@
       const [gameOver, setGameOver] = React.useState(false);
       const [inCheck, setInCheck] = React.useState(false);
       const [checkedKingPosition, setCheckedKingPosition] = React.useState(null);
-      const [isTTSEnabled, setIsTTSEnabled] = React.useState(true);  // State for TTS toggle
+      const [isTTSOn, setIsTTSOn] = React.useState(true); // TTS state
+
+      window.isTTSOn = isTTSOn; // Set global TTS flag
 
       // Start or restart the game
       function startRestartGame() {
@@ -100,12 +102,7 @@
         setGameOver(false);
         setInCheck(false);
         setCheckedKingPosition(null);
-        speak("Game started. White's turn.", isTTSEnabled);
-      }
-
-      // Toggle TTS on and off
-      function toggleTTS() {
-        setIsTTSEnabled(!isTTSEnabled);
+        speak("Game started. White's turn.");
       }
 
       // Handle square click for moving pieces
@@ -125,7 +122,7 @@
 
               if (targetPiece.toLowerCase() === 'k') {
                 setGameOver(true);
-                speak(`Game Over! ${currentPlayer} wins by capturing the King.`, isTTSEnabled);
+                speak(`Game Over! ${currentPlayer} wins by capturing the King.`);
                 alert(`Game Over! ${currentPlayer} wins by capturing the King.`);
               }
 
@@ -141,7 +138,7 @@
                 if (isKingInCheck(newGame, opponentKingPos, !isWhiteTurn)) {
                   setInCheck(true);
                   setCheckedKingPosition(opponentKingPos);
-                  speak(`${currentPlayer} has placed the opponent's King in check.`, isTTSEnabled);
+                  speak(`${currentPlayer} has placed the opponent's King in check.`);
                   alert(`${currentPlayer} has placed the opponent's King in check!`);
                 } else {
                   setInCheck(false);
@@ -191,8 +188,8 @@
             }
             break;
           case 'r':
-            if (rowDiff === 0 || colDiff === 0) {
-              return isClearPath(startRow, startCol, targetRow, targetCol, newGame);
+            if (startRow === targetRow || startCol === targetCol) {
+              return isPathClear(startRow, startCol, targetRow, targetCol, newGame);
             }
             break;
           case 'n':
@@ -202,12 +199,12 @@
             break;
           case 'b':
             if (Math.abs(rowDiff) === Math.abs(colDiff)) {
-              return isClearPath(startRow, startCol, targetRow, targetCol, newGame);
+              return isPathClear(startRow, startCol, targetRow, targetCol, newGame);
             }
             break;
           case 'q':
-            if (rowDiff === 0 || colDiff === 0 || Math.abs(rowDiff) === Math.abs(colDiff)) {
-              return isClearPath(startRow, startCol, targetRow, targetCol, newGame);
+            if (Math.abs(rowDiff) === Math.abs(colDiff) || startRow === targetRow || startCol === targetCol) {
+              return isPathClear(startRow, startCol, targetRow, targetCol, newGame);
             }
             break;
           case 'k':
@@ -221,42 +218,41 @@
         return false;
       }
 
-      function isClearPath(startRow, startCol, targetRow, targetCol, newGame) {
-        const rowDiff = targetRow - startRow;
-        const colDiff = targetCol - startCol;
-        const rowStep = rowDiff === 0 ? 0 : rowDiff > 0 ? 1 : -1;
-        const colStep = colDiff === 0 ? 0 : colDiff > 0 ? 1 : -1;
-        let currentRow = startRow + rowStep;
-        let currentCol = startCol + colStep;
+      function isPathClear(startRow, startCol, targetRow, targetCol, newGame) {
+        const rowStep = targetRow > startRow ? 1 : (targetRow < startRow ? -1 : 0);
+        const colStep = targetCol > startCol ? 1 : (targetCol < startCol ? -1 : 0);
 
-        while (currentRow !== targetRow || currentCol !== targetCol) {
-          if (newGame[currentRow][currentCol] !== '') {
+        let row = startRow + rowStep;
+        let col = startCol + colStep;
+
+        while (row !== targetRow || col !== targetCol) {
+          if (newGame[row][col] !== '') {
             return false;
           }
-          currentRow += rowStep;
-          currentCol += colStep;
+          row += rowStep;
+          col += colStep;
         }
-
         return true;
       }
 
-      function findKing(newGame, king) {
-        for (let row = 0; row < 8; row++) {
-          for (let col = 0; col < 8; col++) {
-            if (newGame[row][col] === king) {
+      function findKing(game, king) {
+        for (let row = 0; row < game.length; row++) {
+          for (let col = 0; col < game[row].length; col++) {
+            if (game[row][col] === king) {
               return [row, col];
             }
           }
         }
       }
 
-      function isKingInCheck(newGame, kingPos, isWhite) {
-        const opponentPieces = isWhite ? ['r', 'n', 'b', 'q', 'k', 'p'] : ['R', 'N', 'B', 'Q', 'K', 'P'];
-        for (let i = 0; i < 8; i++) {
-          for (let j = 0; j < 8; j++) {
-            const piece = newGame[i][j];
-            if (opponentPieces.includes(piece.toLowerCase())) {
-              if (isValidMove(piece, i, j, kingPos[0], kingPos[1], newGame)) {
+      function isKingInCheck(game, kingPosition, isWhiteTurn) {
+        const [kingRow, kingCol] = kingPosition;
+
+        for (let row = 0; row < game.length; row++) {
+          for (let col = 0; col < game[row].length; col++) {
+            const piece = game[row][col];
+            if (piece && isOpponentPiece(piece, isWhiteTurn ? piece.toUpperCase() : piece.toLowerCase())) {
+              if (isValidMove(piece, row, col, kingRow, kingCol, game)) {
                 return true;
               }
             }
@@ -267,42 +263,50 @@
 
       return (
         <div>
-          <div className="turn-info">{gameOver ? "Game Over" : `${isWhiteTurn ? 'White' : 'Black'}'s turn`}</div>
-          <div className="button-container">
-            <button onClick={startRestartGame}>Start/Restart Game</button>
-            <button onClick={toggleTTS}>{isTTSEnabled ? "Disable TTS" : "Enable TTS"}</button>
+          <div className="turn-info">
+            {gameOver ? "Game Over!" : `It's ${isWhiteTurn ? "White" : "Black"}'s turn`} {inCheck && "King is in check!"}
           </div>
+
+          <div className="button-container">
+            <button onClick={startRestartGame}>
+              Start/Restart Game
+            </button>
+            <button onClick={() => setIsTTSOn(!isTTSOn)}>
+              {isTTSOn ? "Turn off TTS" : "Turn on TTS"}
+            </button>
+          </div>
+
           <div className="board-container">
-            <table>
-              <tbody>
-                {game.map((row, rowIndex) => (
-                  <tr key={rowIndex}>
-                    {row.map((square, colIndex) => (
-                      <td
-                        key={colIndex}
-                        onClick={() => handleClick(rowIndex, colIndex)}
-                        style={{
-                          width: '50px',
-                          height: '50px',
-                          backgroundColor: (rowIndex + colIndex) % 2 === 0 ? '#f0d9b5' : '#b58863',
-                          cursor: 'pointer',
-                          textAlign: 'center',
-                          verticalAlign: 'middle'
-                        }}
-                      >
-                        {square && <img src={pieceImages[square]} alt={square} style={{ width: '40px', height: '40px' }} />}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div>
+              {game.map((row, rowIndex) => (
+                <div key={rowIndex}>
+                  {row.map((cell, colIndex) => (
+                    <span
+                      key={`${rowIndex}-${colIndex}`}
+                      style={{
+                        display: 'inline-block',
+                        width: 60,
+                        height: 60,
+                        backgroundColor: (rowIndex + colIndex) % 2 === 0 ? '#f0d9b5' : '#b58863',
+                        textAlign: 'center',
+                        verticalAlign: 'middle',
+                        lineHeight: '60px',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => handleClick(rowIndex, colIndex)}
+                    >
+                      {cell && <img src={pieceImages[cell]} alt={cell} style={{ width: '50px' }} />}
+                    </span>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       );
     }
 
-    ReactDOM.render(<Game />, document.getElementById('root'));
+    ReactDOM.render(<Game />, document.getElementById("root"));
   </script>
 </body>
 </html>
