@@ -1,8 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta http-equiv="X-Compatible" content="IE=edge">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chess Game with TTS</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -48,7 +47,7 @@
 <body>
   <div id="root"></div>
 
-  <script type="text/babel" data-presets="react,stage-3">
+  <script type="text/babel">
     const initialGameState = [
       ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
       ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
@@ -75,7 +74,6 @@
       'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
     };
 
-    // Function to use the text-to-speech (TTS) feature
     function speak(text) {
       const utterance = new SpeechSynthesisUtterance(text);
       window.speechSynthesis.speak(utterance);
@@ -89,7 +87,6 @@
       const [inCheck, setInCheck] = React.useState(false);
       const [checkedKingPosition, setCheckedKingPosition] = React.useState(null);
 
-      // Start or restart the game
       function startRestartGame() {
         setGame(initialGameState);
         setSelectedSquare(null);
@@ -100,7 +97,6 @@
         speak("Game started. White's turn.");
       }
 
-      // Function to determine if it's checkmate
       function isCheckmate(game, isWhiteTurn) {
         for (let row = 0; row < 8; row++) {
           for (let col = 0; col < 8; col++) {
@@ -128,7 +124,6 @@
         return true; // No valid moves left, so it's checkmate
       }
 
-      // Handle square click for moving pieces
       function handleClick(row, col) {
         if (gameOver) return;
 
@@ -143,7 +138,7 @@
             if (targetPiece === '' || isOpponentPiece(selectedPiece, targetPiece)) {
               const newGame = game.map(row => row.slice());
 
-              if (targetPiece.toLowerCase() === 'k') {
+              if (selectedPiece.toLowerCase() === 'k' && targetPiece.toLowerCase() === 'k') {
                 setGameOver(true);
                 speak(`Game Over! ${currentPlayer} wins by capturing the King.`);
                 alert(`Game Over! ${currentPlayer} wins by capturing the King.`);
@@ -167,7 +162,6 @@
                     alert(`Checkmate! ${currentPlayer} wins!`);
                   } else {
                     speak(`${currentPlayer} has placed the opponent's King in check.`);
-                    alert(`${currentPlayer} has placed the opponent's King in check!`);
                   }
                 } else {
                   setInCheck(false);
