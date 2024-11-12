@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="X-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chess Game with TTS</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -75,6 +75,7 @@
       'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
     };
 
+    // Function to use the text-to-speech (TTS) feature
     function speak(text) {
       const utterance = new SpeechSynthesisUtterance(text);
       window.speechSynthesis.speak(utterance);
@@ -86,16 +87,48 @@
       const [isWhiteTurn, setIsWhiteTurn] = React.useState(true);
       const [gameOver, setGameOver] = React.useState(false);
       const [inCheck, setInCheck] = React.useState(false);
+      const [checkedKingPosition, setCheckedKingPosition] = React.useState(null);
 
+      // Start or restart the game
       function startRestartGame() {
         setGame(initialGameState);
         setSelectedSquare(null);
         setIsWhiteTurn(true);
         setGameOver(false);
         setInCheck(false);
+        setCheckedKingPosition(null);
         speak("Game started. White's turn.");
       }
 
+      // Function to determine if it's checkmate
+      function isCheckmate(game, isWhiteTurn) {
+        for (let row = 0; row < 8; row++) {
+          for (let col = 0; col < 8; col++) {
+            const piece = game[row][col];
+            if (piece && isPlayerPiece(piece, isWhiteTurn)) {
+              for (let targetRow = 0; targetRow < 8; targetRow++) {
+                for (let targetCol = 0; targetCol < 8; targetCol++) {
+                  const newGame = game.map(row => row.slice());
+                  if (
+                    isValidMove(piece, row, col, targetRow, targetCol, newGame) &&
+                    (isOpponentPiece(piece, game[targetRow][targetCol]) || game[targetRow][targetCol] === '')
+                  ) {
+                    newGame[targetRow][targetCol] = piece;
+                    newGame[row][col] = '';
+                    const kingPos = findKing(newGame, isWhiteTurn ? 'K' : 'k');
+                    if (!isKingInCheck(newGame, kingPos, isWhiteTurn)) {
+                      return false; // Found a valid move, so not checkmate
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        return true; // No valid moves left, so it's checkmate
+      }
+
+      // Handle square click for moving pieces
       function handleClick(row, col) {
         if (gameOver) return;
 
@@ -125,16 +158,20 @@
 
                 const opponentKingPos = findKing(newGame, isWhiteTurn ? 'k' : 'K');
                 if (isKingInCheck(newGame, opponentKingPos, !isWhiteTurn)) {
+                  setInCheck(true);
+                  setCheckedKingPosition(opponentKingPos);
+
                   if (isCheckmate(newGame, !isWhiteTurn)) {
                     setGameOver(true);
                     speak(`Checkmate! ${currentPlayer} wins.`);
-                    alert(`Checkmate! ${currentPlayer} wins.`);
+                    alert(`Checkmate! ${currentPlayer} wins!`);
                   } else {
-                    setInCheck(true);
                     speak(`${currentPlayer} has placed the opponent's King in check.`);
+                    alert(`${currentPlayer} has placed the opponent's King in check!`);
                   }
                 } else {
                   setInCheck(false);
+                  setCheckedKingPosition(null);
                 }
               } else {
                 setSelectedSquare(null);
@@ -152,82 +189,147 @@
         }
       }
 
-      function isCheckmate(game, isWhiteKing) {
-        const kingPos = findKing(game, isWhiteKing ? 'K' : 'k');
-        for (let row = 0; row < 8; row++) {
-          for (let col = 0; col < 8; col++) {
-            const piece = game[row][col];
-            if (piece && isPlayerPiece(piece, isWhiteKing)) {
-              for (let targetRow = 0; targetRow < 8; targetRow++) {
-                for (let targetCol = 0; targetCol < 8; targetCol++) {
-                  if (isValidMove(piece, row, col, targetRow, targetCol, game)) {
-                    const tempGame = game.map(row => row.slice());
-                    tempGame[targetRow][targetCol] = piece;
-                    tempGame[row][col] = '';
-                    if (!isKingInCheck(tempGame, kingPos, isWhiteKing)) {
-                      return false;
-                    }
-                  }
-                }
-              }
+      function isPlayerPiece(piece, isWhiteTurn) {
+        return isWhiteTurn ? piece === piece.toUpperCase() : piece === piece.toLowerCase();
+      }
+
+      function isOpponentPiece(piece, target) {
+        return (piece.toUpperCase() === piece && target.toLowerCase() === target) || 
+               (piece.toLowerCase() === piece && target.toUpperCase() === target);
+      }
+
+      function isValidMove(piece, startRow, startCol, targetRow, targetCol, newGame) {
+        const rowDiff = targetRow - startRow;
+        const colDiff = targetCol - startCol;
+
+        switch (piece.toLowerCase()) {
+          case 'p':
+            const direction = isWhiteTurn ? -1 : 1;
+            const startRowForPawn = isWhiteTurn ? 6 : 1;
+            if (
+              (colDiff === 0 && rowDiff === direction && newGame[targetRow][targetCol] === '') ||
+              (colDiff === 0 && rowDiff === 2 * direction && startRow === startRowForPawn && newGame[targetRow][targetCol] === '') ||
+              (Math.abs(colDiff) === 1 && rowDiff === direction && newGame[targetRow][targetCol] !== '' && isOpponentPiece(piece, newGame[targetRow][targetCol]))
+            ) return true;
+            break;
+          case 'r':
+            if (startRow === targetRow || startCol === targetCol) {
+              if (clearPath(startRow, startCol, targetRow, targetCol, newGame)) return true;
             }
-          }
+            break;
+          case 'n':
+            if (Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1 || Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2) return true;
+            break;
+          case 'b':
+            if (Math.abs(rowDiff) === Math.abs(colDiff)) {
+              if (clearPath(startRow, startCol, targetRow, targetCol, newGame)) return true;
+            }
+            break;
+          case 'q':
+            if (Math.abs(rowDiff) === Math.abs(colDiff) || startRow === targetRow || startCol === targetCol) {
+              if (clearPath(startRow, startCol, targetRow, targetCol, newGame)) return true;
+            }
+            break;
+          case 'k':
+            if (Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1) return true;
+            break;
+        }
+        return false;
+      }
+
+      function clearPath(startRow, startCol, targetRow, targetCol, newGame) {
+        const rowStep = Math.sign(targetRow - startRow);
+        const colStep = Math.sign(targetCol - startCol);
+        let row = startRow + rowStep;
+        let col = startCol + colStep;
+        while (row !== targetRow || col !== targetCol) {
+          if (newGame[row][col] !== '') return false;
+          row += rowStep;
+          col += colStep;
         }
         return true;
       }
 
+      function findKing(game, kingSymbol) {
+        for (let row = 0; row < 8; row++) {
+          for (let col = 0; col < 8; col++) {
+            if (game[row][col] === kingSymbol) return [row, col];
+          }
+        }
+        return null;
+      }
+
+      function isKingInCheck(game, kingPosition, isWhiteTurn) {
+        if (!kingPosition) return false;
+        const [kingRow, kingCol] = kingPosition;
+
+        for (let row = 0; row < 8; row++) {
+          for (let col = 0; col < 8; col++) {
+            const piece = game[row][col];
+            if (piece && isOpponentPiece(piece, isWhiteTurn ? 'K' : 'k')) {
+              if (isValidMove(piece, row, col, kingRow, kingCol, game)) return true;
+            }
+          }
+        }
+        return false;
+      }
+
       return (
         <div>
+          <div className="turn-info">
+            {gameOver ? "Game Over" : `${isWhiteTurn ? "White" : "Black"}'s Turn`}
+            {inCheck && !gameOver ? ` - ${isWhiteTurn ? "Black" : "White"} King in Check!` : ""}
+          </div>
           <div className="button-container">
-            <button onClick={startRestartGame}>{gameOver ? "Start Game" : "Start/Restart Game"}</button>
+            <button onClick={startRestartGame}>Start/Restart Game</button>
           </div>
-          <h2 className="turn-info">{isWhiteTurn ? "White's Turn" : "Black's Turn"}</h2>
-          {inCheck && <h2 style={{ color: 'red', textAlign: 'center' }}>Check!</h2>}
           <div className="board-container">
-            <Board game={game} onSquareClick={handleClick} selectedSquare={selectedSquare} />
+            {game.map((row, rowIndex) => (
+              <div key={rowIndex} style={{ display: "flex" }}>
+                {row.map((piece, colIndex) => {
+                  const isWhiteSquare = (rowIndex + colIndex) % 2 === 0;
+                  const isKingInCheck =
+                    inCheck &&
+                    checkedKingPosition &&
+                    checkedKingPosition[0] === rowIndex &&
+                    checkedKingPosition[1] === colIndex;
+
+                  return (
+                    <div
+                      key={colIndex}
+                      onClick={() => handleClick(rowIndex, colIndex)}
+                      style={{
+                        width: 50,
+                        height: 50,
+                        backgroundColor: isKingInCheck
+                          ? "red"
+                          : isWhiteSquare
+                          ? "#f0d9b5"
+                          : "#b58863",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        border: selectedSquare &&
+                          selectedSquare[0] === rowIndex &&
+                          selectedSquare[1] === colIndex
+                          ? "2px solid yellow"
+                          : "1px solid black",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {piece && (
+                        <img
+                          src={pieceImages[piece]}
+                          alt={piece}
+                          style={{ width: "80%", height: "80%" }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
-          {gameOver && <h2 style={{ color: 'red', textAlign: 'center' }}>Game Over</h2>}
-        </div>
-      );
-    }
-
-    function Board({ game, onSquareClick, selectedSquare }) {
-      return (
-        <div>
-          {game.map((row, rowIndex) => (
-            <div key={rowIndex} style={{ display: 'flex' }}>
-              {row.map((value, colIndex) => (
-                <Square
-                  key={colIndex}
-                  value={value}
-                  onClick={() => onSquareClick(rowIndex, colIndex)}
-                  isSelected={selectedSquare && selectedSquare[0] === rowIndex && selectedSquare[1] === colIndex}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    function Square({ value, onClick, isSelected }) {
-      return (
-        <div
-          onClick={onClick}
-          style={{
-            width: 60,
-            height: 60,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: isSelected ? 'orange' : 'white',
-            color: 'black',
-            fontSize: '24px',
-            cursor: 'pointer',
-            border: '1px solid #333',
-          }}
-        >
-          {value && <img src={pieceImages[value]} alt={value} style={{ width: '100%', height: '100%' }} />}
         </div>
       );
     }
