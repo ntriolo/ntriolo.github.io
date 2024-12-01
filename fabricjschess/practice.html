@@ -171,15 +171,20 @@
     }
 
     function isPathClear(startRow, startCol, endRow, endCol) {
+      console.log(`Checking path from (${startRow}, ${startCol}) to (${endRow}, ${endCol})`);
       const rowStep = startRow < endRow ? 1 : startRow > endRow ? -1 : 0;
       const colStep = startCol < endCol ? 1 : startCol > endCol ? -1 : 0;
       let row = startRow + rowStep;
       let col = startCol + colStep;
       while (row !== endRow || col !== endCol) {
-        if (game[row][col] !== '') return false;
+        if (game[row][col] !== '') {
+          console.log(`Path blocked at (${row}, ${col})`);
+          return false;
+        }
         row += rowStep;
         col += colStep;
       }
+      console.log("Path is clear.");
       return true;
     }
 
@@ -191,6 +196,7 @@
     function isKingInCheck(kingRow, kingCol) {
       console.log(`Checking if king at (${kingRow}, ${kingCol}) is in check`);
       const king = isWhiteTurn ? 'K' : 'k';
+
       for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
           const piece = game[row][col];
@@ -206,61 +212,7 @@
       return false;
     }
 
-    function findKingRow() {
-      return isWhiteTurn ? findPieceRow('K') : findPieceRow('k');
-    }
-
-    function findKingCol() {
-      return isWhiteTurn ? findPieceCol('K') : findPieceCol('k');
-    }
-
-    function findPieceRow(piece) {
-      for (let row = 0; row < 8; row++) {
-        for (let col = 0; col < 8; col++) {
-          if (game[row][col] === piece) return row;
-        }
-      }
-    }
-
-    function findPieceCol(piece) {
-      for (let row = 0; row < 8; row++) {
-        for (let col = 0; col < 8; col++) {
-          if (game[row][col] === piece) return col;
-        }
-      }
-    }
-
-    canvas.on('mouse:down', (event) => {
-      const pointer = canvas.getPointer(event.e);
-      const row = Math.floor(pointer.y / 60);
-      const col = Math.floor(pointer.x / 60);
-      const piece = game[row][col];
-      if (selectedPiece) {
-        const { row: startRow, col: startCol, piece: selectedPieceType } = selectedPiece;
-        if (isValidMove(selectedPieceType, startRow, startCol, row, col)) {
-          game[row][col] = selectedPieceType;
-          game[startRow][startCol] = '';
-          drawPieces();
-          speak(`${selectedPieceType.toUpperCase()} moved to ${String.fromCharCode(97 + col)}${8 - row}`);
-
-          if (isKingInCheck(findKingRow(), findKingCol())) {
-            speak("King is in check!");
-          } else {
-            speak("King is safe.");
-          }
-
-          isWhiteTurn = !isWhiteTurn;
-          speak(isWhiteTurn ? "White's turn." : "Black's turn.");
-        } else {
-          speak("Invalid move.");
-        }
-        selectedPiece = null;
-      } else if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
-        selectedPiece = { row, col, piece };
-        speak(`${piece.toUpperCase()} selected.`);
-      }
-    });
-
+    // Start the game initially
     startRestartGame();
   </script>
 </body>
