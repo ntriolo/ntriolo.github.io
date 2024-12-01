@@ -3,31 +3,30 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fabric.js Chess Game</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.4.0/fabric.min.js"></script>
+  <title>Chess Game with Fabric.js</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
   <style>
     body {
       margin: 0;
+      padding: 0;
+      background: linear-gradient(45deg, #283048, #859398);
+      height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      background: linear-gradient(45deg, #283048, #859398);
+      font-family: Arial, sans-serif;
     }
-
+    .controls {
+      margin-bottom: 20px;
+      text-align: center;
+    }
     canvas {
       border: 2px solid #000;
     }
-
-    .controls {
-      margin-top: 20px;
-      text-align: center;
-    }
-
-    .controls button {
-      margin: 0 5px;
-      padding: 10px 15px;
+    button {
+      margin: 5px;
+      padding: 10px 20px;
       font-size: 16px;
       border: none;
       border-radius: 5px;
@@ -36,26 +35,15 @@
   </style>
 </head>
 <body>
-  <div>
-    <canvas id="chessBoard" width="480" height="480"></canvas>
-    <div class="controls">
-      <button id="restartGame">Start/Restart Game</button>
-      <button id="toggleTTS">Turn off TTS</button>
-    </div>
+  <div class="controls">
+    <button onclick="startRestartGame()">Start/Restart Game</button>
+    <button onclick="toggleTTS()">
+      <span id="tts-status">Turn off TTS</span>
+    </button>
   </div>
-
+  <canvas id="chessboard" width="480" height="480"></canvas>
   <script>
-    const initialGameState = [
-      ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
-      ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
-      ['', '', '', '', '', '', '', ''],
-      ['', '', '', '', '', '', '', ''],
-      ['', '', '', '', '', '', '', ''],
-      ['', '', '', '', '', '', '', ''],
-      ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
-      ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
-    ];
-
+    const canvas = new fabric.Canvas('chessboard');
     const pieceImages = {
       'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
       'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
@@ -70,10 +58,11 @@
       'K': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
       'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
     };
-
+    let game = [];
+    let isWhiteTurn = true;
+    let selectedPiece = null;
     let isTTSOn = true;
 
-    // Text-to-Speech function
     function speak(text) {
       if (isTTSOn) {
         const utterance = new SpeechSynthesisUtterance(text);
@@ -81,75 +70,147 @@
       }
     }
 
-    // Function to draw the chessboard
-    function drawBoard(canvas) {
-      const lightSquareColor = '#87CEEB'; // Light blue
-      const darkSquareColor = '#708090'; // Grey
-      const squareSize = 60;
-
-      for (let row = 0; row < 8; row++) {
-        for (let col = 0; col < 8; col++) {
-          const isLightSquare = (row + col) % 2 === 0;
+    function drawBoard() {
+      const tileSize = 60;
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          const isLight = (i + j) % 2 === 0;
           const rect = new fabric.Rect({
-            left: col * squareSize,
-            top: row * squareSize,
-            width: squareSize,
-            height: squareSize,
-            fill: isLightSquare ? lightSquareColor : darkSquareColor,
-            selectable: false,
+            left: j * tileSize,
+            top: i * tileSize,
+            width: tileSize,
+            height: tileSize,
+            fill: isLight ? '#f0d9b5' : '#b58863',
+            selectable: false
           });
           canvas.add(rect);
         }
       }
     }
 
-    // Function to draw chess pieces
-    function drawPieces(canvas, game) {
-      const squareSize = 60;
-
-      game.forEach((row, rowIndex) => {
-        row.forEach((piece, colIndex) => {
+    function drawPieces() {
+      const tileSize = 60;
+      canvas.getObjects('image').forEach(obj => canvas.remove(obj));
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          const piece = game[i][j];
           if (piece) {
             fabric.Image.fromURL(pieceImages[piece], (img) => {
               img.set({
-                left: colIndex * squareSize + squareSize / 4,
-                top: rowIndex * squareSize + squareSize / 4,
-                scaleX: 0.5,
-                scaleY: 0.5,
+                left: j * tileSize,
+                top: i * tileSize,
+                scaleX: tileSize / img.width,
+                scaleY: tileSize / img.height,
+                hasControls: false,
+                hasBorders: false,
                 selectable: false,
+                data: { row: i, col: j, piece }
               });
               canvas.add(img);
             });
           }
-        });
-      });
+        }
+      }
     }
 
-    // Function to reset the game
-    function resetGame(canvas, game) {
+    function startRestartGame() {
+      game = [
+        ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+        ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+        ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+      ];
+      isWhiteTurn = true;
+      selectedPiece = null;
       canvas.clear();
-      drawBoard(canvas);
-      drawPieces(canvas, game);
+      drawBoard();
+      drawPieces();
       speak("Game started. White's turn.");
     }
 
-    // Main setup
-    const canvas = new fabric.Canvas('chessBoard', {
-      selection: false,
-    });
-
-    drawBoard(canvas);
-    drawPieces(canvas, initialGameState);
-
-    // Button controls
-    document.getElementById('restartGame').addEventListener('click', () => {
-      resetGame(canvas, initialGameState);
-    });
-
-    document.getElementById('toggleTTS').addEventListener('click', (e) => {
+    function toggleTTS() {
       isTTSOn = !isTTSOn;
-      e.target.textContent = isTTSOn ? "Turn off TTS" : "Turn on TTS";
+      document.getElementById('tts-status').textContent = isTTSOn ? "Turn off TTS" : "Turn on TTS";
+    }
+
+    function isValidMove(piece, startRow, startCol, endRow, endCol) {
+      const rowDiff = Math.abs(startRow - endRow);
+      const colDiff = Math.abs(startCol - endCol);
+      switch (piece.toLowerCase()) {
+        case 'p':
+          return (
+            (colDiff === 0 && rowDiff === 1 && game[endRow][endCol] === '') ||
+            (rowDiff === 1 && colDiff === 1 && game[endRow][endCol] !== '' && isOpponentPiece(endRow, endCol))
+          );
+        case 'r':
+          return (startRow === endRow || startCol === endCol) && isPathClear(startRow, startCol, endRow, endCol);
+        case 'n':
+          return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+        case 'b':
+          return rowDiff === colDiff && isPathClear(startRow, startCol, endRow, endCol);
+        case 'q':
+          return (
+            (startRow === endRow || startCol === endCol || rowDiff === colDiff) &&
+            isPathClear(startRow, startCol, endRow, endCol)
+          );
+        case 'k':
+          return rowDiff <= 1 && colDiff <= 1;
+        default:
+          return false;
+      }
+    }
+
+    function isPathClear(startRow, startCol, endRow, endCol) {
+      const rowStep = startRow < endRow ? 1 : startRow > endRow ? -1 : 0;
+      const colStep = startCol < endCol ? 1 : startCol > endCol ? -1 : 0;
+      let row = startRow + rowStep;
+      let col = startCol + colStep;
+      while (row !== endRow || col !== endCol) {
+        if (game[row][col] !== '') return false;
+        row += rowStep;
+        col += colStep;
+      }
+      return true;
+    }
+
+    function isOpponentPiece(row, col) {
+      const piece = game[row][col];
+      return (isWhiteTurn && piece === piece.toLowerCase()) || (!isWhiteTurn && piece === piece.toUpperCase());
+    }
+
+    canvas.on('mouse:down', (event) => {
+      const pointer = canvas.getPointer(event.e);
+      const row = Math.floor(pointer.y / 60);
+      const col = Math.floor(pointer.x / 60);
+      const piece = game[row][col];
+      if (selectedPiece) {
+        const { row: startRow, col: startCol, piece: selectedPieceType } = selectedPiece;
+        if (isValidMove(selectedPieceType, startRow, startCol, row, col)) {
+          game[row][col] = selectedPieceType;
+          game[startRow][startCol] = '';
+          drawPieces();
+          speak(`${selectedPieceType.toUpperCase()} moved to ${String.fromCharCode(97 + col)}${8 - row}`);
+          isWhiteTurn = !isWhiteTurn;
+          speak(isWhiteTurn ? "White's turn." : "Black's turn.");
+        } else {
+          speak("Invalid move.");
+        }
+        selectedPiece = null;
+      } else if (piece) {
+        if ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase())) {
+          selectedPiece = { row, col, piece };
+          speak(`${piece.toUpperCase()} selected.`);
+        } else {
+          speak("It's not your turn.");
+        }
+      }
     });
+
+    startRestartGame();
   </script>
 </body>
 </html>
