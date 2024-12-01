@@ -90,7 +90,7 @@
 
     function drawPieces() {
       const tileSize = 60;
-      canvas.getObjects('image').forEach(obj => canvas.remove(obj));
+      canvas.getObjects('image').forEach(obj => canvas.remove(obj)); // Clear previous pieces
       for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
           const piece = game[i][j];
@@ -103,9 +103,20 @@
                 scaleY: tileSize / img.height,
                 hasControls: false,
                 hasBorders: false,
-                selectable: false,
+                selectable: true, // Make pieces selectable
                 data: { row: i, col: j, piece }
               });
+
+              // Add event listener for piece selection
+              img.on('mousedown', function () {
+                console.log(`Clicked on ${piece} at (${i}, ${j})`);
+                if (!selectedPiece) {
+                  selectedPiece = { piece, row: i, col: j };
+                  console.log(`Selected ${piece} at (${i}, ${j})`);
+                  speak(`Selected ${piece}`);
+                }
+              });
+
               canvas.add(img);
             });
           }
