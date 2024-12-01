@@ -193,43 +193,15 @@
       for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
           const piece = game[row][col];
-          if (piece && (isWhiteTurn && piece === piece.toLowerCase()) || (!isWhiteTurn && piece === piece.toUpperCase())) continue;
-          if (isValidMove(piece, row, col, kingRow, kingCol)) {
-            return true;
+          if (piece && piece !== king && isOpponentPiece(row, col)) {
+            if (isValidMove(piece, row, col, kingRow, kingCol)) {
+              return true;
+            }
           }
         }
       }
       return false;
     }
-
-    canvas.on('mouse:down', (event) => {
-      const pointer = canvas.getPointer(event.e);
-      const row = Math.floor(pointer.y / 60);
-      const col = Math.floor(pointer.x / 60);
-      const piece = game[row][col];
-      if (selectedPiece) {
-        const { row: startRow, col: startCol, piece: selectedPieceType } = selectedPiece;
-        if (isValidMove(selectedPieceType, startRow, startCol, row, col)) {
-          game[row][col] = selectedPieceType;
-          game[startRow][startCol] = '';
-          drawPieces();
-          speak(`${selectedPieceType.toUpperCase()} moved to ${String.fromCharCode(97 + col)}${8 - row}`);
-          
-          if (isKingInCheck(findKingRow(), findKingCol())) {
-            speak(`King is in check!`);
-          }
-
-          isWhiteTurn = !isWhiteTurn;
-          speak(isWhiteTurn ? "White's turn." : "Black's turn.");
-        } else {
-          speak("Invalid move.");
-        }
-        selectedPiece = null;
-      } else if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
-        selectedPiece = { row, col, piece };
-        speak(`${piece.toUpperCase()} selected.`);
-      }
-    });
 
     function findKingRow() {
       return isWhiteTurn ? findPieceRow('K') : findPieceRow('k');
@@ -254,6 +226,35 @@
         }
       }
     }
+
+    canvas.on('mouse:down', (event) => {
+      const pointer = canvas.getPointer(event.e);
+      const row = Math.floor(pointer.y / 60);
+      const col = Math.floor(pointer.x / 60);
+      const piece = game[row][col];
+      if (selectedPiece) {
+        const { row: startRow, col: startCol, piece: selectedPieceType } = selectedPiece;
+        if (isValidMove(selectedPieceType, startRow, startCol, row, col)) {
+          game[row][col] = selectedPieceType;
+          game[startRow][startCol] = '';
+          drawPieces();
+          speak(`${selectedPieceType.toUpperCase()} moved to ${String.fromCharCode(97 + col)}${8 - row}`);
+
+          if (isKingInCheck(findKingRow(), findKingCol())) {
+            speak("King is in check!");
+          }
+
+          isWhiteTurn = !isWhiteTurn;
+          speak(isWhiteTurn ? "White's turn." : "Black's turn.");
+        } else {
+          speak("Invalid move.");
+        }
+        selectedPiece = null;
+      } else if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
+        selectedPiece = { row, col, piece };
+        speak(`${piece.toUpperCase()} selected.`);
+      }
+    });
 
     startRestartGame();
   </script>
