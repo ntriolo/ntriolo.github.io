@@ -62,13 +62,14 @@
     let isWhiteTurn = true;
     let selectedPiece = null;
     let isTTSOn = true;
-    // Helper to speak text
+
     function speak(text) {
       if (isTTSOn) {
         const utterance = new SpeechSynthesisUtterance(text);
         window.speechSynthesis.speak(utterance);
       }
     }
+
     function drawBoard() {
       const tileSize = 60;
       for (let i = 0; i < 8; i++) {
@@ -86,9 +87,10 @@
         }
       }
     }
+
     function drawPieces() {
       const tileSize = 60;
-      canvas.getObjects('image').forEach(obj => canvas.remove(obj)); // Clear old pieces
+      canvas.getObjects('image').forEach(obj => canvas.remove(obj));
       for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
           const piece = game[i][j];
@@ -110,6 +112,7 @@
         }
       }
     }
+
     function startRestartGame() {
       game = [
         ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
@@ -128,23 +131,86 @@
       drawPieces();
       speak("Game started. White's turn.");
     }
+
     function toggleTTS() {
       isTTSOn = !isTTSOn;
       document.getElementById('tts-status').textContent = isTTSOn ? "Turn off TTS" : "Turn on TTS";
     }
+
+    function isValidMove(piece, startRow, startCol, endRow, endCol) {
+      const rowDiff = Math.abs(startRow - endRow);
+      const colDiff = Math.abs(startCol - endCol);
+      switch (piece.toLowerCase()) {
+        case 'p':
+          return (
+            (colDiff === 0 && rowDiff === 1 && game[endRow][endCol] === '') ||
+            (rowDiff === 1 && colDiff === 1 && game[endRow][endCol] !== '' && isOpponentPiece(endRow, endCol))
+          );
+        case 'r':
+          return (startRow === endRow || startCol === endCol) && isPathClear(startRow, startCol, endRow, endCol);
+        case 'n':
+          return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+        case 'b':
+          return rowDiff === colDiff && isPathClear(startRow, startCol, endRow, endCol);
+        case 'q':
+          return (
+            (startRow === endRow || startCol === endCol || rowDiff === colDiff) &&
+            isPathClear(startRow, startCol, endRow, endCol)
+          );
+        case 'k':
+          return rowDiff <= 1 && colDiff <= 1;
+        default:
+          return false;
+      }
+    }
+
+    function isPathClear(startRow, startCol, endRow, endCol) {
+      const rowStep = startRow < endRow ? 1 : startRow > endRow ? -1 : 0;
+      const colStep = startCol < endCol ? 1 : startCol > endCol ? -1 : 0;
+      let row = startRow + rowStep;
+      let col = startCol + colStep;
+      while (row !== endRow || col !== endCol) {
+        if (game[row][col] !== '') return false;
+        row += rowStep;
+        col += colStep;
+      }
+      return true;
+    }
+
+    function isOpponentPiece(row, col) {
+      const piece = game[row][col];
+      return (isWhiteTurn && piece === piece.toLowerCase()) || (!isWhiteTurn && piece === piece.toUpperCase());
+    }
+
     canvas.on('mouse:down', (event) => {
       const pointer = canvas.getPointer(event.e);
       const row = Math.floor(pointer.y / 60);
       const col = Math.floor(pointer.x / 60);
       const piece = game[row][col];
       if (selectedPiece) {
-        // Move logic here
-        selectedPiece = null; // Deselect after attempting a move
+        const { row: startRow, col: startCol, piece: selectedPieceType } = selectedPiece;
+        if (isValidMove(selectedPieceType, startRow, startCol, row, col)) {
+          game[row][col] = selectedPieceType;
+          game[startRow][startCol] = '';
+          drawPieces();
+          speak(`${selectedPieceType.toUpperCase()} moved to ${String.fromCharCode(97 + col)}${8 - row}`);
+          isWhiteTurn = !isWhiteTurn;
+          speak(isWhiteTurn ? "White's turn." : "Black's turn.");
+        } else {
+          speak("Invalid move.");
+        }
+        selectedPiece = null;
       } else if (piece) {
-        selectedPiece = { row, col, piece };
+        if ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase())) {
+          selectedPiece = { row, col, piece };
+          speak(`${piece.toUpperCase()} selected.`);
+        } else {
+          speak("It's not your turn.");
+        }
       }
     });
-    startRestartGame(); // Initialize the game
+
+    startRestartGame();
   </script>
 </body>
 </html>
