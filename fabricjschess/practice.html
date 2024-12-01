@@ -188,19 +188,16 @@
       return true;
     }
 
-    function isOpponentPiece(row, col) {
-      const piece = game[row][col];
-      return (isWhiteTurn && piece === piece.toLowerCase()) || (!isWhiteTurn && piece === piece.toUpperCase());
-    }
-
     function isKingInCheck(kingRow, kingCol) {
       console.log(`Checking if king at (${kingRow}, ${kingCol}) is in check`);
       const king = isWhiteTurn ? 'K' : 'k';
 
+      // Iterate through all pieces to find potential attackers
       for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
           const piece = game[row][col];
           if (piece && piece !== king && isOpponentPiece(row, col)) {
+            // Check if the current piece can attack the king
             if (isValidMove(piece, row, col, kingRow, kingCol)) {
               console.log(`King is in check by ${piece} at (${row}, ${col})`);
               return true;
@@ -212,7 +209,44 @@
       return false;
     }
 
-    // Start the game initially
+    function isOpponentPiece(row, col) {
+      const piece = game[row][col];
+      return isWhiteTurn ? piece === piece.toLowerCase() : piece === piece.toUpperCase();
+    }
+
+    canvas.on('mouse:down', function (e) {
+      const pointer = e.pointer;
+      const clickedObj = e.target;
+      if (clickedObj) {
+        const { row, col, piece } = clickedObj.data;
+        if (!selectedPiece) {
+          selectedPiece = { piece, row, col };
+          console.log(`Selected ${piece} at (${row}, ${col})`);
+          speak(`Selected ${piece}`);
+        } else {
+          const startRow = selectedPiece.row;
+          const startCol = selectedPiece.col;
+          const endRow = row;
+          const endCol = col;
+          if (isValidMove(selectedPiece.piece, startRow, startCol, endRow, endCol)) {
+            game[endRow][endCol] = selectedPiece.piece;
+            game[startRow][startCol] = '';
+            drawPieces();
+            if (isKingInCheck(4, 4)) { // Assuming the king's position is fixed at (4,4) for demonstration
+              speak('King is in check!');
+            }
+            selectedPiece = null;
+            isWhiteTurn = !isWhiteTurn;
+            speak(isWhiteTurn ? "White's turn" : "Black's turn");
+          } else {
+            console.log(`Invalid move from (${startRow}, ${startCol}) to (${endRow}, ${endCol})`);
+            speak("Invalid move, try again.");
+            selectedPiece = null;
+          }
+        }
+      }
+    });
+
     startRestartGame();
   </script>
 </body>
