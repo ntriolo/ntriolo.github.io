@@ -32,9 +32,6 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    .check {
-      border: 2px solid red;
-    }
   </style>
 </head>
 <body>
@@ -114,7 +111,6 @@
           }
         }
       }
-      highlightKingCheck();
     }
 
     function startRestartGame() {
@@ -133,6 +129,7 @@
       canvas.clear();
       drawBoard();
       drawPieces();
+      highlightKingCheck();
       speak("Game started. White's turn.");
     }
 
@@ -192,28 +189,6 @@
       return (isWhiteTurn && piece === piece.toLowerCase()) || (!isWhiteTurn && piece === piece.toUpperCase());
     }
 
-    function highlightKingCheck() {
-      const kingPosition = findKing(isWhiteTurn ? 'K' : 'k');
-      if (!kingPosition) return;
-
-      const [kingRow, kingCol] = kingPosition;
-      const isChecked = isKingInCheck(kingRow, kingCol, isWhiteTurn ? 'k' : 'K');
-
-      if (isChecked) {
-        const checkRect = new fabric.Rect({
-          left: kingCol * 60,
-          top: kingRow * 60,
-          width: 60,
-          height: 60,
-          fill: 'rgba(255, 0, 0, 0.3)',
-          selectable: false,
-          hasBorders: false,
-          hasControls: false
-        });
-        canvas.add(checkRect);
-      }
-    }
-
     function findKing(kingSymbol) {
       for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
@@ -229,41 +204,44 @@
       for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
           const piece = game[i][j];
-          if (piece && (isWhiteTurn && piece === piece.toLowerCase()) || (!isWhiteTurn && piece === piece.toUpperCase())) continue;
-
+          if (piece === '' || (isWhiteTurn && piece === piece.toLowerCase()) || (!isWhiteTurn && piece === piece.toUpperCase())) {
+            continue;
+          }
           if (isValidMove(piece, i, j, row, col)) {
-            return true;
+            if (piece.toLowerCase() === 'p') {
+              if ((isWhiteTurn && piece === 'p' && i + 1 === row && Math.abs(j - col) === 1) ||
+                  (!isWhiteTurn && piece === 'P' && i - 1 === row && Math.abs(j - col) === 1)) {
+                return true;
+              }
+            } else if (piece.toLowerCase() !== 'k' && isPathClear(i, j, row, col)) {
+              return true;
+            }
           }
         }
       }
       return false;
     }
 
-    canvas.on('mouse:down', (event) => {
-      const pointer = canvas.getPointer(event.e);
-      const row = Math.floor(pointer.y / 60);
-      const col = Math.floor(pointer.x / 60);
-      const piece = game[row][col];
-      if (selectedPiece) {
-        const { row: startRow, col: startCol, piece: selectedPieceType } = selectedPiece;
-        if (isValidMove(selectedPieceType, startRow, startCol, row, col)) {
-          game[row][col] = selectedPieceType;
-          game[startRow][startCol] = '';
-          drawPieces();
-          speak(`${selectedPieceType.toUpperCase()} moved to ${String.fromCharCode(97 + col)}${8 - row}`);
-          isWhiteTurn = !isWhiteTurn;
-          speak(isWhiteTurn ? "White's turn." : "Black's turn.");
-        } else {
-          speak("Invalid move.");
+    function highlightKingCheck() {
+      const kingSymbol = isWhiteTurn ? 'K' : 'k';
+      const kingPosition = findKing(kingSymbol);
+      if (kingPosition) {
+        const [row, col] = kingPosition;
+        if (isKingInCheck(row, col, kingSymbol)) {
+          const square = new fabric.Rect({
+            left: col * 60,
+            top: row * 60,
+            width: 60,
+            height: 60,
+            fill: 'rgba(255, 0, 0, 0.5)',
+            selectable: false
+          });
+          canvas.add(square);
         }
-        selectedPiece = null;
-      } else if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
-        selectedPiece = { row, col, piece };
-        speak(`${piece.toUpperCase()} selected.`);
       }
-    });
+    }
 
-    startRestartGame();
+    startRestartGame(); // Initialize the game on load
   </script>
 </body>
 </html>
