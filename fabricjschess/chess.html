@@ -138,27 +138,33 @@
     }
 
     function isValidMove(piece, startRow, startCol, endRow, endCol) {
-      const rowDiff = Math.abs(startRow - endRow);
+      const rowDiff = endRow - startRow;
       const colDiff = Math.abs(startCol - endCol);
+
       switch (piece.toLowerCase()) {
-        case 'p':
+        case 'p': {
+          const direction = piece === 'P' ? -1 : 1; // White moves up (-1), Black moves down (+1)
+          const startRowPawn = piece === 'P' ? 6 : 1;
           return (
-            (colDiff === 0 && rowDiff === 1 && game[endRow][endCol] === '') ||
-            (rowDiff === 1 && colDiff === 1 && game[endRow][endCol] !== '' && isOpponentPiece(endRow, endCol))
+            (colDiff === 0 &&
+              ((rowDiff === direction && game[endRow][endCol] === '') ||
+               (rowDiff === 2 * direction && game[endRow][endCol] === '' && startRow === startRowPawn && game[startRow + direction][startCol] === ''))) ||
+            (colDiff === 1 && rowDiff === direction && game[endRow][endCol] !== '' && isOpponentPiece(endRow, endCol))
           );
+        }
         case 'r':
           return (startRow === endRow || startCol === endCol) && isPathClear(startRow, startCol, endRow, endCol);
         case 'n':
-          return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+          return (Math.abs(rowDiff) === 2 && colDiff === 1) || (Math.abs(rowDiff) === 1 && colDiff === 2);
         case 'b':
-          return rowDiff === colDiff && isPathClear(startRow, startCol, endRow, endCol);
+          return Math.abs(rowDiff) === colDiff && isPathClear(startRow, startCol, endRow, endCol);
         case 'q':
           return (
-            (startRow === endRow || startCol === endCol || rowDiff === colDiff) &&
+            (startRow === endRow || startCol === endCol || Math.abs(rowDiff) === colDiff) &&
             isPathClear(startRow, startCol, endRow, endCol)
           );
         case 'k':
-          return rowDiff <= 1 && colDiff <= 1;
+          return Math.abs(rowDiff) <= 1 && colDiff <= 1;
         default:
           return false;
       }
@@ -200,13 +206,9 @@
           speak("Invalid move.");
         }
         selectedPiece = null;
-      } else if (piece) {
-        if ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase())) {
-          selectedPiece = { row, col, piece };
-          speak(`${piece.toUpperCase()} selected.`);
-        } else {
-          speak("It's not your turn.");
-        }
+      } else if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
+        selectedPiece = { row, col, piece };
+        speak(`${piece.toUpperCase()} selected.`);
       }
     });
 
