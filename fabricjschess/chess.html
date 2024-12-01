@@ -1,51 +1,190 @@
-const canvas = new fabric.Canvas('chessCanvas');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fabric.js Chess Game</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.4.0/fabric.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(45deg, #283048, #859398);
+    }
 
-// Chessboard dimensions
-const tileSize = 100;
-const boardSize = 8;
+    canvas {
+      border: 2px solid #000;
+    }
 
-// Colors for chessboard tiles
-const lightColor = '#f0d9b5';
-const darkColor = '#b58863';
+    .controls {
+      margin-top: 20px;
+      text-align: center;
+    }
 
-// Draw the chessboard
-for (let row = 0; row < boardSize; row++) {
-  for (let col = 0; col < boardSize; col++) {
-    const color = (row + col) % 2 === 0 ? lightColor : darkColor;
-    const rect = new fabric.Rect({
-      left: col * tileSize,
-      top: row * tileSize,
-      width: tileSize,
-      height: tileSize,
-      fill: color,
-      selectable: false,
+    .controls button {
+      margin: 0 5px;
+      padding: 10px 15px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <canvas id="chessBoard" width="480" height="480"></canvas>
+    <div class="controls">
+      <button id="restartGame">Start/Restart Game</button>
+      <button id="toggleTTS">Turn off TTS</button>
+    </div>
+  </div>
+
+  <script>
+    const initialGameState = [
+      ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+      ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+      ['', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', ''],
+      ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+      ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+    ];
+
+    const pieceImages = {
+      'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+      'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
+      'b': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
+      'q': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
+      'k': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg',
+      'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
+      'R': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
+      'N': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
+      'B': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
+      'Q': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
+      'K': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
+      'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
+    };
+
+    let isTTSOn = true;
+    let currentTurn = 'white';
+    let gameState = JSON.parse(JSON.stringify(initialGameState)); // Deep copy of the initial state
+
+    const squareSize = 60;
+
+    // Text-to-Speech function
+    function speak(text) {
+      if (isTTSOn) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    // Function to draw the chessboard
+    function drawBoard(canvas) {
+      const lightSquareColor = '#87CEEB'; // Light blue
+      const darkSquareColor = '#708090'; // Grey
+
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const isLightSquare = (row + col) % 2 === 0;
+          const rect = new fabric.Rect({
+            left: col * squareSize,
+            top: row * squareSize,
+            width: squareSize,
+            height: squareSize,
+            fill: isLightSquare ? lightSquareColor : darkSquareColor,
+            selectable: false,
+          });
+          canvas.add(rect);
+        }
+      }
+    }
+
+    // Function to draw chess pieces
+    function drawPieces(canvas) {
+      canvas.getObjects('image').forEach((obj) => canvas.remove(obj));
+
+      gameState.forEach((row, rowIndex) => {
+        row.forEach((piece, colIndex) => {
+          if (piece) {
+            fabric.Image.fromURL(pieceImages[piece], (img) => {
+              img.set({
+                left: colIndex * squareSize,
+                top: rowIndex * squareSize,
+                scaleX: 0.5,
+                scaleY: 0.5,
+                originX: 'center',
+                originY: 'center',
+                hasControls: false,
+                hasBorders: false,
+                piece,
+                position: { row: rowIndex, col: colIndex },
+              });
+
+              img.on('mousedown', (e) => {
+                const obj = e.target;
+                canvas.on('mouse:up', (ev) => handleMove(obj, ev, canvas));
+              });
+
+              canvas.add(img);
+            });
+          }
+        });
+      });
+    }
+
+    // Handle piece movement
+    function handleMove(piece, event, canvas) {
+      const pointer = canvas.getPointer(event.e);
+      const col = Math.floor(pointer.x / squareSize);
+      const row = Math.floor(pointer.y / squareSize);
+
+      // Validate the move here (currently moves are unrestricted)
+      const oldPos = piece.position;
+
+      gameState[oldPos.row][oldPos.col] = '';
+      gameState[row][col] = piece.piece;
+
+      drawPieces(canvas);
+      canvas.off('mouse:up');
+
+      speak(`Piece moved to ${String.fromCharCode(65 + col)}${8 - row}`);
+      currentTurn = currentTurn === 'white' ? 'black' : 'white';
+      speak(`${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)}'s turn.`);
+    }
+
+    // Function to reset the game
+    function resetGame(canvas) {
+      gameState = JSON.parse(JSON.stringify(initialGameState));
+      canvas.clear();
+      drawBoard(canvas);
+      drawPieces(canvas);
+      speak("Game started. White's turn.");
+    }
+
+    // Main setup
+    const canvas = new fabric.Canvas('chessBoard', {
+      selection: false,
     });
-    canvas.add(rect);
-  }
-}
 
-// Create a chess piece (example: white pawn)
-const pieceSize = tileSize * 0.8;
-const whitePawn = new fabric.Circle({
-  left: tileSize * 3.1,
-  top: tileSize * 6.1,
-  radius: pieceSize / 2,
-  fill: 'white',
-  originX: 'center',
-  originY: 'center',
-  hasControls: false,
-  hasBorders: false,
-});
+    drawBoard(canvas);
+    drawPieces(canvas);
 
-canvas.add(whitePawn);
+    // Button controls
+    document.getElementById('restartGame').addEventListener('click', () => {
+      resetGame(canvas);
+    });
 
-// Add drag-and-drop functionality
-canvas.on('object:moving', (e) => {
-  const obj = e.target;
-
-  // Snap to grid
-  obj.left = Math.round(obj.left / tileSize) * tileSize + tileSize * 0.1;
-  obj.top = Math.round(obj.top / tileSize) * tileSize + tileSize * 0.1;
-});
-
-// Add logic for piece movement and capturing here...
+    document.getElementById('toggleTTS').addEventListener('click', (e) => {
+      isTTSOn = !isTTSOn;
+      e.target.textContent = isTTSOn ? "Turn off TTS" : "Turn on TTS";
+    });
+  </script>
+</body>
+</html>
