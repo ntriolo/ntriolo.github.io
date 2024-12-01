@@ -129,7 +129,6 @@
       canvas.clear();
       drawBoard();
       drawPieces();
-      highlightKingCheck();
       speak("Game started. White's turn.");
     }
 
@@ -189,59 +188,74 @@
       return (isWhiteTurn && piece === piece.toLowerCase()) || (!isWhiteTurn && piece === piece.toUpperCase());
     }
 
-    function findKing(kingSymbol) {
-      for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 8; j++) {
-          if (game[i][j] === kingSymbol) {
-            return [i, j];
-          }
-        }
-      }
-      return null;
-    }
-
-    function isKingInCheck(row, col, kingSymbol) {
-      for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 8; j++) {
-          const piece = game[i][j];
-          if (piece === '' || (isWhiteTurn && piece === piece.toLowerCase()) || (!isWhiteTurn && piece === piece.toUpperCase())) {
-            continue;
-          }
-          if (isValidMove(piece, i, j, row, col)) {
-            if (piece.toLowerCase() === 'p') {
-              if ((isWhiteTurn && piece === 'p' && i + 1 === row && Math.abs(j - col) === 1) ||
-                  (!isWhiteTurn && piece === 'P' && i - 1 === row && Math.abs(j - col) === 1)) {
-                return true;
-              }
-            } else if (piece.toLowerCase() !== 'k' && isPathClear(i, j, row, col)) {
-              return true;
-            }
+    function isKingInCheck(kingRow, kingCol) {
+      const king = isWhiteTurn ? 'K' : 'k';
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const piece = game[row][col];
+          if (piece && (isWhiteTurn && piece === piece.toLowerCase()) || (!isWhiteTurn && piece === piece.toUpperCase())) continue;
+          if (isValidMove(piece, row, col, kingRow, kingCol)) {
+            return true;
           }
         }
       }
       return false;
     }
 
-    function highlightKingCheck() {
-      const kingSymbol = isWhiteTurn ? 'K' : 'k';
-      const kingPosition = findKing(kingSymbol);
-      if (kingPosition) {
-        const [row, col] = kingPosition;
-        if (isKingInCheck(row, col, kingSymbol)) {
-          const square = new fabric.Rect({
-            left: col * 60,
-            top: row * 60,
-            width: 60,
-            height: 60,
-            fill: 'rgba(255, 0, 0, 0.5)',
-            selectable: false
-          });
-          canvas.add(square);
+    canvas.on('mouse:down', (event) => {
+      const pointer = canvas.getPointer(event.e);
+      const row = Math.floor(pointer.y / 60);
+      const col = Math.floor(pointer.x / 60);
+      const piece = game[row][col];
+      if (selectedPiece) {
+        const { row: startRow, col: startCol, piece: selectedPieceType } = selectedPiece;
+        if (isValidMove(selectedPieceType, startRow, startCol, row, col)) {
+          game[row][col] = selectedPieceType;
+          game[startRow][startCol] = '';
+          drawPieces();
+          speak(`${selectedPieceType.toUpperCase()} moved to ${String.fromCharCode(97 + col)}${8 - row}`);
+          
+          if (isKingInCheck(findKingRow(), findKingCol())) {
+            speak(`King is in check!`);
+          }
+
+          isWhiteTurn = !isWhiteTurn;
+          speak(isWhiteTurn ? "White's turn." : "Black's turn.");
+        } else {
+          speak("Invalid move.");
+        }
+        selectedPiece = null;
+      } else if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
+        selectedPiece = { row, col, piece };
+        speak(`${piece.toUpperCase()} selected.`);
+      }
+    });
+
+    function findKingRow() {
+      return isWhiteTurn ? findPieceRow('K') : findPieceRow('k');
+    }
+
+    function findKingCol() {
+      return isWhiteTurn ? findPieceCol('K') : findPieceCol('k');
+    }
+
+    function findPieceRow(piece) {
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          if (game[row][col] === piece) return row;
         }
       }
     }
 
-    startRestartGame(); // Initialize the game on load
+    function findPieceCol(piece) {
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          if (game[row][col] === piece) return col;
+        }
+      }
+    }
+
+    startRestartGame();
   </script>
 </body>
 </html>
