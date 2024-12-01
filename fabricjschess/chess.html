@@ -71,67 +71,48 @@
       'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
     };
 
-    let isTTSOn = true;
-    let currentTurn = 'white';
-    let gameState = JSON.parse(JSON.stringify(initialGameState)); // Deep copy of the initial state
-
     const squareSize = 60;
+    const canvas = new fabric.Canvas('chessBoard', {
+      selection: false,
+    });
 
-    // Text-to-Speech function
-    function speak(text) {
-      if (isTTSOn) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        window.speechSynthesis.speak(utterance);
-      }
-    }
-
-    // Function to draw the chessboard
-    function drawBoard(canvas) {
-      const lightSquareColor = '#87CEEB'; // Light blue
-      const darkSquareColor = '#708090'; // Grey
+    // Draw chessboard
+    function drawBoard() {
+      const lightSquareColor = '#87CEEB';
+      const darkSquareColor = '#708090';
 
       for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
           const isLightSquare = (row + col) % 2 === 0;
-          const rect = new fabric.Rect({
+          const square = new fabric.Rect({
             left: col * squareSize,
             top: row * squareSize,
             width: squareSize,
             height: squareSize,
             fill: isLightSquare ? lightSquareColor : darkSquareColor,
             selectable: false,
+            hoverCursor: 'default',
           });
-          canvas.add(rect);
+          canvas.add(square);
         }
       }
     }
 
-    // Function to draw chess pieces
-    function drawPieces(canvas) {
-      canvas.getObjects('image').forEach((obj) => canvas.remove(obj));
-
-      gameState.forEach((row, rowIndex) => {
+    // Draw pieces
+    function drawPieces() {
+      initialGameState.forEach((row, rowIndex) => {
         row.forEach((piece, colIndex) => {
           if (piece) {
             fabric.Image.fromURL(pieceImages[piece], (img) => {
               img.set({
-                left: colIndex * squareSize,
-                top: rowIndex * squareSize,
-                scaleX: 0.5,
-                scaleY: 0.5,
+                left: colIndex * squareSize + squareSize / 2,
+                top: rowIndex * squareSize + squareSize / 2,
                 originX: 'center',
                 originY: 'center',
-                hasControls: false,
-                hasBorders: false,
-                piece,
-                position: { row: rowIndex, col: colIndex },
+                scaleX: 0.5,
+                scaleY: 0.5,
+                selectable: true,
               });
-
-              img.on('mousedown', (e) => {
-                const obj = e.target;
-                canvas.on('mouse:up', (ev) => handleMove(obj, ev, canvas));
-              });
-
               canvas.add(img);
             });
           }
@@ -139,52 +120,19 @@
       });
     }
 
-    // Handle piece movement
-    function handleMove(piece, event, canvas) {
-      const pointer = canvas.getPointer(event.e);
-      const col = Math.floor(pointer.x / squareSize);
-      const row = Math.floor(pointer.y / squareSize);
-
-      // Validate the move here (currently moves are unrestricted)
-      const oldPos = piece.position;
-
-      gameState[oldPos.row][oldPos.col] = '';
-      gameState[row][col] = piece.piece;
-
-      drawPieces(canvas);
-      canvas.off('mouse:up');
-
-      speak(`Piece moved to ${String.fromCharCode(65 + col)}${8 - row}`);
-      currentTurn = currentTurn === 'white' ? 'black' : 'white';
-      speak(`${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)}'s turn.`);
-    }
-
-    // Function to reset the game
-    function resetGame(canvas) {
-      gameState = JSON.parse(JSON.stringify(initialGameState));
+    // Reset game
+    function resetGame() {
       canvas.clear();
-      drawBoard(canvas);
-      drawPieces(canvas);
-      speak("Game started. White's turn.");
+      drawBoard();
+      drawPieces();
     }
 
-    // Main setup
-    const canvas = new fabric.Canvas('chessBoard', {
-      selection: false,
-    });
+    // Initial setup
+    drawBoard();
+    drawPieces();
 
-    drawBoard(canvas);
-    drawPieces(canvas);
-
-    // Button controls
-    document.getElementById('restartGame').addEventListener('click', () => {
-      resetGame(canvas);
-    });
-
-    document.getElementById('toggleTTS').addEventListener('click', (e) => {
-      isTTSOn = !isTTSOn;
-      e.target.textContent = isTTSOn ? "Turn off TTS" : "Turn on TTS";
-    });
+    // Restart button
+    document.getElementById('restartGame').addEventListener('click', resetGame);
   </script>
 </body>
 </html>
