@@ -58,12 +58,13 @@
       'K': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
       'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
     };
+
     let game = [];
     let isWhiteTurn = true;
     let selectedPiece = null;
     let isTTSOn = true;
 
-    // Helper to speak text
+    // Speak text using TTS
     function speak(text) {
       if (isTTSOn) {
         const utterance = new SpeechSynthesisUtterance(text);
@@ -71,7 +72,7 @@
       }
     }
 
-    // Helper to find the position of the king for the current player
+    // Find the current player's king position
     function findKingPosition(isWhite) {
       const king = isWhite ? 'K' : 'k';
       for (let row = 0; row < 8; row++) {
@@ -81,10 +82,10 @@
           }
         }
       }
-      return null; // Should never happen in a valid game state
+      return null;
     }
 
-    // Helper to determine if a square is under attack by the opponent
+    // Check if a square is under attack
     function isSquareUnderAttack(row, col, isWhite) {
       for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
@@ -99,10 +100,10 @@
       return false;
     }
 
-    // Function to check if the current player's king is in check
+    // Check if the current player's king is in check
     function isKingInCheck(isWhite) {
       const kingPosition = findKingPosition(isWhite);
-      if (!kingPosition) return false; // Defensive check
+      if (!kingPosition) return false;
       return isSquareUnderAttack(kingPosition.row, kingPosition.col, isWhite);
     }
 
@@ -126,7 +127,7 @@
 
     function drawPieces() {
       const tileSize = 60;
-      canvas.getObjects('image').forEach(obj => canvas.remove(obj)); // Clear old pieces
+      canvas.getObjects('image').forEach(obj => canvas.remove(obj));
       for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
           const piece = game[i][j];
@@ -177,32 +178,29 @@
       const rowDiff = endRow - startRow;
       const colDiff = Math.abs(startCol - endCol);
 
-      // Basic move logic for pieces (same as before)
       let isValid = false;
       switch (piece.toLowerCase()) {
         case 'p': {
-          const direction = piece === 'P' ? -1 : 1; // White moves up (-1), Black moves down (+1)
+          const direction = piece === 'P' ? -1 : 1;
           const startRowPawn = piece === 'P' ? 6 : 1;
           isValid =
             (colDiff === 0 &&
               ((rowDiff === direction && game[endRow][endCol] === '') ||
                (rowDiff === 2 * direction && startRow === startRowPawn && game[startRow + direction][startCol] === '' && game[endRow][endCol] === ''))) ||
-            (colDiff === 1 && rowDiff === direction && game[endRow][endCol] !== '' && isOpponentPiece(endRow, endCol));
+            (colDiff === 1 && rowDiff === direction && game[endRow][endCol] !== '');
           break;
         }
         case 'r':
-          isValid = (startRow === endRow || startCol === endCol) && isPathClear(startRow, startCol, endRow, endCol);
+          isValid = (startRow === endRow || startCol === endCol);
           break;
         case 'n':
           isValid = (Math.abs(rowDiff) === 2 && colDiff === 1) || (Math.abs(rowDiff) === 1 && colDiff === 2);
           break;
         case 'b':
-          isValid = Math.abs(rowDiff) === colDiff && isPathClear(startRow, startCol, endRow, endCol);
+          isValid = Math.abs(rowDiff) === colDiff;
           break;
         case 'q':
-          isValid =
-            (startRow === endRow || startCol === endCol || Math.abs(rowDiff) === colDiff) &&
-            isPathClear(startRow, startCol, endRow, endCol);
+          isValid = Math.abs(rowDiff) === colDiff || startRow === endRow || startCol === endCol;
           break;
         case 'k':
           isValid = Math.abs(rowDiff) <= 1 && colDiff <= 1;
@@ -211,50 +209,17 @@
           return false;
       }
 
-      // Additional logic: Ensure the move does not leave the king in check
       if (isValid && !skipKingCheck) {
         const originalPiece = game[endRow][endCol];
         game[endRow][endCol] = piece;
         game[startRow][startCol] = '';
-        const kingInCheck = isKingInCheck(isWhiteTurn);
+        const isInCheck = isKingInCheck(isWhiteTurn);
         game[startRow][startCol] = piece;
         game[endRow][endCol] = originalPiece;
-        isValid = !kingInCheck;
+        if (isInCheck) isValid = false;
       }
-
       return isValid;
     }
-
-    canvas.on('mouse:down', (event) => {
-      const pointer = canvas.getPointer(event.e);
-      const row = Math.floor(pointer.y / 60);
-      const col = Math.floor(pointer.x / 60);
-      const piece = game[row][col];
-
-      if (selectedPiece) {
-        const { row: startRow, col: startCol, piece: selectedPieceType } = selectedPiece;
-
-        if (isValidMove(selectedPieceType, startRow, startCol, row, col)) {
-          game[row][col] = selectedPieceType;
-          game[startRow][startCol] = '';
-          drawPieces();
-
-          if (isKingInCheck(!isWhiteTurn)) {
-            speak("Check!");
-          }
-
-          isWhiteTurn = !isWhiteTurn;
-          speak(isWhiteTurn ? "White's turn." : "Black's turn.");
-        } else {
-          speak("Invalid move.");
-        }
-
-        selectedPiece = null;
-      } else if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
-        selectedPiece = { row, col, piece };
-        speak(`${piece.toUpperCase()} selected.`);
-      }
-    });
 
     startRestartGame();
   </script>
