@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chess Game with Check Detection</title>
+  <title>Chess Game with Fabric.js</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
   <style>
     body {
@@ -31,6 +31,9 @@
       border: none;
       border-radius: 5px;
       cursor: pointer;
+    }
+    .check {
+      border: 2px solid red;
     }
   </style>
 </head>
@@ -111,6 +114,7 @@
           }
         }
       }
+      highlightKingCheck();
     }
 
     function startRestartGame() {
@@ -137,55 +141,127 @@
       document.getElementById('tts-status').textContent = isTTSOn ? "Turn off TTS" : "Turn on TTS";
     }
 
+    function isValidMove(piece, startRow, startCol, endRow, endCol) {
+      const rowDiff = endRow - startRow;
+      const colDiff = Math.abs(startCol - endCol);
+
+      switch (piece.toLowerCase()) {
+        case 'p': {
+          const direction = piece === 'P' ? -1 : 1; // White moves up (-1), Black moves down (+1)
+          const startRowPawn = piece === 'P' ? 6 : 1;
+          return (
+            (colDiff === 0 &&
+              ((rowDiff === direction && game[endRow][endCol] === '') ||
+               (rowDiff === 2 * direction && game[endRow][endCol] === '' && startRow === startRowPawn && game[startRow + direction][startCol] === ''))) ||
+            (colDiff === 1 && rowDiff === direction && game[endRow][endCol] !== '' && isOpponentPiece(endRow, endCol))
+          );
+        }
+        case 'r':
+          return (startRow === endRow || startCol === endCol) && isPathClear(startRow, startCol, endRow, endCol);
+        case 'n':
+          return (Math.abs(rowDiff) === 2 && colDiff === 1) || (Math.abs(rowDiff) === 1 && colDiff === 2);
+        case 'b':
+          return Math.abs(rowDiff) === colDiff && isPathClear(startRow, startCol, endRow, endCol);
+        case 'q':
+          return (
+            (startRow === endRow || startCol === endCol || Math.abs(rowDiff) === colDiff) &&
+            isPathClear(startRow, startCol, endRow, endCol)
+          );
+        case 'k':
+          return Math.abs(rowDiff) <= 1 && colDiff <= 1;
+        default:
+          return false;
+      }
+    }
+
+    function isPathClear(startRow, startCol, endRow, endCol) {
+      const rowStep = startRow < endRow ? 1 : startRow > endRow ? -1 : 0;
+      const colStep = startCol < endCol ? 1 : startCol > endCol ? -1 : 0;
+      let row = startRow + rowStep;
+      let col = startCol + colStep;
+      while (row !== endRow || col !== endCol) {
+        if (game[row][col] !== '') return false;
+        row += rowStep;
+        col += colStep;
+      }
+      return true;
+    }
+
     function isOpponentPiece(row, col) {
       const piece = game[row][col];
       return (isWhiteTurn && piece === piece.toLowerCase()) || (!isWhiteTurn && piece === piece.toUpperCase());
     }
 
-    function isKingInCheck() {
+    function highlightKingCheck() {
       const kingPosition = findKing(isWhiteTurn ? 'K' : 'k');
-      if (!kingPosition) return false;
+      if (!kingPosition) return;
 
       const [kingRow, kingCol] = kingPosition;
+      const isChecked = isKingInCheck(kingRow, kingCol, isWhiteTurn ? 'k' : 'K');
 
-      // Check if any opponent piece can attack the king
+      if (isChecked) {
+        const checkRect = new fabric.Rect({
+          left: kingCol * 60,
+          top: kingRow * 60,
+          width: 60,
+          height: 60,
+          fill: 'rgba(255, 0, 0, 0.3)',
+          selectable: false,
+          hasBorders: false,
+          hasControls: false
+        });
+        canvas.add(checkRect);
+      }
+    }
+
+    function findKing(kingSymbol) {
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          if (game[i][j] === kingSymbol) {
+            return [i, j];
+          }
+        }
+      }
+      return null;
+    }
+
+    function isKingInCheck(row, col, kingSymbol) {
       for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
           const piece = game[i][j];
-          if (piece && isOpponentPiece(i, j)) {
-            if (isValidMove(piece, i, j, kingRow, kingCol)) {
-              return true;
-            }
+          if (piece && (isWhiteTurn && piece === piece.toLowerCase()) || (!isWhiteTurn && piece === piece.toUpperCase())) continue;
+
+          if (isValidMove(piece, i, j, row, col)) {
+            return true;
           }
         }
       }
       return false;
     }
 
-    function findKing(king) {
-      for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 8; j++) {
-          if (game[i][j] === king) return [i, j];
+    canvas.on('mouse:down', (event) => {
+      const pointer = canvas.getPointer(event.e);
+      const row = Math.floor(pointer.y / 60);
+      const col = Math.floor(pointer.x / 60);
+      const piece = game[row][col];
+      if (selectedPiece) {
+        const { row: startRow, col: startCol, piece: selectedPieceType } = selectedPiece;
+        if (isValidMove(selectedPieceType, startRow, startCol, row, col)) {
+          game[row][col] = selectedPieceType;
+          game[startRow][startCol] = '';
+          drawPieces();
+          speak(`${selectedPieceType.toUpperCase()} moved to ${String.fromCharCode(97 + col)}${8 - row}`);
+          isWhiteTurn = !isWhiteTurn;
+          speak(isWhiteTurn ? "White's turn." : "Black's turn.");
+        } else {
+          speak("Invalid move.");
         }
+        selectedPiece = null;
+      } else if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
+        selectedPiece = { row, col, piece };
+        speak(`${piece.toUpperCase()} selected.`);
       }
-      return null;
-    }
-
-    function handleMove(startRow, startCol, endRow, endCol) {
-      const piece = game[startRow][startCol];
-      game[endRow][endCol] = piece;
-      game[startRow][startCol] = '';
-      drawPieces();
-
-      if (isKingInCheck()) {
-        speak("Check!");
-      }
-
-      isWhiteTurn = !isWhiteTurn;
-      speak(isWhiteTurn ? "White's turn." : "Black's turn.");
-    }
-
-    // Additional functions remain the same as the previous example...
+    });
 
     startRestartGame();
   </script>
