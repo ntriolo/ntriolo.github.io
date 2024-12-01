@@ -189,17 +189,20 @@
     }
 
     function isKingInCheck(kingRow, kingCol) {
+      console.log(`Checking if king at (${kingRow}, ${kingCol}) is in check`);
       const king = isWhiteTurn ? 'K' : 'k';
       for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
           const piece = game[row][col];
           if (piece && piece !== king && isOpponentPiece(row, col)) {
             if (isValidMove(piece, row, col, kingRow, kingCol)) {
+              console.log(`King is in check by ${piece} at (${row}, ${col})`);
               return true;
             }
           }
         }
       }
+      console.log("King is not in check.");
       return false;
     }
 
@@ -242,6 +245,8 @@
 
           if (isKingInCheck(findKingRow(), findKingCol())) {
             speak("King is in check!");
+          } else {
+            speak("King is safe.");
           }
 
           isWhiteTurn = !isWhiteTurn;
