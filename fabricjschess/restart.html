@@ -1,254 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fabric.js Chess Game</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
-  <style>
-    canvas {
-      border: 1px solid black;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chess Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
+    <style>
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
 </head>
 <body>
-  <h1>Fabric.js Chess Game</h1>
-  <button id="startRestart">Start/Restart Game</button>
-  <div>
-    <canvas id="chessboard" width="480" height="480"></canvas>
-  </div>
-
-  <script>
-    const canvas = new fabric.Canvas('chessboard');
-    const squareSize = 60;
-    const boardSize = 8;
-    let pieces = [];
-    const boardState = Array(8).fill(null).map(() => Array(8).fill(null));
-
-    const pieceImages = {
-      r: 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
-      n: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
-      b: 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
-      q: 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
-      k: 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg',
-      p: 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
-      R: 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
-      N: 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
-      B: 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
-      Q: 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
-      K: 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
-      P: 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg',
-    };
-
-    function drawBoard() {
-      canvas.clear();
-      for (let row = 0; row < boardSize; row++) {
-        for (let col = 0; col < boardSize; col++) {
-          const isWhite = (row + col) % 2 === 0;
-          const rect = new fabric.Rect({
-            left: col * squareSize,
-            top: row * squareSize,
-            width: squareSize,
-            height: squareSize,
-            fill: isWhite ? '#f0d9b5' : '#b58863',
-            selectable: false,
-          });
-          canvas.add(rect);
-        }
-      }
-    }
-
-    function createPieces() {
-      const piecePositions = {
-        'RNBQKBNR': 0,
-        'PPPPPPPP': 1,
-        'pppppppp': 6,
-        'rnbqkbnr': 7
-      };
-
-      for (const [rowConfig, rowIndex] of Object.entries(piecePositions)) {
-        for (let col = 0; col < rowConfig.length; col++) {
-          const pieceChar = rowConfig[col];
-          const pieceImage = pieceImages[pieceChar];
-
-          fabric.Image.fromURL(pieceImage, function (img) {
-            img.set({
-              left: col * squareSize,
-              top: rowIndex * squareSize,
-              scaleX: squareSize / img.width,
-              scaleY: squareSize / img.height,
-              originX: 'left',
-              originY: 'top',
-              selectable: true,
-              hasControls: false,
-              pieceType: pieceChar,
-              color: pieceChar === pieceChar.toLowerCase() ? 'black' : 'white',
-            });
-
-            pieces.push(img);
-            canvas.add(img);
-            boardState[rowIndex][col] = img;
-          });
-        }
-      }
-    }
-
-    function getBoardPosition(left, top) {
-      return {
-        col: Math.floor(left / squareSize),
-        row: Math.floor(top / squareSize),
-      };
-    }
-
-    function isValidMove(piece, from, to) {
-      const pieceType = piece.pieceType.toLowerCase();
-      const direction = piece.color === 'black' ? 1 : -1;
-
-      // Pawn movement
-      if (pieceType === 'p') {
-        const startRow = piece.color === 'black' ? 1 : 6;
-        const rowDiff = to.row - from.row;
-        const colDiff = Math.abs(to.col - from.col);
-
-        if (colDiff === 0 && !boardState[to.row][to.col]) {
-          if (rowDiff === direction || (rowDiff === 2 * direction && from.row === startRow)) {
-            return true;
-          }
-        }
-
-        if (colDiff === 1 && rowDiff === direction && boardState[to.row][to.col]?.color !== piece.color) {
-          return true;
-        }
-      }
-
-      // Rook movement
-      if (pieceType === 'r') {
-        if (from.row === to.row || from.col === to.col) {
-          const rowDiff = Math.sign(to.row - from.row);
-          const colDiff = Math.sign(to.col - from.col);
-          let row = from.row + rowDiff;
-          let col = from.col + colDiff;
-
-          while (row !== to.row || col !== to.col) {
-            if (boardState[row][col]) return false; // Blocked by another piece
-            row += rowDiff;
-            col += colDiff;
-          }
-
-          return boardState[to.row][to.col]?.color !== piece.color; // Can't capture own piece
-        }
-      }
-
-      // Knight movement
-      if (pieceType === 'n') {
-        const rowDiff = Math.abs(to.row - from.row);
-        const colDiff = Math.abs(to.col - from.col);
-        if ((rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2)) {
-          return boardState[to.row][to.col]?.color !== piece.color; // Can't capture own piece
-        }
-      }
-
-      // Bishop movement
-      if (pieceType === 'b') {
-        const rowDiff = Math.abs(to.row - from.row);
-        const colDiff = Math.abs(to.col - from.col);
-        if (rowDiff === colDiff) {
-          const rowStep = (to.row - from.row) / rowDiff;
-          const colStep = (to.col - from.col) / colDiff;
-          let row = from.row + rowStep;
-          let col = from.col + colStep;
-
-          while (row !== to.row || col !== to.col) {
-            if (boardState[row][col]) return false; // Blocked by another piece
-            row += rowStep;
-            col += colStep;
-          }
-
-          return boardState[to.row][to.col]?.color !== piece.color; // Can't capture own piece
-        }
-      }
-
-      // Queen movement (combines rook and bishop)
-      if (pieceType === 'q') {
-        const rowDiff = Math.abs(to.row - from.row);
-        const colDiff = Math.abs(to.col - from.col);
-        if (from.row === to.row || from.col === to.col || rowDiff === colDiff) {
-          const rowStep = from.row === to.row ? 0 : (to.row - from.row) / rowDiff;
-          const colStep = from.col === to.col ? 0 : (to.col - from.col) / colDiff;
-          let row = from.row + rowStep;
-          let col = from.col + colStep;
-
-          while (row !== to.row || col !== to.col) {
-            if (boardState[row][col]) return false; // Blocked by another piece
-            row += rowStep;
-            col += colStep;
-          }
-
-          return boardState[to.row][to.col]?.color !== piece.color; // Can't capture own piece
-        }
-      }
-
-      // King movement
-      if (pieceType === 'k') {
-        const rowDiff = Math.abs(to.row - from.row);
-        const colDiff = Math.abs(to.col - from.col);
-        if (rowDiff <= 1 && colDiff <= 1) {
-          return boardState[to.row][to.col]?.color !== piece.color; // Can't capture own piece
-        }
-      }
-
-      return false; // Invalid move
-    }
-
-    function updateBoardState(piece, from, to) {
-      boardState[from.row][from.col] = null;
-      boardState[to.row][to.col] = piece;
-    }
-
-    function setupPieceMovement() {
-      canvas.on('object:moving', (e) => {
-        const piece = e.target;
-        const { col, row } = getBoardPosition(piece.left, piece.top);
-
-        piece.left = col * squareSize;
-        piece.top = row * squareSize;
-      });
-
-      canvas.on('object:moved', (e) => {
-        const piece = e.target;
-        const from = getBoardPosition(piece.startLeft, piece.startTop);
-        const to = getBoardPosition(piece.left, piece.top);
-
-        if (!isValidMove(piece, from, to)) {
-          piece.left = piece.startLeft;
-          piece.top = piece.startTop;
-        } else {
-          updateBoardState(piece, from, to);
-          piece.startLeft = piece.left;
-          piece.startTop = piece.top;
-
-          if (boardState[to.row][to.col]) {
-            canvas.remove(boardState[to.row][to.col]);
-          }
-        }
-
-        canvas.renderAll();
-      });
-    }
-
-    function startGame() {
-      drawBoard();
-      createPieces();
-      setupPieceMovement();
-    }
-
-    document.getElementById('startRestart').addEventListener('click', () => {
-      pieces.forEach(piece => canvas.remove(piece));
-      pieces = [];
-      startGame();
-    });
-
-    startGame();
-  </script>
+    <canvas id="chessboard" width="400" height="400"></canvas>
+    <script src="chess.js"></script>
 </body>
 </html>
+const canvas = new fabric.Canvas('chessboard');
+const boardSize = 8;
+const squareSize = 50;
+
+// Create the chessboard
+function createBoard() {
+    for (let row = 0; row < boardSize; row++) {
+        for (let col = 0; col < boardSize; col++) {
+            const square = new fabric.Rect({
+                left: col * squareSize,
+                top: row * squareSize,
+                fill: (row + col) % 2 === 0 ? 'white' : 'gray',
+                width: squareSize,
+                height: squareSize,
+                selectable: false
+            });
+            canvas.add(square);
+        }
+    }
+}
+
+// Add pieces to the board
+function addPieces() {
+    const pieces = [
+        { type: 'rook', color: 'black', position: { left: 0, top: 0 } },
+        { type: 'knight', color: 'black', position: { left: 1, top: 0 } },
+        { type: 'bishop', color: 'black', position: { left: 2, top: 0 } },
+        { type: 'queen', color: 'black', position: { left: 3, top: 0 } },
+        { type: 'king', color: 'black', position: { left: 4, top: 0 } },
+        { type: 'bishop', color: 'black', position: { left: 5, top: 0 } },
+        { type: 'knight', color: 'black', position: { left: 6, top: 0 } },
+        { type: 'rook', color: 'black', position: { left: 7, top: 0 } },
+        // Add pawns
+        ...Array.from({ length: 8 }, (_, i) => ({ type: 'pawn', color: 'black', position: { left: i, top: 1 } })),
+        // Add white pieces
+        { type: 'rook', color: 'white', position: { left: 0, top: 7 } },
+        { type: 'knight', color: 'white', position: { left: 1, top: 7 } },
+        { type: 'bishop', color: 'white', position: { left: 2, top: 7 } },
+        { type: 'queen', color: 'white', position: { left: 3, top: 7 } },
+        { type: 'king', color: 'white', position: { left: 4, top: 7 } },
+        { type: 'bishop', color: 'white', position: { left: 5, top: 7 } },
+        { type: 'knight', color: 'white', position: { left: 6, top: 7 } },
+        { type: 'rook', color: 'white', position: { left: 7, top: 7 } },
+        // Add white pawns
+        ...Array.from({ length: 8 }, (_, i) => ({ type: 'pawn', color: 'white', position: { left: i, top: 6 } })),
+    ];
+
+    pieces.forEach(piece => {
+        const circle = new fabric.Circle({
+            left: piece.position.left * squareSize + squareSize / 2,
+            top: piece.position.top * squareSize + squareSize / 2,
+            radius: 20,
+            fill: piece.color,
+            selectable: true,
+            hasControls: false,
+            hasBorders: false
+        });
+        canvas.add(circle);
+    });
+}
+
+// Initialize the chess game
+function initChessGame() {
+    createBoard();
+    addPieces();
+}
+
+initChessGame();
