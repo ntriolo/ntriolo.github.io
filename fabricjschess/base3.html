@@ -173,28 +173,23 @@
                                 startY: row
                             });
 
-                            // Mouse event handlers
-                            svgPiece.on('mousedown', function() {
-                                if ((turn === 'white' && this.pieceColor === 'white') || 
-                                    (turn === 'black' && this.pieceColor === 'black')) {
-                                    console.log(`Piece selected: ${this.pieceType} (${this.pieceColor})`);
-                                    canvas.setActiveObject(this);
-                                } else {
+                            svgPiece.on('moving', function() {
+                                if ((turn === 'white' && this.pieceColor !== 'white') || 
+                                    (turn === 'black' && this.pieceColor !== 'black')) {
+                                    this.left = this.startX * squareSize + squareSize / 2;
+                                    this.top = this.startY * squareSize + squareSize / 2;
                                     alert("It's not your turn!");
                                 }
                             });
-                            svgPiece.on('mouseup', function() {
-                                const activeObject = canvas.getActiveObject();
-                                if (activeObject === this) {
-                                    const fromPosition = coordsToPosition(this.left, this.top);
-                                    console.log(`Move from: ${fromPosition}`);
-                                    const toPosition = prompt(`Enter the destination (e.g., e4) for ${this.pieceType}:`);
-                                    if (toPosition) {
-                                        console.log(`Move to: ${toPosition}`);
-                                        movePiece(fromPosition, toPosition);
-                                    }
-                                }
+
+                            svgPiece.on('moved', function() {
+                                const col = Math.floor(this.left / squareSize);
+                                const row = 8 - Math.floor(this.top / squareSize);
+                                const move = `${coordsToPosition(this.left, this.top)} to ${String.fromCharCode(col + 97)}${row}`;
+                                updateHistory(move);
+                                turn = (turn === 'white') ? 'black' : 'white';
                             });
+
                             canvas.add(svgPiece);
                         });
                     }
@@ -205,25 +200,7 @@
         function coordsToPosition(left, top) {
             const col = Math.floor(left / squareSize);
             const row = 8 - Math.floor(top / squareSize);
-            return String.fromCharCode(col + 'a'.charCodeAt(0)) + row;
-        }
-
-        function movePiece(from, to) {
-            const activeObject = canvas.getActiveObject();
-            if (activeObject) {
-                // Calculate the new position for the piece on the canvas
-                const col = to.charCodeAt(0) - 'a'.charCodeAt(0);
-                const row = 8 - parseInt(to[1]);
-                activeObject.left = col * squareSize + squareSize / 2;
-                activeObject.top = row * squareSize + squareSize / 2;
-                activeObject.startX = col;
-                activeObject.startY = row;
-
-                // Update the board state if necessary (not shown here)
-                canvas.renderAll();
-                updateHistory(`${coordsToPosition(activeObject.left, activeObject.top)} to ${to}`);
-                turn = (turn === 'white') ? 'black' : 'white';
-            }
+            return String.fromCharCode(col + 97) + row;
         }
 
         function updateHistory(move) {
