@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chess Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
+    <style>
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="chessboard" width="400" height="400"></canvas>
+    <script>
+        const canvas = new fabric.Canvas('chessboard');
+        const boardSize = 8;
+        const squareSize = 50;
+        const pieces = [];
+
+        // Create the chessboard
+        function createBoard() {
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    const square = new fabric.Rect({
+                        left: col * squareSize,
+                        top: row * squareSize,
+                        fill: (row + col) % 2 === 0 ? 'white' : 'gray',
+                        width: squareSize,
+                        height: squareSize,
+                        selectable: false
+                    });
+                    canvas.add(square);
+                }
+            }
+        }
+
+        // Load images for chess pieces from Wikipedia
+        const pieceImages = {
+            black: {
+                rook: 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+                knight: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
+                bishop: 'https://upload.wikimedia.org/wikipedia/commons/9/9b/Chess_bdt45.svg',
+                queen: 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
+                king: 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg',
+                pawn: 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg'
+            },
+            white: {
+                rook: 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
+                knight: 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
+                bishop: 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
+                queen: 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
+                king: 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
+                pawn: 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
+            }
+        };
+
+        // Add pieces to the board
+        function addPieces() {
+            const initialPositions = [
+                { type: 'rook', color: 'black', position: { left: 0, top: 0 } },
+                { type: 'knight', color: 'black', position: { left: 1, top: 0 } },
+                { type: 'bishop', color: 'black', position: { left: 2, top: 0 } },
+                { type: 'queen', color: 'black', position: { left: 3, top: 0 } },
+                { type: 'king', color: 'black', position: { left: 4, top: 0 } },
+                { type: 'bishop', color: 'black', position: { left: 5, top: 0 } },
+                { type: 'knight', color: 'black', position: { left: 6, top: 0 } },
+                { type: 'rook', color: 'black', position: { left: 7, top: 0 } },
+                ...Array.from({ length: 8 }, (_, i) => ({ type: 'pawn', color: 'black', position: { left: i, top: 1 } })),
+                { type: 'rook', color: 'white', position: { left: 0, top: 7 } },
+                { type: 'knight', color: 'white', position: { left: 1, top: 7 } },
+                { type: 'bishop', color: 'white', position: { left: 2, top: 7 } },
+                { type: 'queen', color: 'white', position: { left: 3, top: 7 } },
+                { type: 'king', color: 'white', position: { left: 4, top: 7 } },
+                { type: 'bishop', color: 'white', position: { left: 5, top: 7 } },
+                { type: 'knight', color: 'white', position: { left: 6, top: 7 } },
+                { type: 'rook', color: 'white', position: { left: 7, top: 7 } },
+                ...Array.from({ length: 8 }, (_, i) => ({ type: 'pawn', color: 'white', position: { left: i, top: 6 } })),
+            ];
+
+            initialPositions.forEach(piece => {
+                fabric.Image.fromURL(pieceImages[piece.color][piece.type], function(img) {
+                    img.set({
+                        left: piece.position.left * squareSize,
+                        top: piece.position.top * squareSize,
+                        scaleX: squareSize / img.width,
+                        scaleY: squareSize / img.height,
+                        selectable: true,
+                        pieceType: piece.type,
+                        pieceColor: piece.color
+                    });
+                    pieces.push(img);
+                    canvas.add(img);
+                });
+            });
+        }
+
+        // Move piece to a new position
+        function movePiece(piece, newLeft, newTop) {
+            piece.set({
+                left: newLeft * squareSize,
+                top: newTop * squareSize
+            });
+            canvas.renderAll();
+        }
+
+        // Handle piece selection and movement
+        canvas.on('mouse:down', function(event) {
+            const target = event.target;
+            if (target && target.pieceType === 'pawn') {
+                const currentLeft = target.left / squareSize;
+                const currentTop = target.top / squareSize;
+                const newTop = target.pieceColor === 'white' ? currentTop - 1 : currentTop + 1;
+
+                // Check if the new position is within the board limits
+                if (newTop >= 0 && newTop < boardSize) {
+                    movePiece(target, currentLeft, newTop);
+                }
+            }
+        });
+
+        // Initialize the chess game
+        function initChessGame() {
+            createBoard();
+            addPieces();
+        }
+
+        initChessGame();
+    </script>
+</body>
+</html>
