@@ -113,12 +113,17 @@
                 const currentTop = target.top / squareSize;
                 const newTop = target.pieceColor === 'white' ? currentTop - 1 : currentTop + 1;
 
-                // Check if the new position is within the board limits
-                if (newTop >= 0 && newTop < boardSize) {
+                // Check if the new position is within the board limits and not occupied
+                if (newTop >= 0 && newTop < boardSize && !isOccupied(currentLeft, newTop)) {
                     movePiece(target, currentLeft, newTop);
                 }
             }
         });
+
+        // Check if a position is occupied by another piece
+        function isOccupied(left, top) {
+            return pieces.some(piece => piece.left / squareSize === left && piece.top / squareSize === top);
+        }
 
         // Initialize the chess game
         function initChessGame() {
