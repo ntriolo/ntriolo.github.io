@@ -130,57 +130,64 @@
 
             let validMove = false;
 
+            // Check if the destination square is occupied by an opponent's piece
+            const targetPiece = canvas.getObjects().find(o => o.startX === endX && o.startY === endY && o !== obj);
+            const isCapture = targetPiece && targetPiece.pieceColor !== pieceColor;
+
             // Define movement rules for each piece
             switch (pieceType) {
                 case 'p': // Pawn
                     if (pieceColor === 'white') {
-                        if (startY === 6 && endY === 4 && startX === endX) {
+                        if (startY === 6 && endY === 4 && startX === endX && !targetPiece) {
                             validMove = true; // Initial two-square move
-                        } else if (endY === startY - 1 && startX === endX) {
+                        } else if (endY === startY - 1 && startX === endX && !targetPiece) {
                             validMove = true; // Single square move
-                        } else if (endY === startY - 1 && Math.abs(endX - startX) === 1) {
+                        } else if (endY === startY - 1 && Math.abs(endX - startX) === 1 && isCapture) {
                             validMove = true; // Diagonal capture
                         }
                     } else if (pieceColor === 'black') {
-                        if (startY === 1 && endY === 3 && startX === endX) {
+                        if (startY === 1 && endY === 3 && startX === endX && !targetPiece) {
                             validMove = true; // Initial two-square move
-                        } else if (endY === startY + 1 && startX === endX) {
+                        } else if (endY === startY + 1 && startX === endX && !targetPiece) {
                             validMove = true; // Single square move
-                        } else if (endY === startY + 1 && Math.abs(endX - startX) === 1) {
+                        } else if (endY === startY + 1 && Math.abs(endX - startX) === 1 && isCapture) {
                             validMove = true; // Diagonal capture
                         }
                     }
                     break;
                 case 'r': // Rook
-                    if (startX === endX || startY === endY) {
+                    if ((startX === endX || startY === endY) && (!targetPiece || isCapture)) {
                         validMove = true; // Horizontal or vertical move
                     }
                     break;
                 case 'n': // Knight
-                    if ((Math.abs(startX - endX) === 2 && Math.abs(startY - endY) === 1) ||
-                        (Math.abs(startX - endX) === 1 && Math.abs(startY - endY) === 2)) {
+                    if (((Math.abs(startX - endX) === 2 && Math.abs(startY - endY) === 1) ||
+                        (Math.abs(startX - endX) === 1 && Math.abs(startY - endY) === 2)) && (!targetPiece || isCapture)) {
                         validMove = true; // L-shaped move
                     }
                     break;
                 case 'b': // Bishop
-                    if (Math.abs(startX - endX) === Math.abs(startY - endY)) {
+                    if (Math.abs(startX - endX) === Math.abs(startY - endY) && (!targetPiece || isCapture)) {
                         validMove = true; // Diagonal move
                     }
                     break;
                 case 'q': // Queen
-                    if (startX === endX || startY === endY || 
-                        Math.abs(startX - endX) === Math.abs(startY - endY)) {
+                    if ((startX === endX || startY === endY || 
+                        Math.abs(startX - endX) === Math.abs(startY - endY)) && (!targetPiece || isCapture)) {
                         validMove = true; // Horizontal, vertical, or diagonal move
                     }
                     break;
                 case 'k': // King
-                    if (Math.abs(startX - endX) <= 1 && Math.abs(startY - endY) <= 1) {
+                    if (Math.abs(startX - endX) <= 1 && Math.abs(startY - endY) <= 1 && (!targetPiece || isCapture)) {
                         validMove = true; // One square in any direction
                     }
                     break;
             }
 
             if (validMove) {
+                if (isCapture) {
+                    canvas.remove(targetPiece); // Remove the captured piece
+                }
                 obj.set({
                     left: endX * squareSize + squareSize / 2,
                     top: endY * squareSize + squareSize / 2
