@@ -173,27 +173,56 @@
                                 startY: row
                             });
 
-                            svgPiece.on('moving', function() {
-                                if ((turn === 'white' && this.pieceColor !== 'white') || 
-                                    (turn === 'black' && this.pieceColor !== 'black')) {
+                            svgPiece.on('moved', function() {
+                                const fromPos = { x: this.startX, y: this.startY };
+                                const toPos = { 
+                                    x: Math.floor(this.left / squareSize), 
+                                    y: 8 - Math.floor(this.top / squareSize) 
+                                };
+
+                                if (isValidMove(fromPos, toPos, this.pieceType, this.pieceColor)) {
+                                    const move = `${coordsToPosition(this.left, this.top)} from ${coordsToPosition(this.startX * squareSize, this.startY * squareSize)}`;
+                                    updateHistory(move);
+                                    turn = (turn === 'white') ? 'black' : 'white';
+                                } else {
+                                    alert('Invalid move for this piece!');
+                                    // Reset the piece's position if the move is invalid
                                     this.left = this.startX * squareSize + squareSize / 2;
                                     this.top = this.startY * squareSize + squareSize / 2;
-                                    alert("It's not your turn!");
                                 }
-                            });
-
-                            svgPiece.on('moved', function() {
-                                const col = Math.floor(this.left / squareSize);
-                                const row = 8 - Math.floor(this.top / squareSize);
-                                const move = `${coordsToPosition(this.left, this.top)} to ${String.fromCharCode(col + 97)}${row}`;
-                                updateHistory(move);
-                                turn = (turn === 'white') ? 'black' : 'white';
                             });
 
                             canvas.add(svgPiece);
                         });
                     }
                 }
+            }
+        }
+
+        function isValidMove(from, to, pieceType, pieceColor) {
+            const dx = Math.abs(to.x - from.x);
+            const dy = Math.abs(to.y - from.y);
+
+            switch (pieceType) {
+                case 'r': // Rook
+                    return (dx === 0 || dy === 0);
+                case 'n': // Knight
+                    return (dx === 2 && dy === 1) || (dx === 1 && dy === 2);
+                case 'b': // Bishop
+                    return dx === dy;
+                case 'q': // Queen
+                    return (dx === 0 || dy === 0 || dx === dy);
+                case 'k': // King
+                    return (dx <= 1 && dy <= 1);
+                case 'p': // Pawn
+                    // Check forward movement and capture logic
+                    if (pieceColor === 'white') {
+                        return (dy === 1 && dx === 0 && to.y < from.y) || (dy === 1 && dx === 1 && to.y < from.y);
+                    } else { // black pawn
+                        return (dy === 1 && dx === 0 && to.y > from.y) || (dy === 1 && dx === 1 && to.y > from.y);
+                    }
+                default:
+                    return false;
             }
         }
 
