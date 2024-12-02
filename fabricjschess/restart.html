@@ -22,7 +22,7 @@
     const canvas = new fabric.Canvas('chessboard');
     const squareSize = 60;
     const boardSize = 8;
-    const pieces = [];
+    let pieces = [];
     const boardState = Array(8).fill(null).map(() => Array(8).fill(null));
 
     const pieceImages = {
@@ -181,8 +181,14 @@
     function setupPieceMovement() {
       canvas.on('object:moving', (e) => {
         const piece = e.target;
-        piece.left = piece.startLeft;
-        piece.top = piece.startTop;
+        const from = getBoardPosition(piece.startLeft, piece.startTop);
+        const to = getBoardPosition(piece.left, piece.top);
+
+        if (!isValidMove(piece, from, to)) {
+          piece.left = piece.startLeft;
+          piece.top = piece.startTop;
+          canvas.renderAll();
+        }
       });
 
       canvas.on('object:moved', (e) => {
