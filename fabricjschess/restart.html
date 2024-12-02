@@ -22,7 +22,7 @@
     const canvas = new fabric.Canvas('chessboard');
     const squareSize = 60;
     const boardSize = 8;
-    let pieces = [];
+    const pieces = [];
     const boardState = Array(8).fill(null).map(() => Array(8).fill(null));
 
     const pieceImages = {
@@ -84,6 +84,8 @@
               pieceType: pieceChar.toLowerCase(),
               color: pieceChar === pieceChar.toLowerCase() ? 'black' : 'white',
               moved: false,
+              startLeft: col * squareSize,
+              startTop: rowIndex * squareSize,
             });
 
             pieces.push(img);
@@ -123,9 +125,11 @@
       const rowDiff = to.row - from.row;
       const colDiff = to.col - from.col;
 
+      if (to.row < 0 || to.row >= boardSize || to.col < 0 || to.col >= boardSize) return false;
+
       if (pieceType === 'p') {
         if (colDiff === 0 && boardState[to.row][to.col] === null) {
-          if (rowDiff === direction || (rowDiff === 2 * direction && !piece.moved)) {
+          if (rowDiff === direction || (rowDiff === 2 * direction && !piece.moved && boardState[from.row + direction][from.col] === null)) {
             return true;
           }
         }
@@ -177,9 +181,8 @@
     function setupPieceMovement() {
       canvas.on('object:moving', (e) => {
         const piece = e.target;
-        const { col, row } = getBoardPosition(piece.left, piece.top);
-        piece.left = col * squareSize;
-        piece.top = row * squareSize;
+        piece.left = piece.startLeft;
+        piece.top = piece.startTop;
       });
 
       canvas.on('object:moved', (e) => {
@@ -187,17 +190,16 @@
         const from = getBoardPosition(piece.startLeft, piece.startTop);
         const to = getBoardPosition(piece.left, piece.top);
 
-        if (!isValidMove(piece, from, to)) {
-          piece.left = piece.startLeft;
-          piece.top = piece.startTop;
-        } else {
+        if (isValidMove(piece, from, to)) {
           updateBoardState(piece, from, to);
           piece.startLeft = piece.left;
           piece.startTop = piece.top;
-
           if (boardState[to.row][to.col]) {
             canvas.remove(boardState[to.row][to.col]);
           }
+        } else {
+          piece.left = piece.startLeft;
+          piece.top = piece.startTop;
         }
 
         canvas.renderAll();
