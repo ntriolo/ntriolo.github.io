@@ -24,6 +24,22 @@
     const boardSize = 8;
     let pieces = []; // Store piece objects
 
+    // Map chess piece codes to image URLs
+    const pieceImages = {
+      r: 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg', // Black Rook
+      n: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg', // Black Knight
+      b: 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg', // Black Bishop
+      q: 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg', // Black Queen
+      k: 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg', // Black King
+      p: 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg', // Black Pawn
+      R: 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg', // White Rook
+      N: 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg', // White Knight
+      B: 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg', // White Bishop
+      Q: 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg', // White Queen
+      K: 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg', // White King
+      P: 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg', // White Pawn
+    };
+
     // Initialize the chessboard
     function drawBoard() {
       canvas.clear();
@@ -43,10 +59,9 @@
       }
     }
 
-    // Create chess pieces
+    // Create chess pieces using images
     function createPieces() {
       const piecePositions = {
-        // Initial positions: black (uppercase), white (lowercase)
         'RNBQKBNR': 0, // Row 0 for black
         'PPPPPPPP': 1, // Row 1 for black
         'pppppppp': 6, // Row 6 for white
@@ -56,23 +71,24 @@
       for (const [rowConfig, rowIndex] of Object.entries(piecePositions)) {
         for (let col = 0; col < rowConfig.length; col++) {
           const pieceChar = rowConfig[col];
-          const pieceColor = pieceChar === pieceChar.toLowerCase() ? 'white' : 'black';
+          const pieceImage = pieceImages[pieceChar];
 
-          const piece = new fabric.Text(pieceChar, {
-            left: col * squareSize + squareSize / 4,
-            top: rowIndex * squareSize + squareSize / 4,
-            fontSize: 40,
-            fill: pieceColor,
-            originX: 'center',
-            originY: 'center',
-            selectable: true,
-            hasControls: false,
-            pieceType: pieceChar,
-            color: pieceColor,
+          fabric.Image.fromURL(pieceImage, function (img) {
+            img.set({
+              left: col * squareSize,
+              top: rowIndex * squareSize,
+              scaleX: squareSize / img.width,
+              scaleY: squareSize / img.height,
+              originX: 'left',
+              originY: 'top',
+              selectable: true,
+              hasControls: false,
+              pieceType: pieceChar,
+            });
+
+            pieces.push(img);
+            canvas.add(img);
           });
-
-          pieces.push(piece);
-          canvas.add(piece);
         }
       }
     }
@@ -93,7 +109,7 @@
         // TODO: Implement move validation and capturing logic
 
         // Example TTS announcement
-        const move = `${piece.color} ${piece.pieceType} moved`;
+        const move = `${piece.pieceType} moved`;
         speechSynthesis.speak(new SpeechSynthesisUtterance(move));
       });
     }
