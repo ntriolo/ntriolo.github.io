@@ -195,15 +195,31 @@
       const piece = game[row][col];
       if (selectedPiece) {
         const { row: startRow, col: startCol, piece: selectedPieceType } = selectedPiece;
-        if (piece) {
+        if (isValidMove(selectedPieceType)) {
+          // ... logic for movement...
+          game[row][col] = selectedPieceType;
+          game[startRow][startCol] = '';
+          drawPieces();
           isWhiteTurn = !isWhiteTurn;
+          speak(`${selectedPieceType.toUpperCase()} moved to ${String.fromCharCode(97 + col)}${8 - row}`);
+          speak(isWhiteTurn ? "White's turn." : "Black's turn.");
+        } else {
+          speak("Invalid move.");
         }
         selectedPiece = null;
-        startTimer(); // Restart timer for the next player
+      } else if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
+        selectedPiece = { row, col, piece };
+        speak(`${piece.toUpperCase()} selected.`);
       }
     });
 
-    startRestartGame();
+    function isValidMove(piece) {
+      // Simplified move validation (you can expand this logic to include checks for each type of piece)
+      return true; // Assume the move is valid for now
+    }
+
+    // Start the game when the page loads
+    window.onload = startRestartGame;
   </script>
 </body>
 </html>
