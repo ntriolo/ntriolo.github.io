@@ -1,98 +1,209 @@
-// Timer Variables
-let whiteTime = 300; // 5 minutes in seconds
-let blackTime = 300;
-let currentPlayer = "white"; // Start with white
-let timerInterval;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Game with Timer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(45deg, #283048, #859398);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+    }
+    .controls {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .timer {
+      margin-bottom: 10px;
+      font-size: 20px;
+      color: white;
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+    }
+    canvas {
+      border: 2px solid #000;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button onclick="startRestartGame()">Start/Restart Game</button>
+    <button onclick="toggleTTS()">
+      <span id="tts-status">Turn off TTS</span>
+    </button>
+  </div>
+  <div class="timer">
+    <div id="white-timer">White: 5:00</div>
+    <div id="black-timer">Black: 5:00</div>
+  </div>
+  <canvas id="chessboard" width="480" height="480"></canvas>
+  <script>
+    const canvas = new fabric.Canvas('chessboard');
+    const pieceImages = {
+      'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+      'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
+      'b': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
+      'q': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
+      'k': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg',
+      'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
+      'R': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
+      'N': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
+      'B': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
+      'Q': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
+      'K': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
+      'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
+    };
+    let game = [];
+    let isWhiteTurn = true;
+    let selectedPiece = null;
+    let isTTSOn = true;
 
-// Timer Display
-const whiteTimerDisplay = document.createElement("div");
-whiteTimerDisplay.style.fontSize = "20px";
-whiteTimerDisplay.style.color = "black";
-whiteTimerDisplay.style.margin = "10px";
-whiteTimerDisplay.textContent = "White Time: 5:00";
-document.body.appendChild(whiteTimerDisplay);
+    // Timer variables
+    let whiteTime = 300; // 5 minutes in seconds
+    let blackTime = 300;
+    let timerInterval;
 
-const blackTimerDisplay = document.createElement("div");
-blackTimerDisplay.style.fontSize = "20px";
-blackTimerDisplay.style.color = "black";
-blackTimerDisplay.style.margin = "10px";
-blackTimerDisplay.textContent = "Black Time: 5:00";
-document.body.appendChild(blackTimerDisplay);
+    function updateTimers() {
+      const formatTime = (time) => {
+        const minutes = Math.floor(time / 60);
+        const seconds = time % 60;
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      };
+      document.getElementById('white-timer').textContent = `White: ${formatTime(whiteTime)}`;
+      document.getElementById('black-timer').textContent = `Black: ${formatTime(blackTime)}`;
+    }
 
-// Update Timer Display
-function updateTimerDisplay() {
-  const whiteMinutes = Math.floor(whiteTime / 60);
-  const whiteSeconds = whiteTime % 60;
-  const blackMinutes = Math.floor(blackTime / 60);
-  const blackSeconds = blackTime % 60;
-
-  whiteTimerDisplay.textContent = `White Time: ${whiteMinutes}:${whiteSeconds
-    .toString()
-    .padStart(2, "0")}`;
-  blackTimerDisplay.textContent = `Black Time: ${blackMinutes}:${blackSeconds
-    .toString()
-    .padStart(2, "0")}`;
-}
-
-// Switch Timer
-function switchTimer() {
-  clearInterval(timerInterval);
-  if (currentPlayer === "white") {
-    currentPlayer = "black";
-    startTimer(() => blackTime--);
-  } else {
-    currentPlayer = "white";
-    startTimer(() => whiteTime--);
-  }
-}
-
-// Start Timer
-function startTimer(decrementFunction) {
-  timerInterval = setInterval(() => {
-    decrementFunction();
-    updateTimerDisplay();
-
-    if (whiteTime <= 0 || blackTime <= 0) {
+    function startTimer() {
       clearInterval(timerInterval);
-      alert(`${whiteTime <= 0 ? "Black" : "White"} wins by timeout!`);
+      timerInterval = setInterval(() => {
+        if (isWhiteTurn) {
+          whiteTime--;
+          if (whiteTime <= 0) {
+            clearInterval(timerInterval);
+            alert("Black wins by timeout!");
+          }
+        } else {
+          blackTime--;
+          if (blackTime <= 0) {
+            clearInterval(timerInterval);
+            alert("White wins by timeout!");
+          }
+        }
+        updateTimers();
+      }, 1000);
     }
-  }, 1000);
-}
 
-// Initialize Timer
-startTimer(() => whiteTime--);
-
-// Example: Call switchTimer() when a player makes a move.
-canvas.on("mouse:down", (e) => {
-  const mouseX = e.pointer.x;
-  const mouseY = e.pointer.y;
-
-  if (selectedPiece && !movingPiece) {
-    movingPiece = true;
-
-    const col = Math.floor(mouseX / tileSize);
-    const row = Math.floor(mouseY / tileSize);
-
-    if (col >= 0 && col < 8 && row >= 0 && row < 8) {
-      selectedPiece.left = col * tileSize;
-      selectedPiece.top = row * tileSize;
-
-      if (ttsEnabled) {
-        const position = `${String.fromCharCode(65 + col)}${8 - row}`;
-        const message = `${selectedPiece.name} to ${position}`;
-        const utterance = new SpeechSynthesisUtterance(message);
-        utterance.rate = 1;
-        utterance.pitch = 1;
-        speechSynthesis.speak(utterance);
+    function speak(text) {
+      if (isTTSOn) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utterance);
       }
-
-      selectedPiece = null;
-      canvas.renderAll();
-
-      // Switch Timer After Move
-      switchTimer();
     }
 
-    movingPiece = false;
-  }
-});
+    function drawBoard() {
+      const tileSize = 60;
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          const isLight = (i + j) % 2 === 0;
+          const rect = new fabric.Rect({
+            left: j * tileSize,
+            top: i * tileSize,
+            width: tileSize,
+            height: tileSize,
+            fill: isLight ? '#f0d9b5' : '#b58863',
+            selectable: false
+          });
+          canvas.add(rect);
+        }
+      }
+    }
+
+    function drawPieces() {
+      const tileSize = 60;
+      canvas.getObjects('image').forEach(obj => canvas.remove(obj));
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          const piece = game[i][j];
+          if (piece) {
+            fabric.Image.fromURL(pieceImages[piece], (img) => {
+              img.set({
+                left: j * tileSize,
+                top: i * tileSize,
+                scaleX: tileSize / img.width,
+                scaleY: tileSize / img.height,
+                hasControls: false,
+                hasBorders: false,
+                selectable: false,
+                data: { row: i, col: j, piece }
+              });
+              canvas.add(img);
+            });
+          }
+        }
+      }
+    }
+
+    function startRestartGame() {
+      game = [
+        ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+        ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+        ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+      ];
+      isWhiteTurn = true;
+      selectedPiece = null;
+      whiteTime = blackTime = 300;
+      clearInterval(timerInterval);
+      canvas.clear();
+      drawBoard();
+      drawPieces();
+      updateTimers();
+      startTimer();
+      speak("Game started. White's turn.");
+    }
+
+    function toggleTTS() {
+      isTTSOn = !isTTSOn;
+      document.getElementById('tts-status').textContent = isTTSOn ? "Turn off TTS" : "Turn on TTS";
+    }
+
+    canvas.on('mouse:down', (event) => {
+      const pointer = canvas.getPointer(event.e);
+      const row = Math.floor(pointer.y / 60);
+      const col = Math.floor(pointer.x / 60);
+      const piece = game[row][col];
+      if (selectedPiece) {
+        const { row: startRow, col: startCol, piece: selectedPieceType } = selectedPiece;
+        if (piece) {
+          isWhiteTurn = !isWhiteTurn;
+        }
+        selectedPiece = null;
+        startTimer(); // Restart timer for the next player
+      }
+    });
+
+    startRestartGame();
+  </script>
+</body>
+</html>
