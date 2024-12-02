@@ -16,11 +16,7 @@
     <script>
         // Initialize Fabric.js canvas
         const canvas = new fabric.Canvas('canvas');
-
-        // Size of each square
-        const squareSize = 50;
-
-        // Chess piece colors and turn handling
+        const squareSize = 50; // Size of each square
         let turn = 'white'; // White goes first
 
         // Create the chessboard
@@ -44,18 +40,18 @@
         // Load SVG pieces onto the chessboard
         function addPieces() {
             const pieces = {
-                'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg', // black rook
-                'n': 'https://upload.wikimedia.org/wikipedia/commons/8/81/Chess_ndt45.svg', // black knight
-                'b': 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Chess_bdt45.svg', // black bishop
-                'q': 'https://upload.wikimedia.org/wikipedia/commons/4/49/Chess_qdt45.svg', // black queen
-                'k': 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Chess_kdt45.svg', // black king
-                'p': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_pdt45.svg', // black pawn
-                'R': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg', // white rook
-                'N': 'https://upload.wikimedia.org/wikipedia/commons/2/25/Chess_nlt45.svg', // white knight
-                'B': 'https://upload.wikimedia.org/wikipedia/commons/7/74/Chess_blt45.svg', // white bishop
-                'Q': 'https://upload.wikimedia.org/wikipedia/commons/1/1a/Chess_qlt45.svg', // white queen
-                'K': 'https://upload.wikimedia.org/wikipedia/commons/5/5c/Chess_klf45.svg', // white king
-                'P': 'https://upload.wikimedia.org/wikipedia/commons/3/39/Chess_plt45.svg'  // white pawn
+                'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+                'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
+                'b': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
+                'q': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
+                'k': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg',
+                'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
+                'R': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
+                'N': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
+                'B': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
+                'Q': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
+                'K': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
+                'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
             };
 
             const boardState = [
@@ -82,24 +78,32 @@
                                 originX: 'center',
                                 originY: 'center',
                                 hasControls: false,
-                                selectable: true, // Pieces are selectable
-                                pieceColor: piece === piece.toUpperCase() ? 'white' : 'black' // Track the piece color
+                                selectable: true,
+                                pieceColor: piece === piece.toUpperCase() ? 'white' : 'black' // Track piece color
                             });
+
+                            // Handle mouse down event
                             svgPiece.on('mousedown', function() {
                                 if ((turn === 'white' && this.pieceColor === 'white') || 
                                     (turn === 'black' && this.pieceColor === 'black')) {
-                                    this.set({ opacity: 0.5 });
+                                    console.log(`Selected ${this.pieceColor} piece`);
+                                    this.set({ opacity: 0.5 }); // Dim the selected piece
                                     canvas.setActiveObject(this);
                                 } else {
-                                    this.set({ selectable: false });
+                                    console.log(`It's not your turn to move ${this.pieceColor} pieces.`);
                                 }
                             });
+
+                            // Handle mouse up event
                             svgPiece.on('mouseup', function() {
                                 if (canvas.getActiveObject() === this) {
-                                    this.set({ opacity: 1 });
+                                    console.log(`Released ${this.pieceColor} piece`);
+                                    this.set({ opacity: 1 }); // Restore opacity
                                     turn = turn === 'white' ? 'black' : 'white'; // Switch turns
+                                    console.log(`Turn switched to ${turn}`);
                                 }
                             });
+
                             canvas.add(svgPiece);
                         });
                     }
@@ -118,6 +122,7 @@
                 left: Math.round(obj.left / squareSize) * squareSize + squareSize / 2,
                 top: Math.round(obj.top / squareSize) * squareSize + squareSize / 2
             });
+            console.log(`Moving piece to (${obj.left}, ${obj.top})`);
         });
     </script>
 </body>
