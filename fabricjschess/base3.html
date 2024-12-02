@@ -53,11 +53,12 @@
     <script>
         const canvas = new fabric.Canvas('canvas');
         const squareSize = 50;
-        let turn = 'white'; // Track whose turn it is (white or black)
+        let turn = 'white';
         const history = [];
         let whiteTime = 300; // 5 minutes
         let blackTime = 300; // 5 minutes
         let timerInterval;
+        let selectedPiece = null;
 
         function startTimer() {
             clearInterval(timerInterval);
@@ -167,31 +168,24 @@
                                 originY: 'center',
                                 hasControls: false,
                                 selectable: true,
-                                pieceColor: piece === piece.toUpperCase() ? 'white' : 'black',
-                                pieceType: piece.toLowerCase(),
-                                startX: col,
-                                startY: row
+                                pieceColor: piece === piece.toUpperCase() ? 'white' : 'black'
                             });
 
-                            svgPiece.on('moved', function() {
-                                const fromPos = { x: this.startX, y: this.startY };
-                                const toPos = { 
-                                    x: Math.floor(this.left / squareSize), 
-                                    y: 8 - Math.floor(this.top / squareSize) 
-                                };
-
-                                if (isValidMove(fromPos, toPos, this.pieceType, this.pieceColor)) {
-                                    const move = `${coordsToPosition(this.left, this.top)} from ${coordsToPosition(this.startX * squareSize, this.startY * squareSize)}`;
-                                    updateHistory(move);
-                                    turn = (turn === 'white') ? 'black' : 'white';
-                                } else {
-                                    alert('Invalid move for this piece!');
-                                    // Reset the piece's position if the move is invalid
-                                    this.left = this.startX * squareSize + squareSize / 2;
-                                    this.top = this.startY * squareSize + squareSize / 2;
+                            // Mouse event handlers
+                            svgPiece.on('mousedown', function() {
+                                if ((turn === 'white' && this.pieceColor === 'white') || 
+                                    (turn === 'black' && this.pieceColor === 'black')) {
+                                    selectedPiece = this;
                                 }
                             });
-
+                            svgPiece.on('mouseup', function() {
+                                if (selectedPiece) {
+                                    const fromPosition = coordsToPosition(selectedPiece.left, selectedPiece.top);
+                                    const toPosition = coordsToPosition(this.left, this.top);
+                                    movePiece(fromPosition, toPosition);
+                                    selectedPiece = null;
+                                }
+                            });
                             canvas.add(svgPiece);
                         });
                     }
@@ -199,37 +193,16 @@
             }
         }
 
-        function isValidMove(from, to, pieceType, pieceColor) {
-            const dx = Math.abs(to.x - from.x);
-            const dy = Math.abs(to.y - from.y);
-
-            switch (pieceType) {
-                case 'r': // Rook
-                    return (dx === 0 || dy === 0);
-                case 'n': // Knight
-                    return (dx === 2 && dy === 1) || (dx === 1 && dy === 2);
-                case 'b': // Bishop
-                    return dx === dy;
-                case 'q': // Queen
-                    return (dx === 0 || dy === 0 || dx === dy);
-                case 'k': // King
-                    return (dx <= 1 && dy <= 1);
-                case 'p': // Pawn
-                    // Check forward movement and capture logic
-                    if (pieceColor === 'white') {
-                        return (dy === 1 && dx === 0 && to.y < from.y) || (dy === 1 && dx === 1 && to.y < from.y);
-                    } else { // black pawn
-                        return (dy === 1 && dx === 0 && to.y > from.y) || (dy === 1 && dx === 1 && to.y > from.y);
-                    }
-                default:
-                    return false;
-            }
-        }
-
         function coordsToPosition(left, top) {
             const col = Math.floor(left / squareSize);
             const row = 8 - Math.floor(top / squareSize);
-            return String.fromCharCode(col + 97) + row;
+            return String.fromCharCode(col + 'a'.charCodeAt(0)) + row;
+        }
+
+        function positionToCoords(position) {
+            const col = position.charCodeAt(0) - 'a'.charCodeAt(0);
+            const row = 8 - parseInt(position[1]);
+            return { left: col * squareSize + squareSize / 2, top: row * squareSize + squareSize / 2 };
         }
 
         function updateHistory(move) {
@@ -238,7 +211,19 @@
             historyDiv.innerHTML = history.join('<br/>');
         }
 
-        // Initialize the board and pieces
+        function movePiece(from, to) {
+            const fromCoords = positionToCoords(from);
+            const toCoords = positionToCoords(to);
+            const piece = canvas.getObjects().find(obj => obj.left === fromCoords.left && obj.top === fromCoords.top);
+            if (piece) {
+                piece.set({ left: toCoords.left, top: toCoords.top });
+                canvas.renderAll();
+                updateHistory(`${from} to ${to}`);
+                turn = turn === 'white' ? 'black' : 'white';
+                startTimer();
+            }
+        }
+
         createChessboard();
         addPieces();
         startTimer();
