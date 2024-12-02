@@ -190,7 +190,7 @@
 
     function isKingInCheck(kingRow, kingCol, isWhite) {
       const opponentPieces = isWhite ? ['r', 'n', 'b', 'q', 'p'] : ['R', 'N', 'B', 'Q', 'P'];
-      
+
       for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
           const piece = game[i][j];
@@ -232,16 +232,11 @@
           return false;
         }
         case 'q': {
-          if (kingRow === pieceRow || kingCol === pieceCol || rowDiff === colDiff) {
-            return isPathClear(pieceRow, pieceCol, kingRow, kingCol);
-          }
-          return false;
+          return (kingRow === pieceRow || kingCol === pieceCol || rowDiff === colDiff) &&
+                 isPathClear(pieceRow, pieceCol, kingRow, kingCol);
         }
         case 'k': {
-          if (rowDiff <= 1 && colDiff <= 1) {
-            return true;
-          }
-          return false;
+          return rowDiff <= 1 && colDiff <= 1;
         }
         default:
           return false;
@@ -249,8 +244,8 @@
     }
 
     function isPathClear(startRow, startCol, endRow, endCol) {
-      const rowStep = startRow < endRow ? 1 : (startRow > endRow ? -1 : 0);
-      const colStep = startCol < endCol ? 1 : (startCol > endCol ? -1 : 0);
+      const rowStep = endRow > startRow ? 1 : (endRow < startRow ? -1 : 0);
+      const colStep = endCol > startCol ? 1 : (endCol < startCol ? -1 : 0);
 
       let currentRow = startRow + rowStep;
       let currentCol = startCol + colStep;
@@ -265,39 +260,6 @@
       return true;
     }
 
-    canvas.on('mouse:down', (event) => {
-      const pointer = canvas.getPointer(event.e);
-      const row = Math.floor(pointer.y / 60);
-      const col = Math.floor(pointer.x / 60);
-      const piece = game[row][col];
-      if (selectedPiece) {
-        const { row: startRow, col: startCol, piece: selectedPieceType } = selectedPiece;
-        if (isValidMove(selectedPieceType)) {
-          game[row][col] = selectedPieceType;
-          game[startRow][startCol] = '';
-          drawPieces();
-          isWhiteTurn = !isWhiteTurn;
-          if (isKingInCheck(row, col, !isWhiteTurn)) {
-            alert(isWhiteTurn ? "Black's king is in check!" : "White's king is in check!");
-          }
-          speak(`${selectedPieceType.toUpperCase()} moved to ${String.fromCharCode(97 + col)}${8 - row}`);
-          speak(isWhiteTurn ? "White's turn." : "Black's turn.");
-        } else {
-          speak("Invalid move.");
-        }
-        selectedPiece = null;
-      } else if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
-        selectedPiece = { row, col, piece };
-        speak(`${piece.toUpperCase()} selected.`);
-      }
-    });
-
-    function isValidMove(piece) {
-      // Simplified move validation (you can expand this logic to include checks for each type of piece)
-      return true; // Assume the move is valid for now
-    }
-
-    // Start the game when the page loads
     window.onload = startRestartGame;
   </script>
 </body>
