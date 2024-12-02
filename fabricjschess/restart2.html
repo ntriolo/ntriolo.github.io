@@ -88,7 +88,8 @@
                         scaleY: squareSize / img.height,
                         selectable: true,
                         pieceType: piece.type,
-                        pieceColor: piece.color
+                        pieceColor: piece.color,
+                        hasMoved: false
                     });
                     pieces.push(img);
                     canvas.add(img);
@@ -100,7 +101,8 @@
         function movePiece(piece, newLeft, newTop) {
             piece.set({
                 left: newLeft * squareSize,
-                top: newTop * squareSize
+                top: newTop * squareSize,
+                hasMoved: true
             });
             canvas.renderAll();
         }
@@ -111,11 +113,15 @@
             if (target && target.pieceType === 'pawn') {
                 const currentLeft = target.left / squareSize;
                 const currentTop = target.top / squareSize;
-                const newTop = target.pieceColor === 'white' ? currentTop - 1 : currentTop + 1;
+                const direction = target.pieceColor === 'white' ? -1 : 1;
+                const newTopOneStep = currentTop + direction;
+                const newTopTwoSteps = currentTop + 2 * direction;
 
                 // Check if the new position is within the board limits and not occupied
-                if (newTop >= 0 && newTop < boardSize && !isOccupied(currentLeft, newTop)) {
-                    movePiece(target, currentLeft, newTop);
+                if (newTopOneStep >= 0 && newTopOneStep < boardSize && !isOccupied(currentLeft, newTopOneStep)) {
+                    movePiece(target, currentLeft, newTopOneStep);
+                } else if (!target.hasMoved && newTopTwoSteps >= 0 && newTopTwoSteps < boardSize && !isOccupied(currentLeft, newTopTwoSteps) && !isOccupied(currentLeft, newTopOneStep)) {
+                    movePiece(target, currentLeft, newTopTwoSteps);
                 }
             }
         });
