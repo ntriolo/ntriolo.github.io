@@ -130,18 +130,74 @@
           let col = from.col + colDiff;
 
           while (row !== to.row || col !== to.col) {
-            if (boardState[row][col]) return false;
+            if (boardState[row][col]) return false; // Blocked by another piece
             row += rowDiff;
             col += colDiff;
           }
 
-          return boardState[to.row][to.col]?.color !== piece.color;
+          return boardState[to.row][to.col]?.color !== piece.color; // Can't capture own piece
         }
       }
 
-      // Add additional piece movement logic here (knight, bishop, queen, king)
+      // Knight movement
+      if (pieceType === 'n') {
+        const rowDiff = Math.abs(to.row - from.row);
+        const colDiff = Math.abs(to.col - from.col);
+        if ((rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2)) {
+          return boardState[to.row][to.col]?.color !== piece.color; // Can't capture own piece
+        }
+      }
 
-      return false;
+      // Bishop movement
+      if (pieceType === 'b') {
+        const rowDiff = Math.abs(to.row - from.row);
+        const colDiff = Math.abs(to.col - from.col);
+        if (rowDiff === colDiff) {
+          const rowStep = (to.row - from.row) / rowDiff;
+          const colStep = (to.col - from.col) / colDiff;
+          let row = from.row + rowStep;
+          let col = from.col + colStep;
+
+          while (row !== to.row || col !== to.col) {
+            if (boardState[row][col]) return false; // Blocked by another piece
+            row += rowStep;
+            col += colStep;
+          }
+
+          return boardState[to.row][to.col]?.color !== piece.color; // Can't capture own piece
+        }
+      }
+
+      // Queen movement (combines rook and bishop)
+      if (pieceType === 'q') {
+        const rowDiff = Math.abs(to.row - from.row);
+        const colDiff = Math.abs(to.col - from.col);
+        if (from.row === to.row || from.col === to.col || rowDiff === colDiff) {
+          const rowStep = from.row === to.row ? 0 : (to.row - from.row) / rowDiff;
+          const colStep = from.col === to.col ? 0 : (to.col - from.col) / colDiff;
+          let row = from.row + rowStep;
+          let col = from.col + colStep;
+
+          while (row !== to.row || col !== to.col) {
+            if (boardState[row][col]) return false; // Blocked by another piece
+            row += rowStep;
+            col += colStep;
+          }
+
+          return boardState[to.row][to.col]?.color !== piece.color; // Can't capture own piece
+        }
+      }
+
+      // King movement
+      if (pieceType === 'k') {
+        const rowDiff = Math.abs(to.row - from.row);
+        const colDiff = Math.abs(to.col - from.col);
+        if (rowDiff <= 1 && colDiff <= 1) {
+          return boardState[to.row][to.col]?.color !== piece.color; // Can't capture own piece
+        }
+      }
+
+      return false; // Invalid move
     }
 
     function updateBoardState(piece, from, to) {
