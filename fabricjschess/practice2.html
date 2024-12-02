@@ -150,13 +150,79 @@
                 scaleY: tileSize / img.height,
                 hasControls: false,
                 hasBorders: false,
-                selectable: false,
+                selectable: true,
                 data: { row: i, col: j, piece }
               });
+              img.on('mousedown', (e) => selectPiece(e));
+              img.on('mouseup', (e) => movePiece(e));
               canvas.add(img);
             });
           }
         }
+      }
+    }
+
+    function selectPiece(e) {
+      if (isWhiteTurn && e.target.data.piece.toUpperCase() === e.target.data.piece) {
+        selectedPiece = e.target;
+        speak(`Selected ${e.target.data.piece}`);
+      } else if (!isWhiteTurn && e.target.data.piece.toLowerCase() === e.target.data.piece) {
+        selectedPiece = e.target;
+        speak(`Selected ${e.target.data.piece}`);
+      }
+    }
+
+    function movePiece(e) {
+      if (selectedPiece) {
+        const target = e.target;
+        if (isMoveValid(selectedPiece.data, target.data)) {
+          const { row, col } = target.data;
+          const { row: srcRow, col: srcCol } = selectedPiece.data;
+
+          // Move the piece
+          game[row][col] = selectedPiece.data.piece;
+          game[srcRow][srcCol] = '';
+
+          // Update the canvas
+          selectedPiece.set({ left: col * 60, top: row * 60 });
+          canvas.renderAll();
+          selectedPiece = null;
+
+          // Change turn
+          isWhiteTurn = !isWhiteTurn;
+          speak(isWhiteTurn ? "White's turn" : "Black's turn");
+        }
+      }
+    }
+
+    function isMoveValid(from, to) {
+      // Basic move validation; you can extend this as needed
+      const { row: fromRow, col: fromCol, piece } = from;
+      const { row: toRow, col: toCol } = to;
+      const rowDiff = Math.abs(fromRow - toRow);
+      const colDiff = Math.abs(fromCol - toCol);
+
+      switch (piece.toLowerCase()) {
+        case 'p':
+          // Pawn move validation
+          if (piece === 'P') {
+            return (fromCol === toCol && (fromRow - toRow === 1 || (fromRow === 6 && fromRow - toRow === 2))) ||
+                   (fromCol !== toCol && fromRow - toRow === 1 && game[toRow][toCol] !== '');
+          }
+          return (fromCol === toCol && (toRow - fromRow === 1 || (fromRow === 1 && toRow - fromRow === 2))) ||
+                 (fromCol !== toCol && toRow - fromRow === 1 && game[toRow][toCol] !== '');
+        case 'r':
+          return fromRow === toRow || fromCol === toCol;
+        case 'n':
+          return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+        case 'b':
+          return rowDiff === colDiff;
+        case 'q':
+          return fromRow === toRow || fromCol === toCol || rowDiff === colDiff;
+        case 'k':
+          return rowDiff <= 1 && colDiff <= 1;
+        default:
+          return false;
       }
     }
 
@@ -171,93 +237,15 @@
         ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
         ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
       ];
-      isWhiteTurn = true;
-      selectedPiece = null;
-      whiteTime = blackTime = 300;
-      clearInterval(timerInterval);
       canvas.clear();
       drawBoard();
       drawPieces();
-      updateTimers();
       startTimer();
-      speak("Game started. White's turn.");
     }
 
     function toggleTTS() {
       isTTSOn = !isTTSOn;
-      document.getElementById('tts-status').textContent = isTTSOn ? "Turn off TTS" : "Turn on TTS";
-    }
-
-    function isKingInCheck(kingRow, kingCol, isWhite) {
-      const opponentPieces = isWhite ? ['r', 'n', 'b', 'q', 'p'] : ['R', 'N', 'B', 'Q', 'P'];
-
-      for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 8; j++) {
-          const piece = game[i][j];
-          if (piece && opponentPieces.includes(piece)) {
-            if (canAttack(kingRow, kingCol, i, j, piece)) {
-              return true;
-            }
-          }
-        }
-      }
-      return false;
-    }
-
-    function canAttack(kingRow, kingCol, pieceRow, pieceCol, piece) {
-      const rowDiff = Math.abs(kingRow - pieceRow);
-      const colDiff = Math.abs(kingCol - pieceCol);
-
-      switch (piece.toLowerCase()) {
-        case 'p': {
-          const direction = piece === 'P' ? -1 : 1;
-          if (colDiff === 1 && rowDiff === direction) {
-            return true;
-          }
-          return false;
-        }
-        case 'r': {
-          if (kingRow === pieceRow || kingCol === pieceCol) {
-            return isPathClear(pieceRow, pieceCol, kingRow, kingCol);
-          }
-          return false;
-        }
-        case 'n': {
-          return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
-        }
-        case 'b': {
-          if (rowDiff === colDiff) {
-            return isPathClear(pieceRow, pieceCol, kingRow, kingCol);
-          }
-          return false;
-        }
-        case 'q': {
-          return (kingRow === pieceRow || kingCol === pieceCol || rowDiff === colDiff) &&
-                 isPathClear(pieceRow, pieceCol, kingRow, kingCol);
-        }
-        case 'k': {
-          return rowDiff <= 1 && colDiff <= 1;
-        }
-        default:
-          return false;
-      }
-    }
-
-    function isPathClear(startRow, startCol, endRow, endCol) {
-      const rowStep = endRow > startRow ? 1 : (endRow < startRow ? -1 : 0);
-      const colStep = endCol > startCol ? 1 : (endCol < startCol ? -1 : 0);
-
-      let currentRow = startRow + rowStep;
-      let currentCol = startCol + colStep;
-
-      while (currentRow !== endRow || currentCol !== endCol) {
-        if (game[currentRow][currentCol] !== '') {
-          return false;
-        }
-        currentRow += rowStep;
-        currentCol += colStep;
-      }
-      return true;
+      document.getElementById('tts-status').textContent = isTTSOn ? 'Turn off TTS' : 'Turn on TTS';
     }
 
     window.onload = startRestartGame;
