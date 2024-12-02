@@ -80,7 +80,9 @@
                                 hasControls: false,
                                 selectable: true,
                                 pieceColor: piece === piece.toUpperCase() ? 'white' : 'black', // Track piece color
-                                pieceType: piece.toLowerCase() // Track piece type
+                                pieceType: piece.toLowerCase(), // Track piece type
+                                startX: col,
+                                startY: row
                             });
 
                             // Handle mouse down event
@@ -121,8 +123,8 @@
             const obj = e.target;
             const pieceType = obj.pieceType;
             const pieceColor = obj.pieceColor;
-            const startX = Math.round((obj.left - squareSize / 2) / squareSize);
-            const startY = Math.round((obj.top - squareSize / 2) / squareSize);
+            const startX = obj.startX;
+            const startY = obj.startY;
             const endX = Math.round(obj.left / squareSize);
             const endY = Math.round(obj.top / squareSize);
 
@@ -153,6 +155,8 @@
                     left: endX * squareSize + squareSize / 2,
                     top: endY * squareSize + squareSize / 2
                 });
+                obj.startX = endX;
+                obj.startY = endY;
                 console.log(`Moved piece to (${endX}, ${endY})`);
             } else {
                 obj.set({
