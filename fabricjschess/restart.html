@@ -25,20 +25,19 @@
     let pieces = [];
     const boardState = Array(8).fill(null).map(() => Array(8).fill(null));
 
-    // Map chess piece codes to image URLs
     const pieceImages = {
-      r: 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg', // Black Rook
-      n: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg', // Black Knight
-      b: 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg', // Black Bishop
-      q: 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg', // Black Queen
-      k: 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg', // Black King
-      p: 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg', // Black Pawn
-      R: 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg', // White Rook
-      N: 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg', // White Knight
-      B: 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg', // White Bishop
-      Q: 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg', // White Queen
-      K: 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg', // White King
-      P: 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg', // White Pawn
+      r: 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+      n: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
+      b: 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
+      q: 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
+      k: 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg',
+      p: 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
+      R: 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
+      N: 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
+      B: 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
+      Q: 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
+      K: 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
+      P: 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg',
     };
 
     function drawBoard() {
@@ -61,10 +60,10 @@
 
     function createPieces() {
       const piecePositions = {
-        'RNBQKBNR': 0, // Row 0 for black
-        'PPPPPPPP': 1, // Row 1 for black
-        'pppppppp': 6, // Row 6 for white
-        'rnbqkbnr': 7  // Row 7 for white
+        'RNBQKBNR': 0,
+        'PPPPPPPP': 1,
+        'pppppppp': 6,
+        'rnbqkbnr': 7
       };
 
       for (const [rowConfig, rowIndex] of Object.entries(piecePositions)) {
@@ -82,8 +81,9 @@
               originY: 'top',
               selectable: true,
               hasControls: false,
-              pieceType: pieceChar,
+              pieceType: pieceChar.toLowerCase(),
               color: pieceChar === pieceChar.toLowerCase() ? 'black' : 'white',
+              moved: false,
             });
 
             pieces.push(img);
@@ -101,40 +101,67 @@
       };
     }
 
+    function isPathClear(from, to) {
+      const rowDiff = Math.sign(to.row - from.row);
+      const colDiff = Math.sign(to.col - from.col);
+      let row = from.row + rowDiff;
+      let col = from.col + colDiff;
+
+      while (row !== to.row || col !== to.col) {
+        if (boardState[row][col]) {
+          return false;
+        }
+        row += rowDiff;
+        col += colDiff;
+      }
+      return true;
+    }
+
     function isValidMove(piece, from, to) {
-      const pieceType = piece.pieceType.toLowerCase();
+      const pieceType = piece.pieceType;
       const direction = piece.color === 'black' ? 1 : -1;
+      const rowDiff = to.row - from.row;
+      const colDiff = to.col - from.col;
 
       if (pieceType === 'p') {
-        const startRow = piece.color === 'black' ? 1 : 6;
-        const rowDiff = to.row - from.row;
-        const colDiff = Math.abs(to.col - from.col);
-
-        if (colDiff === 0 && !boardState[to.row][to.col]) {
-          if (rowDiff === direction || (rowDiff === 2 * direction && from.row === startRow)) {
+        if (colDiff === 0 && boardState[to.row][to.col] === null) {
+          if (rowDiff === direction || (rowDiff === 2 * direction && !piece.moved)) {
             return true;
           }
         }
-
-        if (colDiff === 1 && rowDiff === direction && boardState[to.row][to.col]?.color !== piece.color) {
+        if (Math.abs(colDiff) === 1 && rowDiff === direction && boardState[to.row][to.col]?.color !== piece.color) {
           return true;
         }
       }
 
       if (pieceType === 'r') {
-        if (from.row === to.row || from.col === to.col) {
-          const rowDiff = Math.sign(to.row - from.row);
-          const colDiff = Math.sign(to.col - from.col);
-          let row = from.row + rowDiff;
-          let col = from.col + colDiff;
+        if ((from.row === to.row || from.col === to.col) && isPathClear(from, to)) {
+          return true;
+        }
+      }
 
-          while (row !== to.row || col !== to.col) {
-            if (boardState[row][col]) return false;
-            row += rowDiff;
-            col += colDiff;
-          }
+      if (pieceType === 'n') {
+        if ((Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) ||
+            (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2)) {
+          return true;
+        }
+      }
 
-          return boardState[to.row][to.col]?.color !== piece.color;
+      if (pieceType === 'b') {
+        if (Math.abs(rowDiff) === Math.abs(colDiff) && isPathClear(from, to)) {
+          return true;
+        }
+      }
+
+      if (pieceType === 'q') {
+        if ((from.row === to.row || from.col === to.col || Math.abs(rowDiff) === Math.abs(colDiff)) && isPathClear(from, to)) {
+          return true;
+        }
+      }
+
+      if (pieceType === 'k') {
+        if (Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1) {
+          return true;
         }
       }
 
@@ -144,13 +171,13 @@
     function updateBoardState(piece, from, to) {
       boardState[from.row][from.col] = null;
       boardState[to.row][to.col] = piece;
+      piece.moved = true;
     }
 
     function setupPieceMovement() {
       canvas.on('object:moving', (e) => {
         const piece = e.target;
         const { col, row } = getBoardPosition(piece.left, piece.top);
-
         piece.left = col * squareSize;
         piece.top = row * squareSize;
       });
