@@ -177,9 +177,13 @@
     function setupPieceMovement() {
       canvas.on('object:moving', (e) => {
         const piece = e.target;
-        const { col, row } = getBoardPosition(piece.left, piece.top);
-        piece.left = col * squareSize;
-        piece.top = row * squareSize;
+        const from = getBoardPosition(piece.startLeft, piece.startTop);
+        const to = getBoardPosition(piece.left, piece.top);
+
+        if (!isValidMove(piece, from, to)) {
+          piece.left = piece.startLeft;
+          piece.top = piece.startTop;
+        }
       });
 
       canvas.on('object:moved', (e) => {
@@ -187,14 +191,10 @@
         const from = getBoardPosition(piece.startLeft, piece.startTop);
         const to = getBoardPosition(piece.left, piece.top);
 
-        if (!isValidMove(piece, from, to)) {
-          piece.left = piece.startLeft;
-          piece.top = piece.startTop;
-        } else {
+        if (isValidMove(piece, from, to)) {
           updateBoardState(piece, from, to);
           piece.startLeft = piece.left;
           piece.startTop = piece.top;
-
           if (boardState[to.row][to.col]) {
             canvas.remove(boardState[to.row][to.col]);
           }
