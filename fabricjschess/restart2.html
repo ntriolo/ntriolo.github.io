@@ -3,21 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fabric.js Chessboard with Moveable Pieces</title>
+    <title>Fabric.js Chessboard with Enhanced Features</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
         canvas {
             border: 1px solid #000;
         }
+        #history {
+            width: 400px;
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #000;
+            margin-top: 10px;
+            padding: 5px;
+        }
+        #hud {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
+    <div id="hud">
+        <div id="white-timer">White: 00:00</div>
+        <div id="black-timer">Black: 00:00</div>
+    </div>
     <canvas id="canvas" width="400" height="400"></canvas>
+    <div id="history"></div>
     <script>
-        // Initialize Fabric.js canvas
         const canvas = new fabric.Canvas('canvas');
-        const squareSize = 50; // Size of each square
-        let turn = 'white'; // White goes first
+        const squareSize = 50;
+        let turn = 'white';
+        const history = [];
+        let whiteTime = 300; // 5 minutes
+        let blackTime = 300; // 5 minutes
+        let timerInterval;
+
+        // Initialize the timers
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (turn === 'white') {
+                    whiteTime--;
+                    updateTimerDisplay('white');
+                } else {
+                    blackTime--;
+                    updateTimerDisplay('black');
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay(color) {
+            const timerElement = document.getElementById(`${color}-timer`);
+            const time = color === 'white' ? whiteTime : blackTime;
+            const minutes = String(Math.floor(time / 60)).padStart(2, '0');
+            const seconds = String(time % 60).padStart(2, '0');
+            timerElement.innerText = `${color.charAt(0).toUpperCase() + color.slice(1)}: ${minutes}:${seconds}`;
+            if (time <= 0) {
+                clearInterval(timerInterval);
+                alert(`${color.charAt(0).toUpperCase() + color.slice(1)} time's up!`);
+            }
+        }
 
         // Create the chessboard
         function createChessboard() {
@@ -27,7 +74,7 @@
                     const square = new fabric.Rect({
                         left: col * squareSize,
                         top: row * squareSize,
-                        fill: isLightSquare ? '#eee' : '#8B4513', // Dark brown for dark squares
+                        fill: isLightSquare ? '#eee' : '#8B4513',
                         width: squareSize,
                         height: squareSize,
                         selectable: false
@@ -69,7 +116,6 @@
                 for (let col = 0; col < 8; col++) {
                     const piece = boardState[row][col];
                     if (piece !== '.') {
-                        // Load the SVG piece
                         fabric.loadSVGFromURL(pieces[piece], function(objects, options) {
                             const svgPiece = fabric.util.groupSVGElements(objects, options);
                             svgPiece.set({
@@ -79,31 +125,25 @@
                                 originY: 'center',
                                 hasControls: false,
                                 selectable: true,
-                                pieceColor: piece === piece.toUpperCase() ? 'white' : 'black' // Track piece color
+                                pieceColor: piece === piece.toUpperCase() ? 'white' : 'black'
                             });
-
-                            // Handle mouse down event
+                            
+                            // Mouse event handlers
                             svgPiece.on('mousedown', function() {
+                                console.log(`Piece selected: ${piece}`);
                                 if ((turn === 'white' && this.pieceColor === 'white') || 
                                     (turn === 'black' && this.pieceColor === 'black')) {
-                                    console.log(`Selected ${this.pieceColor} piece`);
-                                    this.set({ opacity: 0.5 }); // Dim the selected piece
                                     canvas.setActiveObject(this);
-                                } else {
-                                    console.log(`It's not your turn to move ${this.pieceColor} pieces.`);
                                 }
                             });
-
-                            // Handle mouse up event
                             svgPiece.on('mouseup', function() {
-                                if (canvas.getActiveObject() === this) {
-                                    console.log(`Released ${this.pieceColor} piece`);
-                                    this.set({ opacity: 1 }); // Restore opacity
-                                    turn = turn === 'white' ? 'black' : 'white'; // Switch turns
-                                    console.log(`Turn switched to ${turn}`);
+                                const activeObject = canvas.getActiveObject();
+                                if (activeObject === this) {
+                                    const fromPosition = coordsToPosition(this.left, this.top);
+                                    console.log(`Move from: ${fromPosition}`);
+                                    alert(`Select destination square for ${piece} (current position: ${fromPosition})`);
                                 }
                             });
-
                             canvas.add(svgPiece);
                         });
                     }
@@ -111,19 +151,59 @@
             }
         }
 
-        // Initialize the chessboard and add the pieces
+        function coordsToPosition(left, top) {
+            const col = Math.floor(left / squareSize);
+            const row = 8 - Math.floor(top / squareSize);
+            return String.fromCharCode(col + 'a'.charCodeAt(0)) + row;
+        }
+
+        function updateHistory(move) {
+            history.push(move);
+            const historyDiv = document.getElementById('history');
+            historyDiv.innerHTML = history.join('<br/>');
+        }
+
+        function movePiece(from, to) {
+            const piece = canvas.getActiveObject();
+            if (!piece) return;
+
+            const fromCoords = positionToCoords(from);
+            const toCoords = positionToCoords(to);
+
+            if (piece && piece.left === fromCoords.x && piece.top === fromCoords.y) {
+                piece.set({
+                    left: toCoords.x,
+                    top: toCoords.y,
+                });
+                piece.setCoords();
+                canvas.renderAll();
+                updateHistory(`${piece.pieceColor} moves from ${from} to ${to}`);
+                turn = turn === 'white' ? 'black' : 'white'; // Switch turns
+                startTimer(); // Restart timer for the next player
+            }
+        }
+
+        function positionToCoords(position) {
+            const col = position.charCodeAt(0) - 'a'.charCodeAt(0);
+            const row = 8 - parseInt(position[1]);
+            return {
+                x: col * squareSize + squareSize / 2,
+                y: row * squareSize + squareSize / 2
+            };
+        }
+
+        window.addEventListener('keydown', function(event) {
+            if (event.key.match(/[a-h][1-8]/)) { // Check for valid square
+                const from = prompt("Enter the piece's current position (e.g., e2):");
+                if (from) {
+                    movePiece(from, event.key); // Move to the square indicated by the key
+                }
+            }
+        });
+
         createChessboard();
         addPieces();
-
-        // Enable piece dragging
-        canvas.on('object:moving', function(e) {
-            const obj = e.target;
-            obj.set({
-                left: Math.round(obj.left / squareSize) * squareSize + squareSize / 2,
-                top: Math.round(obj.top / squareSize) * squareSize + squareSize / 2
-            });
-            console.log(`Moving piece to (${obj.left}, ${obj.top})`);
-        });
+        startTimer();
     </script>
 </body>
 </html>
