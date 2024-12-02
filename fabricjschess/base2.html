@@ -79,7 +79,8 @@
                                 originY: 'center',
                                 hasControls: false,
                                 selectable: true,
-                                pieceColor: piece === piece.toUpperCase() ? 'white' : 'black' // Track piece color
+                                pieceColor: piece === piece.toUpperCase() ? 'white' : 'black', // Track piece color
+                                pieceType: piece.toLowerCase() // Track piece type
                             });
 
                             // Handle mouse down event
@@ -115,14 +116,51 @@
         createChessboard();
         addPieces();
 
-        // Enable piece dragging
+        // Enable piece dragging with pawn movement rules
         canvas.on('object:moving', function(e) {
             const obj = e.target;
-            obj.set({
-                left: Math.round(obj.left / squareSize) * squareSize + squareSize / 2,
-                top: Math.round(obj.top / squareSize) * squareSize + squareSize / 2
-            });
-            console.log(`Moving piece to (${obj.left}, ${obj.top})`);
+            const pieceType = obj.pieceType;
+            const pieceColor = obj.pieceColor;
+            const startX = Math.round((obj.left - squareSize / 2) / squareSize);
+            const startY = Math.round((obj.top - squareSize / 2) / squareSize);
+            const endX = Math.round(obj.left / squareSize);
+            const endY = Math.round(obj.top / squareSize);
+
+            let validMove = false;
+
+            if (pieceType === 'p') {
+                if (pieceColor === 'white') {
+                    if (startY === 6 && endY === 4 && startX === endX) {
+                        validMove = true; // Initial two-square move
+                    } else if (endY === startY - 1 && startX === endX) {
+                        validMove = true; // Single square move
+                    } else if (endY === startY - 1 && Math.abs(endX - startX) === 1) {
+                        validMove = true; // Diagonal capture
+                    }
+                } else if (pieceColor === 'black') {
+                    if (startY === 1 && endY === 3 && startX === endX) {
+                        validMove = true; // Initial two-square move
+                    } else if (endY === startY + 1 && startX === endX) {
+                        validMove = true; // Single square move
+                    } else if (endY === startY + 1 && Math.abs(endX - startX) === 1) {
+                        validMove = true; // Diagonal capture
+                    }
+                }
+            }
+
+            if (validMove) {
+                obj.set({
+                    left: endX * squareSize + squareSize / 2,
+                    top: endY * squareSize + squareSize / 2
+                });
+                console.log(`Moved piece to (${endX}, ${endY})`);
+            } else {
+                obj.set({
+                    left: startX * squareSize + squareSize / 2,
+                    top: startY * squareSize + squareSize / 2
+                });
+                console.log(`Invalid move for ${pieceType} piece`);
+            }
         });
     </script>
 </body>
