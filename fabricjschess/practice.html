@@ -1,242 +1,98 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chess Game with Fabric.js</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(45deg, #283048, #859398);
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      font-family: Arial, sans-serif;
-    }
-    .controls {
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    canvas {
-      border: 2px solid #000;
-    }
-    button {
-      margin: 5px;
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .timer {
-      font-size: 24px;
-      margin: 10px;
-    }
-  </style>
-</head>
-<body>
-  <div class="controls">
-    <button onclick="startRestartGame()">Start/Restart Game</button>
-    <button onclick="toggleTTS()">
-      <span id="tts-status">Turn off TTS</span>
-    </button>
-  </div>
-  <div class="timer">
-    <span id="white-timer">White: 5:00</span> | 
-    <span id="black-timer">Black: 5:00</span>
-  </div>
-  <canvas id="chessboard" width="480" height="480"></canvas>
-  <script>
-    const canvas = new fabric.Canvas('chessboard');
-    const pieceImages = {
-      'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
-      'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
-      'b': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
-      'q': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
-      'k': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg',
-      'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
-      'R': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
-      'N': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
-      'B': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
-      'Q': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
-      'K': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
-      'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
-    };
-    let game = [];
-    let isWhiteTurn = true;
-    let selectedPiece = null;
-    let isTTSOn = true;
+// Timer Variables
+let whiteTime = 300; // 5 minutes in seconds
+let blackTime = 300;
+let currentPlayer = "white"; // Start with white
+let timerInterval;
 
-    let whiteTime = 300; // 5 minutes in seconds
-    let blackTime = 300; // 5 minutes in seconds
-    let whiteTimerInterval;
-    let blackTimerInterval;
+// Timer Display
+const whiteTimerDisplay = document.createElement("div");
+whiteTimerDisplay.style.fontSize = "20px";
+whiteTimerDisplay.style.color = "black";
+whiteTimerDisplay.style.margin = "10px";
+whiteTimerDisplay.textContent = "White Time: 5:00";
+document.body.appendChild(whiteTimerDisplay);
 
-    function speak(text) {
-      if (isTTSOn) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        window.speechSynthesis.speak(utterance);
+const blackTimerDisplay = document.createElement("div");
+blackTimerDisplay.style.fontSize = "20px";
+blackTimerDisplay.style.color = "black";
+blackTimerDisplay.style.margin = "10px";
+blackTimerDisplay.textContent = "Black Time: 5:00";
+document.body.appendChild(blackTimerDisplay);
+
+// Update Timer Display
+function updateTimerDisplay() {
+  const whiteMinutes = Math.floor(whiteTime / 60);
+  const whiteSeconds = whiteTime % 60;
+  const blackMinutes = Math.floor(blackTime / 60);
+  const blackSeconds = blackTime % 60;
+
+  whiteTimerDisplay.textContent = `White Time: ${whiteMinutes}:${whiteSeconds
+    .toString()
+    .padStart(2, "0")}`;
+  blackTimerDisplay.textContent = `Black Time: ${blackMinutes}:${blackSeconds
+    .toString()
+    .padStart(2, "0")}`;
+}
+
+// Switch Timer
+function switchTimer() {
+  clearInterval(timerInterval);
+  if (currentPlayer === "white") {
+    currentPlayer = "black";
+    startTimer(() => blackTime--);
+  } else {
+    currentPlayer = "white";
+    startTimer(() => whiteTime--);
+  }
+}
+
+// Start Timer
+function startTimer(decrementFunction) {
+  timerInterval = setInterval(() => {
+    decrementFunction();
+    updateTimerDisplay();
+
+    if (whiteTime <= 0 || blackTime <= 0) {
+      clearInterval(timerInterval);
+      alert(`${whiteTime <= 0 ? "Black" : "White"} wins by timeout!`);
+    }
+  }, 1000);
+}
+
+// Initialize Timer
+startTimer(() => whiteTime--);
+
+// Example: Call switchTimer() when a player makes a move.
+canvas.on("mouse:down", (e) => {
+  const mouseX = e.pointer.x;
+  const mouseY = e.pointer.y;
+
+  if (selectedPiece && !movingPiece) {
+    movingPiece = true;
+
+    const col = Math.floor(mouseX / tileSize);
+    const row = Math.floor(mouseY / tileSize);
+
+    if (col >= 0 && col < 8 && row >= 0 && row < 8) {
+      selectedPiece.left = col * tileSize;
+      selectedPiece.top = row * tileSize;
+
+      if (ttsEnabled) {
+        const position = `${String.fromCharCode(65 + col)}${8 - row}`;
+        const message = `${selectedPiece.name} to ${position}`;
+        const utterance = new SpeechSynthesisUtterance(message);
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        speechSynthesis.speak(utterance);
       }
-    }
 
-    function drawBoard() {
-      const tileSize = 60;
-      for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 8; j++) {
-          const isLight = (i + j) % 2 === 0;
-          const rect = new fabric.Rect({
-            left: j * tileSize,
-            top: i * tileSize,
-            width: tileSize,
-            height: tileSize,
-            fill: isLight ? '#f0d9b5' : '#b58863',
-            selectable: false
-          });
-          canvas.add(rect);
-        }
-      }
-    }
-
-    function drawPieces() {
-      const tileSize = 60;
-      canvas.getObjects('image').forEach(obj => canvas.remove(obj)); // Clear previous pieces
-      for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 8; j++) {
-          const piece = game[i][j];
-          if (piece) {
-            fabric.Image.fromURL(pieceImages[piece], (img) => {
-              img.set({
-                left: j * tileSize,
-                top: i * tileSize,
-                scaleX: tileSize / img.width,
-                scaleY: tileSize / img.height,
-                hasControls: false,
-                hasBorders: false,
-                selectable: true,
-                data: { row: i, col: j, piece }
-              });
-
-              // Add drag-and-drop functionality
-              img.on('mousedown', function () {
-                selectedPiece = img.data;
-                console.log(`Selected ${img.data.piece} at (${img.data.row}, ${img.data.col})`);
-                speak(`Selected ${img.data.piece}`);
-              });
-
-              img.on('mouseup', function (options) {
-                if (selectedPiece) {
-                  const startRow = selectedPiece.row;
-                  const startCol = selectedPiece.col;
-                  const endRow = Math.floor(img.top / tileSize);
-                  const endCol = Math.floor(img.left / tileSize);
-
-                  if (isValidMove(selectedPiece.piece, startRow, startCol, endRow, endCol)) {
-                    // Update the game state
-                    game[endRow][endCol] = selectedPiece.piece;
-                    game[startRow][startCol] = '';
-                    drawPieces();
-                    selectedPiece = null;
-                    switchTurn();
-                  } else {
-                    speak("Invalid move");
-                    selectedPiece = null;
-                  }
-                }
-              });
-
-              canvas.add(img);
-            });
-          }
-        }
-      }
-    }
-
-    function startRestartGame() {
-      clearInterval(whiteTimerInterval);
-      clearInterval(blackTimerInterval);
-      whiteTime = 300;
-      blackTime = 300;
-      document.getElementById('white-timer').textContent = 'White: 5:00';
-      document.getElementById('black-timer').textContent = 'Black: 5:00';
-      game = [
-        ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
-        ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
-        ['', '', '', '', '', '', '', ''],
-        ['', '', '', '', '', '', '', ''],
-        ['', '', '', '', '', '', '', ''],
-        ['', '', '', '', '', '', '', ''],
-        ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
-        ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
-      ];
-      isWhiteTurn = true;
       selectedPiece = null;
-      canvas.clear();
-      drawBoard();
-      drawPieces();
-      startTimer();
-      speak("Game started. White's turn.");
+      canvas.renderAll();
+
+      // Switch Timer After Move
+      switchTimer();
     }
 
-    function toggleTTS() {
-      isTTSOn = !isTTSOn;
-      document.getElementById('tts-status').textContent = isTTSOn ? "Turn off TTS" : "Turn on TTS";
-    }
-
-    function startTimer() {
-      if (isWhiteTurn) {
-        clearInterval(blackTimerInterval);
-        whiteTimerInterval = setInterval(() => {
-          if (whiteTime > 0) {
-            whiteTime--;
-            document.getElementById('white-timer').textContent = `White: ${formatTime(whiteTime)}`;
-          } else {
-            endGame("Black wins! White ran out of time.");
-          }
-        }, 1000);
-      } else {
-        clearInterval(whiteTimerInterval);
-        blackTimerInterval = setInterval(() => {
-          if (blackTime > 0) {
-            blackTime--;
-            document.getElementById('black-timer').textContent = `Black: ${formatTime(blackTime)}`;
-          } else {
-            endGame("White wins! Black ran out of time.");
-          }
-        }, 1000);
-      }
-    }
-
-    function switchTurn() {
-      isWhiteTurn = !isWhiteTurn;
-      startTimer();
-      speak(isWhiteTurn ? "White's turn" : "Black's turn");
-    }
-
-    function formatTime(seconds) {
-      const mins = Math.floor(seconds / 60);
-      const secs = seconds % 60;
-      return `${mins}:${secs.toString().padStart(2, '0')}`;
-    }
-
-    function endGame(message) {
-      clearInterval(whiteTimerInterval);
-      clearInterval(blackTimerInterval);
-      alert(message);
-      speak(message);
-      startRestartGame();
-    }
-
-    function isValidMove(piece, startRow, startCol, endRow, endCol) {
-      // Simplified for demonstration
-      return true; 
-    }
-
-    drawBoard();
-    startRestartGame(); // Initialize the game
-  </script>
-</body>
-</html>
+    movingPiece = false;
+  }
+});
