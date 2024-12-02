@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chess Game with Timer</title>
+  <title>Chess Game with Fabric.js</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
   <style>
     body {
@@ -20,14 +20,6 @@
     .controls {
       margin-bottom: 20px;
       text-align: center;
-    }
-    .timer {
-      margin-bottom: 10px;
-      font-size: 20px;
-      color: white;
-      display: flex;
-      justify-content: space-around;
-      width: 100%;
     }
     canvas {
       border: 2px solid #000;
@@ -48,10 +40,6 @@
     <button onclick="toggleTTS()">
       <span id="tts-status">Turn off TTS</span>
     </button>
-  </div>
-  <div class="timer">
-    <div id="white-timer">White: 5:00</div>
-    <div id="black-timer">Black: 5:00</div>
   </div>
   <canvas id="chessboard" width="480" height="480"></canvas>
   <script>
@@ -74,41 +62,6 @@
     let isWhiteTurn = true;
     let selectedPiece = null;
     let isTTSOn = true;
-
-    // Timer variables
-    let whiteTime = 300; // 5 minutes in seconds
-    let blackTime = 300;
-    let timerInterval;
-
-    function updateTimers() {
-      const formatTime = (time) => {
-        const minutes = Math.floor(time / 60);
-        const seconds = time % 60;
-        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-      };
-      document.getElementById('white-timer').textContent = `White: ${formatTime(whiteTime)}`;
-      document.getElementById('black-timer').textContent = `Black: ${formatTime(blackTime)}`;
-    }
-
-    function startTimer() {
-      clearInterval(timerInterval);
-      timerInterval = setInterval(() => {
-        if (isWhiteTurn) {
-          whiteTime--;
-          if (whiteTime <= 0) {
-            clearInterval(timerInterval);
-            alert("Black wins by timeout!");
-          }
-        } else {
-          blackTime--;
-          if (blackTime <= 0) {
-            clearInterval(timerInterval);
-            alert("White wins by timeout!");
-          }
-        }
-        updateTimers();
-      }, 1000);
-    }
 
     function speak(text) {
       if (isTTSOn) {
@@ -173,13 +126,9 @@
       ];
       isWhiteTurn = true;
       selectedPiece = null;
-      whiteTime = blackTime = 300;
-      clearInterval(timerInterval);
       canvas.clear();
       drawBoard();
       drawPieces();
-      updateTimers();
-      startTimer();
       speak("Game started. White's turn.");
     }
 
@@ -188,20 +137,93 @@
       document.getElementById('tts-status').textContent = isTTSOn ? "Turn off TTS" : "Turn on TTS";
     }
 
-    canvas.on('mouse:down', (event) => {
-      const pointer = canvas.getPointer(event.e);
-      const row = Math.floor(pointer.y / 60);
-      const col = Math.floor(pointer.x / 60);
+    function isKingInCheck(kingRow, kingCol, isWhite) {
+      const opponentPieces = isWhite ? ['r', 'n', 'b', 'q', 'k', 'p'] : ['R', 'N', 'B', 'Q', 'K', 'P'];
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          const piece = game[i][j];
+          if (piece && opponentPieces.includes(piece)) {
+            if (isValidMove(piece, i, j, kingRow, kingCol)) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    function isValidMove(piece, startRow, startCol, endRow, endCol) {
+      const rowDiff = endRow - startRow;
+      const colDiff = Math.abs(startCol - endCol);
+
+      switch (piece.toLowerCase()) {
+        case 'p': {
+          const direction = piece === 'P' ? -1 : 1; // White moves up (-1), Black moves down (+1)
+          const startRowPawn = piece === 'P' ? 6 : 1;
+          return (
+            (colDiff === 0 &&
+              ((rowDiff === direction && game[endRow][endCol] === '') ||
+               (rowDiff === 2 * direction && game[endRow][endCol] === '' && startRow === startRowPawn && game[startRow + direction][startCol] === ''))) ||
+            (colDiff === 1 && rowDiff === direction && game[endRow][endCol] !== '' && isOpponentPiece(endRow, endCol))
+          );
+        }
+        case 'r':
+          return (startRow === endRow || startCol === endCol) && isPathClear(startRow, startCol, endRow, endCol);
+        case 'n':
+          return (Math.abs(rowDiff) === 2 && colDiff === 1) || (Math.abs(rowDiff) === 1 && colDiff === 2);
+        case 'b':
+          return Math.abs(rowDiff) === colDiff && isPathClear(startRow, startCol, endRow, endCol);
+        case 'q':
+          return (
+            (startRow === endRow || startCol === endCol || Math.abs(rowDiff) === colDiff) &&
+            isPathClear(startRow, startCol, endRow, endCol)
+          );
+        case 'k':
+          return Math.abs(rowDiff) <= 1 && colDiff <= 1;
+        default:
+          return false;
+      }
+    }
+
+    function isPathClear(startRow, startCol, endRow, endCol) {
+      const rowStep = startRow < endRow ? 1 : startRow > endRow ? -1 : 0;
+      const colStep = startCol < endCol ? 1 : startCol > endCol ? -1 : 0;
+      let row = startRow + rowStep;
+      let col = startCol + colStep;
+      while (row !== endRow || col !== endCol) {
+        if (game[row][col] !== '') {
+          return false;
+        }
+        row += rowStep;
+        col += colStep;
+      }
+      return true;
+    }
+
+    function isOpponentPiece(row, col) {
       const piece = game[row][col];
+      return (isWhiteTurn && piece === piece.toLowerCase()) || (!isWhiteTurn && piece === piece.toUpperCase());
+    }
+
+    canvas.on('mouse:down', (e) => {
+      const tileSize = 60;
+      const row = Math.floor(e.pointer.y / tileSize);
+      const col = Math.floor(e.pointer.x / tileSize);
+      const piece = game[row][col];
+
       if (selectedPiece) {
-        const { row: startRow, col: startCol, piece: selectedPieceType } = selectedPiece;
-        if (isValidMove(selectedPieceType)) {
-          // ... logic for movement...
-          game[row][col] = selectedPieceType;
+        const [startRow, startCol] = [selectedPiece.row, selectedPiece.col];
+        if (isValidMove(selectedPiece.piece, startRow, startCol, row, col)) {
+          game[row][col] = selectedPiece.piece;
           game[startRow][startCol] = '';
           drawPieces();
           isWhiteTurn = !isWhiteTurn;
-          speak(`${selectedPieceType.toUpperCase()} moved to ${String.fromCharCode(97 + col)}${8 - row}`);
+
+          if (isKingInCheck(row, col, isWhiteTurn)) {
+            alert(`${isWhiteTurn ? 'White' : 'Black'}'s king is in check!`);
+          }
+
+          speak(`${selectedPiece.piece.toUpperCase()} moved to ${String.fromCharCode(97 + col)}${8 - row}`);
           speak(isWhiteTurn ? "White's turn." : "Black's turn.");
         } else {
           speak("Invalid move.");
@@ -213,12 +235,6 @@
       }
     });
 
-    function isValidMove(piece) {
-      // Simplified move validation (you can expand this logic to include checks for each type of piece)
-      return true; // Assume the move is valid for now
-    }
-
-    // Start the game when the page loads
     window.onload = startRestartGame;
   </script>
 </body>
