@@ -127,7 +127,6 @@
 
       if (to.row < 0 || to.row >= boardSize || to.col < 0 || to.col >= boardSize) return false;
 
-      // Pawn logic
       if (pieceType === 'p') {
         if (colDiff === 0 && boardState[to.row][to.col] === null) {
           if (rowDiff === direction || (rowDiff === 2 * direction && !piece.moved && boardState[from.row + direction][from.col] === null)) {
@@ -139,14 +138,12 @@
         }
       }
 
-      // Rook logic
       if (pieceType === 'r') {
         if ((from.row === to.row || from.col === to.col) && isPathClear(from, to)) {
           return true;
         }
       }
 
-      // Knight logic
       if (pieceType === 'n') {
         if ((Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) ||
             (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2)) {
@@ -154,21 +151,18 @@
         }
       }
 
-      // Bishop logic
       if (pieceType === 'b') {
         if (Math.abs(rowDiff) === Math.abs(colDiff) && isPathClear(from, to)) {
           return true;
         }
       }
 
-      // Queen logic
       if (pieceType === 'q') {
         if ((from.row === to.row || from.col === to.col || Math.abs(rowDiff) === Math.abs(colDiff)) && isPathClear(from, to)) {
           return true;
         }
       }
 
-      // King logic
       if (pieceType === 'k') {
         if (Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1) {
           return true;
@@ -190,8 +184,12 @@
         const from = getBoardPosition(piece.startLeft, piece.startTop);
         const to = getBoardPosition(piece.left, piece.top);
 
+        // Temporarily move piece visually, but check move validity when it's released
         if (!isValidMove(piece, from, to)) {
-          e.cancel = true; // Prevents the piece from moving if the move is invalid
+          e.target.set({
+            left: piece.startLeft,
+            top: piece.startTop
+          });
         }
       });
 
