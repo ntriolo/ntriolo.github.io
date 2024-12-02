@@ -182,8 +182,13 @@
                                 if (selectedPiece) {
                                     const fromPosition = coordsToPosition(selectedPiece.left, selectedPiece.top);
                                     const toPosition = coordsToPosition(this.left, this.top);
-                                    movePiece(fromPosition, toPosition);
-                                    selectedPiece = null;
+                                    if (isValidMove(selectedPiece, fromPosition, toPosition)) {
+                                        movePiece(fromPosition, toPosition);
+                                        selectedPiece = null;
+                                    } else {
+                                        alert('Invalid move');
+                                        selectedPiece = null;
+                                    }
                                 }
                             });
                             canvas.add(svgPiece);
@@ -221,6 +226,44 @@
                 updateHistory(`${from} to ${to}`);
                 turn = turn === 'white' ? 'black' : 'white';
                 startTimer();
+            }
+        }
+
+        function isValidMove(piece, from, to) {
+            // Implement basic movement rules for each piece
+            const fromCol = from.charCodeAt(0);
+            const fromRow = parseInt(from[1]);
+            const toCol = to.charCodeAt(0);
+            const toRow = parseInt(to[1]);
+
+            switch (piece.type) {
+                case 'r': // Rook
+                case 'R':
+                    return fromCol === toCol || fromRow === toRow;
+                case 'n': // Knight
+                case 'N':
+                    return (Math.abs(fromCol - toCol) === 2 && Math.abs(fromRow - toRow) === 1) ||
+                           (Math.abs(fromCol - toCol) === 1 && Math.abs(fromRow - toRow) === 2);
+                case 'b': // Bishop
+                case 'B':
+                    return Math.abs(fromCol - toCol) === Math.abs(fromRow - toRow);
+                case 'q': // Queen
+                case 'Q':
+                    return fromCol === toCol || fromRow === toRow || 
+                           Math.abs(fromCol - toCol) === Math.abs(fromRow - toRow);
+                case 'k': // King
+                case 'K':
+                    return Math.abs(fromCol - toCol) <= 1 && Math.abs(fromRow - toRow) <= 1;
+                case 'p': // Pawn
+                    if (piece.pieceColor === 'white') {
+                        return (fromCol === toCol && fromRow + 1 === toRow) ||
+                               (fromCol === toCol && fromRow === 2 && toRow === 4);
+                    } else {
+                        return (fromCol === toCol && fromRow - 1 === toRow) ||
+                               (fromCol === toCol && fromRow === 7 && toRow === 5);
+                    }
+                default:
+                    return false;
             }
         }
 
