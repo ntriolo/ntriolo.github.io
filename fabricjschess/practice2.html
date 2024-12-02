@@ -74,7 +74,6 @@
     let isWhiteTurn = true;
     let selectedPiece = null;
     let isTTSOn = true;
-    let enPassantTarget = null;
 
     // Timer variables
     let whiteTime = 300; // 5 minutes in seconds
@@ -99,14 +98,12 @@
           if (whiteTime <= 0) {
             clearInterval(timerInterval);
             alert("Black wins by timeout!");
-            return;
           }
         } else {
           blackTime--;
           if (blackTime <= 0) {
             clearInterval(timerInterval);
             alert("White wins by timeout!");
-            return;
           }
         }
         updateTimers();
@@ -121,7 +118,9 @@
     }
 
     function drawBoard() {
+      console.log("Drawing the board...");
       const tileSize = 60;
+      canvas.clear(); // Clear the canvas before drawing
       for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
           const isLight = (i + j) % 2 === 0;
@@ -139,6 +138,7 @@
     }
 
     function drawPieces() {
+      console.log("Drawing pieces...");
       const tileSize = 60;
       canvas.getObjects('image').forEach(obj => canvas.remove(obj));
       for (let i = 0; i < 8; i++) {
@@ -164,6 +164,7 @@
     }
 
     function startRestartGame() {
+      console.log("Starting or restarting the game...");
       game = [
         ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
         ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
@@ -178,7 +179,6 @@
       selectedPiece = null;
       whiteTime = blackTime = 300;
       clearInterval(timerInterval);
-      canvas.clear();
       drawBoard();
       drawPieces();
       updateTimers();
@@ -193,25 +193,15 @@
 
     canvas.on('mouse:down', (event) => {
       const pointer = canvas.getPointer(event.e);
-      const row
       const row = Math.floor(pointer.y / 60);
       const col = Math.floor(pointer.x / 60);
       const piece = game[row][col];
-
       if (selectedPiece) {
         const { row: startRow, col: startCol, piece: selectedPieceType } = selectedPiece;
-
         if (isValidMove(selectedPieceType, startRow, startCol, row, col)) {
-          // Check for special moves like en passant
-          if (selectedPieceType.toLowerCase() === 'p' && Math.abs(startRow - row) === 1 && Math.abs(startCol - col) === 1 && game[row][col] === '') {
-            // En passant logic here if applicable
-            game[row][col] = ''; // Remove captured pawn
-            game[row][col] = selectedPieceType; // Move pawn to the new location
-          } else {
-            game[row][col] = selectedPieceType;
-            game[startRow][startCol] = '';
-          }
-
+          // Move the piece
+          game[row][col] = selectedPieceType;
+          game[startRow][startCol] = '';
           drawPieces();
           isWhiteTurn = !isWhiteTurn;
           speak(`${selectedPieceType.toUpperCase()} moved to ${String.fromCharCode(97 + col)}${8 - row}`);
@@ -227,85 +217,14 @@
     });
 
     function isValidMove(piece, startRow, startCol, endRow, endCol) {
-      // Basic validation based on piece type
+      // Basic validation for each piece type (expand as needed)
       const rowDiff = Math.abs(endRow - startRow);
       const colDiff = Math.abs(endCol - startCol);
-
-      switch (piece.toLowerCase()) {
-        case 'p': // Pawn movement
-          if (piece === 'P') { // White pawn
-            if (startCol === endCol && rowDiff === 1 && game[endRow][endCol] === '') {
-              return true; // Forward move
-            }
-            if (startCol === endCol && startRow === 1 && rowDiff === 2 && game[endRow][endCol] === '' && game[startRow + 1][startCol] === '') {
-              return true; // First double move
-            }
-            if (rowDiff === 1 && colDiff === 1 && game[endRow][endCol] !== '' && game[endRow][endCol].toLowerCase() !== piece) {
-              return true; // Capture
-            }
-            break;
-          } else { // Black pawn
-            if (startCol === endCol && rowDiff === 1 && game[endRow][endCol] === '') {
-              return true; // Forward move
-            }
-            if (startCol === endCol && startRow === 6 && rowDiff === 2 && game[endRow][endCol] === '' && game[startRow - 1][startCol] === '') {
-              return true; // First double move
-            }
-            if (rowDiff === 1 && colDiff === 1 && game[endRow][endCol] !== '' && game[endRow][endCol].toLowerCase() !== piece) {
-              return true; // Capture
-            }
-            break;
-          }
-        case 'r': // Rook movement
-          if (startRow === endRow || startCol === endCol) {
-            return isPathClear(startRow, startCol, endRow, endCol);
-          }
-          break;
-        case 'n': // Knight movement
-          if ((rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2)) {
-            return true;
-          }
-          break;
-        case 'b': // Bishop movement
-          if (rowDiff === colDiff) {
-            return isPathClear(startRow, startCol, endRow, endCol);
-          }
-          break;
-        case 'q': // Queen movement
-          if (startRow === endRow || startCol === endCol || rowDiff === colDiff) {
-            return isPathClear(startRow, startCol, endRow, endCol);
-          }
-          break;
-        case 'k': // King movement
-          if (rowDiff <= 1 && colDiff <= 1) {
-            return true;
-          }
-          break;
-        default:
-          return false;
+      if (piece.toLowerCase() === 'p') {
+        return (rowDiff === 1 && colDiff === 0) || (rowDiff === 2 && colDiff === 0 && startRow === (piece === piece.toLowerCase() ? 1 : 6));
       }
-      return false;
+      return true; // Simplified; implement more rules here
     }
-
-    function isPathClear(startRow, startCol, endRow, endCol) {
-      const rowDirection = endRow > startRow ? 1 : endRow < startRow ? -1 : 0;
-      const colDirection = endCol > startCol ? 1 : endCol < startCol ? -1 : 0;
-
-      let row = startRow + rowDirection;
-      let col = startCol + colDirection;
-
-      while (row !== endRow || col !== endCol) {
-        if (game[row][col] !== '') {
-          return false; // Path is blocked
-        }
-        row += rowDirection;
-        col += colDirection;
-      }
-      return true;
-    }
-
-    // Start the game when the page loads
-    window.onload = startRestartGame;
   </script>
 </body>
 </html>
