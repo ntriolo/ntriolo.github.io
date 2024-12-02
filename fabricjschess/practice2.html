@@ -1,1 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Game with Timer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(45deg, #283048, #859398);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+    }
+    .controls {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .timer {
+      margin-bottom: 10px;
+      font-size: 20px;
+      color: white;
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+    }
+    canvas {
+      border: 2px solid #000;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button onclick="startRestartGame()">Start/Restart Game</button>
+    <button onclick="toggleTTS()">
+      <span id="tts-status">Turn off TTS</span>
+    </button>
+  </div>
+  <div class="timer">
+    <div id="white-timer">White: 5:00</div>
+    <div id="black-timer">Black: 5:00</div>
+  </div>
+  <canvas id="chessboard" width="480" height="480"></canvas>
+  <script>
+    const canvas = new fabric.Canvas('chessboard');
+    const pieceImages = {
+      'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+      'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
+      'b': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
+      'q': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
+      'k': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg',
+      'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
+      'R': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
+      'N': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
+      'B': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
+      'Q': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
+      'K': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
+      'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
+    };
+    let game = [];
+    let isWhiteTurn = true;
+    let selectedPiece = null;
+    let isTTSOn = true;
 
+    // Timer variables
+    let whiteTime = 300; // 5 minutes in seconds
+    let blackTime = 300;
+    let timerInterval;
+
+    function updateTimers() {
+      const formatTime = (time) => {
+        const minutes = Math.floor(time / 60);
+        const seconds = time % 60;
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      };
+      document.getElementById('white-timer').textContent = `White: ${formatTime(whiteTime)}`;
+      document.getElementById('black-timer').textContent = `Black: ${formatTime(blackTime)}`;
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        if (isWhiteTurn) {
+          whiteTime--;
+          if (whiteTime <= 0) {
+            clearInterval(timerInterval);
+            alert("Black wins by timeout!");
+          }
+        } else {
+          blackTime--;
+          if (blackTime <= 0) {
+            clearInterval(timerInterval);
+            alert("White wins by timeout!");
+          }
+        }
+        updateTimers();
+      }, 1000);
+    }
+
+    function speak(text) {
+      if (isTTSOn) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function drawBoard() {
+      const tileSize = 60;
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          const isLight = (i + j) % 2 === 0;
+          const rect = new fabric.Rect({
+            left: j * tileSize,
+            top: i * tileSize,
+            width: tileSize,
+            height: tileSize,
+            fill: isLight ? '#f0d9b5' : '#b58863',
+            selectable: false
+          });
+          canvas.add(rect);
+        }
+      }
+    }
+
+    function drawPieces() {
+      const tileSize = 60;
+      canvas.getObjects('image').forEach(obj => canvas.remove(obj));
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          const piece = game[i][j];
+          if (piece) {
+            fabric.Image.fromURL(pieceImages[piece], (img) => {
+              img.set({
+                left: j * tileSize,
+                top: i * tileSize,
+                scaleX: tileSize / img.width,
+                scaleY: tileSize / img.height,
+                hasControls: false,
+                hasBorders: false,
+                selectable: false,
+                data: { row: i, col: j, piece }
+              });
+              canvas.add(img);
+            });
+          }
+        }
+      }
+    }
+
+    function startRestartGame() {
+      game = [
+        ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+        ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+        ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+      ];
+      isWhiteTurn = true;
+      selectedPiece = null;
+      whiteTime = blackTime = 300;
+      clearInterval(timerInterval);
+      canvas.clear();
+      drawBoard();
+      drawPieces();
+      updateTimers();
+      startTimer();
+      speak("Game started. White's turn.");
+    }
+
+    function toggleTTS() {
+      isTTSOn = !isTTSOn;
+      document.getElementById('tts-status').textContent = isTTSOn ? "Turn off TTS" : "Turn on TTS";
+    }
+
+    canvas.on('mouse:down', (event) => {
+      const pointer = canvas.getPointer(event.e);
+      const row = Math.floor(pointer.y / 60);
+      const col = Math.floor(pointer.x / 60);
+      const piece = game[row][col];
+      if (selectedPiece) {
+        const { row: startRow, col: startCol, piece: selectedPieceType } = selectedPiece;
+        if (isValidMove(selectedPieceType)) {
+          // ... logic for movement...
+          game[row][col] = selectedPieceType;
+          game[startRow][startCol] = '';
+          drawPieces();
+          isWhiteTurn = !isWhiteTurn;
+          speak(`${selectedPieceType.toUpperCase()} moved to ${String.fromCharCode(97 + col)}${8 - row}`);
+          speak(isWhiteTurn ? "White's turn." : "Black's turn.");
+        } else {
+          speak("Invalid move.");
+        }
+        selectedPiece = null;
+      } else if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
+        selectedPiece = { row, col, piece };
+        speak(`${piece.toUpperCase()} selected.`);
+      }
+    });
+
+    function isValidMove(piece) {
+      // Simplified move validation (you can expand this logic to include checks for each type of piece)
+      return true; // Assume the move is valid for now
+    }
+
+    // Start the game when the page loads
+    window.onload = startRestartGame;
+  </script>
+</body>
+</html>
