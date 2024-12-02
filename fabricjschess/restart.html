@@ -22,7 +22,7 @@
     const canvas = new fabric.Canvas('chessboard');
     const squareSize = 60;
     const boardSize = 8;
-    const pieces = [];
+    let pieces = [];
     const boardState = Array(8).fill(null).map(() => Array(8).fill(null));
 
     const pieceImages = {
@@ -127,6 +127,7 @@
 
       if (to.row < 0 || to.row >= boardSize || to.col < 0 || to.col >= boardSize) return false;
 
+      // Pawn logic
       if (pieceType === 'p') {
         if (colDiff === 0 && boardState[to.row][to.col] === null) {
           if (rowDiff === direction || (rowDiff === 2 * direction && !piece.moved && boardState[from.row + direction][from.col] === null)) {
@@ -138,12 +139,14 @@
         }
       }
 
+      // Rook logic
       if (pieceType === 'r') {
         if ((from.row === to.row || from.col === to.col) && isPathClear(from, to)) {
           return true;
         }
       }
 
+      // Knight logic
       if (pieceType === 'n') {
         if ((Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) ||
             (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2)) {
@@ -151,18 +154,21 @@
         }
       }
 
+      // Bishop logic
       if (pieceType === 'b') {
         if (Math.abs(rowDiff) === Math.abs(colDiff) && isPathClear(from, to)) {
           return true;
         }
       }
 
+      // Queen logic
       if (pieceType === 'q') {
         if ((from.row === to.row || from.col === to.col || Math.abs(rowDiff) === Math.abs(colDiff)) && isPathClear(from, to)) {
           return true;
         }
       }
 
+      // King logic
       if (pieceType === 'k') {
         if (Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1) {
           return true;
@@ -181,8 +187,12 @@
     function setupPieceMovement() {
       canvas.on('object:moving', (e) => {
         const piece = e.target;
-        piece.left = piece.startLeft;
-        piece.top = piece.startTop;
+        const from = getBoardPosition(piece.startLeft, piece.startTop);
+        const to = getBoardPosition(piece.left, piece.top);
+
+        if (!isValidMove(piece, from, to)) {
+          e.cancel = true; // Prevents the piece from moving if the move is invalid
+        }
       });
 
       canvas.on('object:moved', (e) => {
