@@ -20,9 +20,10 @@
 
   <script>
     const canvas = new fabric.Canvas('chessboard');
-    const squareSize = 60; // Size of each square (480px board / 8 squares)
+    const squareSize = 60;
     const boardSize = 8;
-    let pieces = []; // Store piece objects
+    let pieces = [];
+    const boardState = Array(8).fill(null).map(() => Array(8).fill(null));
 
     // Map chess piece codes to image URLs
     const pieceImages = {
@@ -40,7 +41,6 @@
       P: 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg', // White Pawn
     };
 
-    // Initialize the chessboard
     function drawBoard() {
       canvas.clear();
       for (let row = 0; row < boardSize; row++) {
@@ -59,7 +59,6 @@
       }
     }
 
-    // Create chess pieces using images
     function createPieces() {
       const piecePositions = {
         'RNBQKBNR': 0, // Row 0 for black
@@ -84,49 +83,108 @@
               selectable: true,
               hasControls: false,
               pieceType: pieceChar,
+              color: pieceChar === pieceChar.toLowerCase() ? 'black' : 'white',
             });
 
             pieces.push(img);
             canvas.add(img);
+            boardState[rowIndex][col] = img;
           });
         }
       }
     }
 
-    // Handle piece movement
+    function getBoardPosition(left, top) {
+      return {
+        col: Math.floor(left / squareSize),
+        row: Math.floor(top / squareSize),
+      };
+    }
+
+    function isValidMove(piece, from, to) {
+      const pieceType = piece.pieceType.toLowerCase();
+      const direction = piece.color === 'black' ? 1 : -1;
+
+      if (pieceType === 'p') {
+        const startRow = piece.color === 'black' ? 1 : 6;
+        const rowDiff = to.row - from.row;
+        const colDiff = Math.abs(to.col - from.col);
+
+        if (colDiff === 0 && !boardState[to.row][to.col]) {
+          if (rowDiff === direction || (rowDiff === 2 * direction && from.row === startRow)) {
+            return true;
+          }
+        }
+
+        if (colDiff === 1 && rowDiff === direction && boardState[to.row][to.col]?.color !== piece.color) {
+          return true;
+        }
+      }
+
+      if (pieceType === 'r') {
+        if (from.row === to.row || from.col === to.col) {
+          const rowDiff = Math.sign(to.row - from.row);
+          const colDiff = Math.sign(to.col - from.col);
+          let row = from.row + rowDiff;
+          let col = from.col + colDiff;
+
+          while (row !== to.row || col !== to.col) {
+            if (boardState[row][col]) return false;
+            row += rowDiff;
+            col += colDiff;
+          }
+
+          return boardState[to.row][to.col]?.color !== piece.color;
+        }
+      }
+
+      return false;
+    }
+
+    function updateBoardState(piece, from, to) {
+      boardState[from.row][from.col] = null;
+      boardState[to.row][to.col] = piece;
+    }
+
     function setupPieceMovement() {
       canvas.on('object:moving', (e) => {
         const piece = e.target;
-        const left = Math.round(piece.left / squareSize) * squareSize;
-        const top = Math.round(piece.top / squareSize) * squareSize;
+        const { col, row } = getBoardPosition(piece.left, piece.top);
 
-        piece.set({ left, top });
+        piece.left = col * squareSize;
+        piece.top = row * squareSize;
       });
 
       canvas.on('object:moved', (e) => {
         const piece = e.target;
+        const from = getBoardPosition(piece.startLeft, piece.startTop);
+        const to = getBoardPosition(piece.left, piece.top);
 
-        // TODO: Implement move validation and capturing logic
+        if (!isValidMove(piece, from, to)) {
+          piece.left = piece.startLeft;
+          piece.top = piece.startTop;
+        } else {
+          updateBoardState(piece, from, to);
+          piece.startLeft = piece.left;
+          piece.startTop = piece.top;
 
-        // Example TTS announcement
-        const move = `${piece.pieceType} moved`;
-        speechSynthesis.speak(new SpeechSynthesisUtterance(move));
+          if (boardState[to.row][to.col]) {
+            canvas.remove(boardState[to.row][to.col]);
+          }
+        }
+
+        canvas.renderAll();
       });
     }
 
-    // Initialize the game
     function startGame() {
       drawBoard();
       createPieces();
       setupPieceMovement();
     }
 
-    // Add Start/Restart functionality
-    document.getElementById('startRestart').addEventListener('click', () => {
-      startGame();
-    });
+    document.getElementById('startRestart').addEventListener('click', startGame);
 
-    // Load the board on page load
     startGame();
   </script>
 </body>
