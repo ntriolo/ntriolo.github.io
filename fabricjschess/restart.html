@@ -13,74 +13,75 @@
 </head>
 <body>
     <canvas id="chessboard" width="400" height="400"></canvas>
-    <script src="chess.js"></script>
+    <script>
+        const canvas = new fabric.Canvas('chessboard');
+        const boardSize = 8;
+        const squareSize = 50;
+
+        // Create the chessboard
+        function createBoard() {
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    const square = new fabric.Rect({
+                        left: col * squareSize,
+                        top: row * squareSize,
+                        fill: (row + col) % 2 === 0 ? 'white' : 'gray',
+                        width: squareSize,
+                        height: squareSize,
+                        selectable: false
+                    });
+                    canvas.add(square);
+                }
+            }
+        }
+
+        // Add pieces to the board
+        function addPieces() {
+            const pieces = [
+                { type: 'rook', color: 'black', position: { left: 0, top: 0 } },
+                { type: 'knight', color: 'black', position: { left: 1, top: 0 } },
+                { type: 'bishop', color: 'black', position: { left: 2, top: 0 } },
+                { type: 'queen', color: 'black', position: { left: 3, top: 0 } },
+                { type: 'king', color: 'black', position: { left: 4, top: 0 } },
+                { type: 'bishop', color: 'black', position: { left: 5, top: 0 } },
+                { type: 'knight', color: 'black', position: { left: 6, top: 0 } },
+                { type: 'rook', color: 'black', position: { left: 7, top: 0 } },
+                // Add pawns
+                ...Array.from({ length: 8 }, (_, i) => ({ type: 'pawn', color: 'black', position: { left: i, top: 1 } })),
+                // Add white pieces
+                { type: 'rook', color: 'white', position: { left: 0, top: 7 } },
+                { type: 'knight', color: 'white', position: { left: 1, top: 7 } },
+                { type: 'bishop', color: 'white', position: { left: 2, top: 7 } },
+                { type: 'queen', color: 'white', position: { left: 3, top: 7 } },
+                { type: 'king', color: 'white', position: { left: 4, top: 7 } },
+                { type: 'bishop', color: 'white', position: { left: 5, top: 7 } },
+                { type: 'knight', color: 'white', position: { left: 6, top: 7 } },
+                { type: 'rook', color: 'white', position: { left: 7, top: 7 } },
+                // Add white pawns
+                ...Array.from({ length: 8 }, (_, i) => ({ type: 'pawn', color: 'white', position: { left: i, top: 6 } })),
+            ];
+
+            pieces.forEach(piece => {
+                const circle = new fabric.Circle({
+                    left: piece.position.left * squareSize + squareSize / 2,
+                    top: piece.position.top * squareSize + squareSize / 2,
+                    radius: 20,
+                    fill: piece.color,
+                    selectable: true,
+                    hasControls: false,
+                    hasBorders: false
+                });
+                canvas.add(circle);
+            });
+        }
+
+        // Initialize the chess game
+        function initChessGame() {
+            createBoard();
+            addPieces();
+        }
+
+        initChessGame();
+    </script>
 </body>
 </html>
-const canvas = new fabric.Canvas('chessboard');
-const boardSize = 8;
-const squareSize = 50;
-
-// Create the chessboard
-function createBoard() {
-    for (let row = 0; row < boardSize; row++) {
-        for (let col = 0; col < boardSize; col++) {
-            const square = new fabric.Rect({
-                left: col * squareSize,
-                top: row * squareSize,
-                fill: (row + col) % 2 === 0 ? 'white' : 'gray',
-                width: squareSize,
-                height: squareSize,
-                selectable: false
-            });
-            canvas.add(square);
-        }
-    }
-}
-
-// Add pieces to the board
-function addPieces() {
-    const pieces = [
-        { type: 'rook', color: 'black', position: { left: 0, top: 0 } },
-        { type: 'knight', color: 'black', position: { left: 1, top: 0 } },
-        { type: 'bishop', color: 'black', position: { left: 2, top: 0 } },
-        { type: 'queen', color: 'black', position: { left: 3, top: 0 } },
-        { type: 'king', color: 'black', position: { left: 4, top: 0 } },
-        { type: 'bishop', color: 'black', position: { left: 5, top: 0 } },
-        { type: 'knight', color: 'black', position: { left: 6, top: 0 } },
-        { type: 'rook', color: 'black', position: { left: 7, top: 0 } },
-        // Add pawns
-        ...Array.from({ length: 8 }, (_, i) => ({ type: 'pawn', color: 'black', position: { left: i, top: 1 } })),
-        // Add white pieces
-        { type: 'rook', color: 'white', position: { left: 0, top: 7 } },
-        { type: 'knight', color: 'white', position: { left: 1, top: 7 } },
-        { type: 'bishop', color: 'white', position: { left: 2, top: 7 } },
-        { type: 'queen', color: 'white', position: { left: 3, top: 7 } },
-        { type: 'king', color: 'white', position: { left: 4, top: 7 } },
-        { type: 'bishop', color: 'white', position: { left: 5, top: 7 } },
-        { type: 'knight', color: 'white', position: { left: 6, top: 7 } },
-        { type: 'rook', color: 'white', position: { left: 7, top: 7 } },
-        // Add white pawns
-        ...Array.from({ length: 8 }, (_, i) => ({ type: 'pawn', color: 'white', position: { left: i, top: 6 } })),
-    ];
-
-    pieces.forEach(piece => {
-        const circle = new fabric.Circle({
-            left: piece.position.left * squareSize + squareSize / 2,
-            top: piece.position.top * squareSize + squareSize / 2,
-            radius: 20,
-            fill: piece.color,
-            selectable: true,
-            hasControls: false,
-            hasBorders: false
-        });
-        canvas.add(circle);
-    });
-}
-
-// Initialize the chess game
-function initChessGame() {
-    createBoard();
-    addPieces();
-}
-
-initChessGame();
