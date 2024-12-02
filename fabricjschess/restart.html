@@ -81,11 +81,8 @@
               originY: 'top',
               selectable: true,
               hasControls: false,
-              pieceType: pieceChar.toLowerCase(),
+              pieceType: pieceChar,
               color: pieceChar === pieceChar.toLowerCase() ? 'black' : 'white',
-              moved: false,
-              startLeft: col * squareSize,
-              startTop: rowIndex * squareSize,
             });
 
             pieces.push(img);
@@ -103,71 +100,46 @@
       };
     }
 
-    function isPathClear(from, to) {
-      const rowDiff = Math.sign(to.row - from.row);
-      const colDiff = Math.sign(to.col - from.col);
-      let row = from.row + rowDiff;
-      let col = from.col + colDiff;
-
-      while (row !== to.row || col !== to.col) {
-        if (boardState[row][col]) {
-          return false;
-        }
-        row += rowDiff;
-        col += colDiff;
-      }
-      return true;
-    }
-
     function isValidMove(piece, from, to) {
-      const pieceType = piece.pieceType;
+      const pieceType = piece.pieceType.toLowerCase();
       const direction = piece.color === 'black' ? 1 : -1;
-      const rowDiff = to.row - from.row;
-      const colDiff = to.col - from.col;
 
-      if (to.row < 0 || to.row >= boardSize || to.col < 0 || to.col >= boardSize) return false;
-
+      // Pawn movement
       if (pieceType === 'p') {
-        if (colDiff === 0 && boardState[to.row][to.col] === null) {
-          if (rowDiff === direction || (rowDiff === 2 * direction && !piece.moved && boardState[from.row + direction][from.col] === null)) {
+        const startRow = piece.color === 'black' ? 1 : 6;
+        const rowDiff = to.row - from.row;
+        const colDiff = Math.abs(to.col - from.col);
+
+        if (colDiff === 0 && !boardState[to.row][to.col]) {
+          if (rowDiff === direction || (rowDiff === 2 * direction && from.row === startRow)) {
             return true;
           }
         }
-        if (Math.abs(colDiff) === 1 && rowDiff === direction && boardState[to.row][to.col]?.color !== piece.color) {
+
+        if (colDiff === 1 && rowDiff === direction && boardState[to.row][to.col]?.color !== piece.color) {
           return true;
         }
       }
 
+      // Rook movement
       if (pieceType === 'r') {
-        if ((from.row === to.row || from.col === to.col) && isPathClear(from, to)) {
-          return true;
+        if (from.row === to.row || from.col === to.col) {
+          const rowDiff = Math.sign(to.row - from.row);
+          const colDiff = Math.sign(to.col - from.col);
+          let row = from.row + rowDiff;
+          let col = from.col + colDiff;
+
+          while (row !== to.row || col !== to.col) {
+            if (boardState[row][col]) return false;
+            row += rowDiff;
+            col += colDiff;
+          }
+
+          return boardState[to.row][to.col]?.color !== piece.color;
         }
       }
 
-      if (pieceType === 'n') {
-        if ((Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) ||
-            (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2)) {
-          return true;
-        }
-      }
-
-      if (pieceType === 'b') {
-        if (Math.abs(rowDiff) === Math.abs(colDiff) && isPathClear(from, to)) {
-          return true;
-        }
-      }
-
-      if (pieceType === 'q') {
-        if ((from.row === to.row || from.col === to.col || Math.abs(rowDiff) === Math.abs(colDiff)) && isPathClear(from, to)) {
-          return true;
-        }
-      }
-
-      if (pieceType === 'k') {
-        if (Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1) {
-          return true;
-        }
-      }
+      // Add additional piece movement logic here (knight, bishop, queen, king)
 
       return false;
     }
@@ -175,22 +147,15 @@
     function updateBoardState(piece, from, to) {
       boardState[from.row][from.col] = null;
       boardState[to.row][to.col] = piece;
-      piece.moved = true;
     }
 
     function setupPieceMovement() {
       canvas.on('object:moving', (e) => {
         const piece = e.target;
-        const from = getBoardPosition(piece.startLeft, piece.startTop);
-        const to = getBoardPosition(piece.left, piece.top);
+        const { col, row } = getBoardPosition(piece.left, piece.top);
 
-        // Temporarily move piece visually, but check move validity when it's released
-        if (!isValidMove(piece, from, to)) {
-          e.target.set({
-            left: piece.startLeft,
-            top: piece.startTop
-          });
-        }
+        piece.left = col * squareSize;
+        piece.top = row * squareSize;
       });
 
       canvas.on('object:moved', (e) => {
@@ -198,16 +163,17 @@
         const from = getBoardPosition(piece.startLeft, piece.startTop);
         const to = getBoardPosition(piece.left, piece.top);
 
-        if (isValidMove(piece, from, to)) {
+        if (!isValidMove(piece, from, to)) {
+          piece.left = piece.startLeft;
+          piece.top = piece.startTop;
+        } else {
           updateBoardState(piece, from, to);
           piece.startLeft = piece.left;
           piece.startTop = piece.top;
+
           if (boardState[to.row][to.col]) {
             canvas.remove(boardState[to.row][to.col]);
           }
-        } else {
-          piece.left = piece.startLeft;
-          piece.top = piece.startTop;
         }
 
         canvas.renderAll();
@@ -220,7 +186,11 @@
       setupPieceMovement();
     }
 
-    document.getElementById('startRestart').addEventListener('click', startGame);
+    document.getElementById('startRestart').addEventListener('click', () => {
+      pieces.forEach(piece => canvas.remove(piece));
+      pieces = [];
+      startGame();
+    });
 
     startGame();
   </script>
