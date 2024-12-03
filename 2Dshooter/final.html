@@ -14,131 +14,110 @@
 </head>
 <body>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <script src="game.js"></script>
-</body>
-</html>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - 50,
+            width: 50,
+            height: 50,
+            color: 'blue',
+            speed: 5
+        };
 
-const player = {
-    x: canvas.width / 2,
-    y: canvas.height - 50,
-    width: 50,
-    height: 50,
-    color: 'blue',
-    speed: 5
-};
+        const bullets = [];
+        const bulletSpeed = 7;
 
-function drawPlayer() {
-    ctx.fillStyle = player.color;
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-}
+        const enemies = [];
+        const enemySpeed = 2;
 
-function update() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawPlayer();
-    requestAnimationFrame(update);
-}
-
-update();
-
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'ArrowLeft' && player.x > 0) {
-        player.x -= player.speed;
-    } else if (event.key === 'ArrowRight' && player.x + player.width < canvas.width) {
-        player.x += player.speed;
-    }
-});
-
-const bullets = [];
-const bulletSpeed = 7;
-
-function shoot() {
-    bullets.push({
-        x: player.x + player.width / 2 - 5,
-        y: player.y,
-        width: 10,
-        height: 20,
-        color: 'red'
-    });
-}
-
-document.addEventListener('keydown', function(event) {
-    if (event.key === ' ') {
-        shoot();
-    }
-});
-
-function drawBullets() {
-    bullets.forEach((bullet, index) => {
-        bullet.y -= bulletSpeed;
-        if (bullet.y + bullet.height < 0) {
-            bullets.splice(index, 1);
-        } else {
-            ctx.fillStyle = bullet.color;
-            ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+        function drawPlayer() {
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
         }
-    });
-}
 
-function update() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawPlayer();
-    drawBullets();
-    requestAnimationFrame(update);
-}
-
-update();
-
-            const enemies = [];
-const enemySpeed = 2;
-
-function createEnemy() {
-    enemies.push({
-        x: Math.random() * (canvas.width - 50),
-        y: 0,
-        width: 50,
-        height: 50,
-        color: 'green'
-    });
-}
-
-function drawEnemies() {
-    enemies.forEach((enemy, index) => {
-        enemy.y += enemySpeed;
-        if (enemy.y > canvas.height) {
-            enemies.splice(index, 1);
-        } else {
-            ctx.fillStyle = enemy.color;
-            ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        function shoot() {
+            bullets.push({
+                x: player.x + player.width / 2 - 5,
+                y: player.y,
+                width: 10,
+                height: 20,
+                color: 'red'
+            });
         }
-    });
-}
 
-function checkCollisions() {
-    bullets.forEach((bullet, bulletIndex) => {
-        enemies.forEach((enemy, enemyIndex) => {
-            if (bullet.x < enemy.x + enemy.width &&
-                bullet.x + bullet.width > enemy.x &&
-                bullet.y < enemy.y + enemy.height &&
-                bullet.y + bullet.height > enemy.y) {
-                bullets.splice(bulletIndex, 1);
-                enemies.splice(enemyIndex, 1);
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowLeft' && player.x > 0) {
+                player.x -= player.speed;
+            } else if (event.key === 'ArrowRight' && player.x + player.width < canvas.width) {
+                player.x += player.speed;
+            } else if (event.key === ' ') {
+                shoot();
             }
         });
-    });
-}
 
-setInterval(createEnemy, 1000);
+        function drawBullets() {
+            bullets.forEach((bullet, index) => {
+                bullet.y -= bulletSpeed;
+                if (bullet.y + bullet.height < 0) {
+                    bullets.splice(index, 1);
+                } else {
+                    ctx.fillStyle = bullet.color;
+                    ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+                }
+            });
+        }
 
-function update() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawPlayer();
-    drawBullets();
-    drawEnemies();
-    checkCollisions();
-    requestAnimationFrame(update);
-}
+        function createEnemy() {
+            enemies.push({
+                x: Math.random() * (canvas.width - 50),
+                y: 0,
+                width: 50,
+                height: 50,
+                color: 'green'
+            });
+        }
 
-update();
+        function drawEnemies() {
+            enemies.forEach((enemy, index) => {
+                enemy.y += enemySpeed;
+                if (enemy.y > canvas.height) {
+                    enemies.splice(index, 1);
+                } else {
+                    ctx.fillStyle = enemy.color;
+                    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                }
+            });
+        }
+
+        function checkCollisions() {
+            bullets.forEach((bullet, bulletIndex) => {
+                enemies.forEach((enemy, enemyIndex) => {
+                    if (bullet.x < enemy.x + enemy.width &&
+                        bullet.x + bullet.width > enemy.x &&
+                        bullet.y < enemy.y + enemy.height &&
+                        bullet.y + bullet.height > enemy.y) {
+                        bullets.splice(bulletIndex, 1);
+                        enemies.splice(enemyIndex, 1);
+                    }
+                });
+            });
+        }
+
+        setInterval(createEnemy, 1000);
+
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPlayer();
+            drawBullets();
+            drawEnemies();
+            checkCollisions();
+            requestAnimationFrame(update);
+        }
+
+        update();
+    </script>
+</body>
+</html>
