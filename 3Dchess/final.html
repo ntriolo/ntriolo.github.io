@@ -4,9 +4,7 @@
     <title>Babylon.js Chessboard with STL Export</title>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
-    <script src="https://cdn.babylonjs.com/stlExporter/babylon.stlExporter.min
-
-.js"></script>
+    <script src="https://cdn.babylonjs.com/stlExporter/babylon.stlExporter.min.js"></script>
     <script src="https://cdn.babylonjs.com/gui/babylon.gui.js"></script>
 </head>
 <body>
@@ -19,9 +17,7 @@
         const createScene = () => {
             const scene = new BABYLON.Scene(engine);
 
-            const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI
-
- / 2.5, 15, BABYLON.Vector3.Zero(), scene);
+            const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 15, BABYLON.Vector3.Zero(), scene);
             camera.attachControl(canvas, true);
 
             const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
@@ -36,7 +32,7 @@
                     const tileMaterial = new BABYLON.StandardMaterial(`tileMat${row}_${col}`, scene);
 
                     // Update colors here
-                    tileMaterial.diffuseColor = (row + col) % 2 === 0 ? new BABYLON.Color3(0.678, 0.847, 0.902) : new BABYLON.Color3(0.827, 0.827, 0.827);
+                    tileMaterial.diffuseColor = (row + col) % 2 === 0 ? new BABYLON.Color3(0.529, 0.808, 0.922) : new BABYLON.Color3(0.827, 0.827, 0.827);
 
                     tile.material = tileMaterial;
                 }
