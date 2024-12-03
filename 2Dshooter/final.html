@@ -23,6 +23,14 @@
             transform: translateX(-50%);
             z-index: 10;
         }
+        #lives {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            font-size: 20px;
+            z-index: 10;
+        }
         button {
             padding: 10px 20px;
             margin: 5px;
@@ -35,6 +43,7 @@
         <button id="startButton">Start</button>
         <button id="stopButton">Stop</button>
     </div>
+    <div id="lives">Lives: 10</div>
     <canvas id="gameCanvas"></canvas>
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -54,7 +63,7 @@
             width: 50,
             height: 50,
             color: 'blue',
-            speed: 75
+            speed: 5
         };
 
         const bullets = [];
@@ -64,6 +73,7 @@
         const enemySpeed = 2;
 
         let gameRunning = false;
+        let lives = 10;
 
         function drawPlayer() {
             ctx.fillStyle = player.color;
@@ -117,6 +127,12 @@
                 enemy.y += enemySpeed;
                 if (enemy.y > canvas.height) {
                     enemies.splice(index, 1);
+                    lives--;
+                    document.getElementById('lives').innerText = `Lives: ${lives}`;
+                    if (lives <= 0) {
+                        gameRunning = false;
+                        alert('Game Over');
+                    }
                 } else {
                     ctx.fillStyle = enemy.color;
                     ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
@@ -152,6 +168,8 @@
         document.getElementById('startButton').addEventListener('click', function() {
             if (!gameRunning) {
                 gameRunning = true;
+                lives = 10;
+                document.getElementById('lives').innerText = `Lives: ${lives}`;
                 setInterval(createEnemy, 1000);
                 update();
             }
