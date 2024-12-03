@@ -23,6 +23,19 @@
             transform: translateX(-50%);
             z-index: 10;
         }
+        #lives, #score {
+            position: absolute;
+            top: 10px;
+            color: white;
+            font-size: 20px;
+            z-index: 10;
+        }
+        #lives {
+            right: 10px;
+        }
+        #score {
+            left: 10px;
+        }
         button {
             padding: 10px 20px;
             margin: 5px;
@@ -35,6 +48,8 @@
         <button id="startButton">Start</button>
         <button id="stopButton">Stop</button>
     </div>
+    <div id="lives">Lives: 10</div>
+    <div id="score">Score: 0</div>
     <canvas id="gameCanvas"></canvas>
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -64,6 +79,8 @@
         const enemySpeed = 2;
 
         let gameRunning = false;
+        let lives = 10;
+        let score = 0;
 
         function drawPlayer() {
             ctx.fillStyle = player.color;
@@ -117,6 +134,12 @@
                 enemy.y += enemySpeed;
                 if (enemy.y > canvas.height) {
                     enemies.splice(index, 1);
+                    lives--;
+                    document.getElementById('lives').innerText = `Lives: ${lives}`;
+                    if (lives <= 0) {
+                        gameRunning = false;
+                        alert('Game Over');
+                    }
                 } else {
                     ctx.fillStyle = enemy.color;
                     ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
@@ -133,6 +156,8 @@
                         bullet.y + bullet.height > enemy.y) {
                         bullets.splice(bulletIndex, 1);
                         enemies.splice(enemyIndex, 1);
+                        score++;
+                        document.getElementById('score').innerText = `Score: ${score}`;
                     }
                 });
             });
@@ -152,6 +177,10 @@
         document.getElementById('startButton').addEventListener('click', function() {
             if (!gameRunning) {
                 gameRunning = true;
+                lives = 10;
+                score = 0;
+                document.getElementById('lives').innerText = `Lives: ${lives}`;
+                document.getElementById('score').innerText = `Score: ${score}`;
                 setInterval(createEnemy, 1000);
                 update();
             }
