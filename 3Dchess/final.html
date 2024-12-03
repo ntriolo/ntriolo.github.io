@@ -136,7 +136,7 @@
                         if (capturedName == "king") {
                             let winnerName = playerTurn.equals(new BABYLON.Color3(1, 1, 1)) ? "White" : "Black";
                             playerTurn.set(0, 0, 0);
-                            text1.text = winnerName + " Wins!";
+                            text1.text = winnerName + " Wins, game over";
                         } else {
                             let rgbValue = selectedPiece.material.diffuseColor.equals(new BABYLON.Color3(1, 1, 1)) ? 0.3 : 1;
                             playerTurn.set(rgbValue, rgbValue, rgbValue);
