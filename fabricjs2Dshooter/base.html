@@ -37,6 +37,7 @@
         function moveUp() {
             if (shooter.top > 0) {
                 shooter.top -= 20; // Increase speed
+                shooter.setCoords(); // Update boundaries
                 canvas.renderAll();
             }
         }
@@ -45,6 +46,7 @@
         function moveDown() {
             if (shooter.top < canvas.height - shooter.height) {
                 shooter.top += 20; // Increase speed
+                shooter.setCoords(); // Update boundaries
                 canvas.renderAll();
             }
         }
@@ -66,6 +68,7 @@
             function moveBullet() {
                 if (bullet.left < canvas.width) {
                     bullet.left += 10;
+                    bullet.setCoords(); // Update boundaries
                     canvas.renderAll();
                     requestAnimationFrame(moveBullet);
                 } else {
@@ -94,6 +97,7 @@
             function moveEnemy() {
                 if (enemy.left > 0) {
                     enemy.left -= 5;
+                    enemy.setCoords(); // Update boundaries
                     canvas.renderAll();
                     requestAnimationFrame(moveEnemy);
                 } else {
@@ -127,10 +131,15 @@
 
         // Function to check if two objects are colliding
         function isColliding(obj1, obj2) {
-            return obj1.left < obj2.left + obj2.width &&
-                   obj1.left + obj1.width > obj2.left &&
-                   obj1.top < obj2.top + obj2.height &&
-                   obj1.top + obj1.height > obj2.top;
+            const obj1Bounds = obj1.aCoords;
+            const obj2Bounds = obj2.aCoords;
+
+            return (
+                obj1Bounds.tl.x < obj2Bounds.br.x &&
+                obj1Bounds.br.x > obj2Bounds.tl.x &&
+                obj1Bounds.tl.y < obj2Bounds.br.y &&
+                obj1Bounds.br.y > obj2Bounds.tl.y
+            );
         }
 
         // Main game loop
