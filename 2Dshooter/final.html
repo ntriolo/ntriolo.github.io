@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Shooter Game</title>
+    <title>Simple Shooter Game with Fabric.js</title>
     <style>
         body, html {
             margin: 0;
@@ -51,30 +51,28 @@
     <div id="lives">Lives: 10</div>
     <div id="score">Score: 0</div>
     <canvas id="gameCanvas"></canvas>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.6.0/fabric.min.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        const canvas = new fabric.Canvas('gameCanvas');
+        canvas.setWidth(window.innerWidth);
+        canvas.setHeight(window.innerHeight);
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        window.addEventListener('resize', () => {
+            canvas.setWidth(window.innerWidth);
+            canvas.setHeight(window.innerHeight);
+        });
 
         const backgroundImage = new Image();
-        backgroundImage.src = 'https://github.com/ntriolo/ntriolo.github.io/blob/main/2Dshooter/caveman background.jpeg'; // Replace with your background image path
+        backgroundImage.src = 'path/to/your/background-image.jpg'; // Replace with your background image path
 
-        const player = {
-            x: 50,
-            y: canvas.height / 2 - 25,
+        const player = new fabric.Rect({
+            left: 50,
+            top: canvas.height / 2 - 25,
             width: 50,
             height: 50,
-            color: 'blue',
-            speed: 5,
-            dy: 0
-        };
+            fill: 'blue',
+            selectable: false
+        });
 
         const bullets = [];
         const bulletSpeed = 7;
@@ -86,114 +84,85 @@
         let lives = 10;
         let score = 0;
 
-        function drawBackground() {
-            ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
-        }
-
-        function drawPlayer() {
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-        }
+        canvas.add(player);
 
         function shoot() {
-            bullets.push({
-                x: player.x + player.width,
-                y: player.y + player.height / 2 - 5,
+            const bullet = new fabric.Rect({
+                left: player.left + player.width,
+                top: player.top + player.height / 2 - 5,
                 width: 20,
                 height: 10,
-                color: 'red'
+                fill: 'red',
+                selectable: false
             });
+            bullets.push(bullet);
+            canvas.add(bullet);
         }
 
         function keyDownHandler(event) {
             if (event.key === 'ArrowUp') {
-                player.dy = -player.speed;
+                player.set('top', player.top - player.height);
             } else if (event.key === 'ArrowDown') {
-                player.dy = player.speed;
+                player.set('top', player.top + player.height);
             } else if (event.key === ' ' && gameRunning) {
                 shoot();
             }
-        }
-
-        function keyUpHandler(event) {
-            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-                player.dy = 0;
-            }
+            canvas.renderAll();
         }
 
         document.addEventListener('keydown', keyDownHandler);
-        document.addEventListener('keyup', keyUpHandler);
-
-        function drawBullets() {
-            bullets.forEach((bullet, index) => {
-                bullet.x += bulletSpeed;
-                if (bullet.x > canvas.width) {
-                    bullets.splice(index, 1);
-                } else {
-                    ctx.fillStyle = bullet.color;
-                    ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-                }
-            });
-        }
 
         function createEnemy() {
-            enemies.push({
-                x: canvas.width,
-                y: Math.random() * (canvas.height - 50),
+            const enemy = new fabric.Rect({
+                left: canvas.width,
+                top: Math.random() * (canvas.height - 50),
                 width: 50,
                 height: 50,
-                color: 'green'
+                fill: 'green',
+                selectable: false
             });
-        }
-
-        function drawEnemies() {
-            enemies.forEach((enemy, index) => {
-                enemy.x -= enemySpeed;
-                if (enemy.x + enemy.width < 0) {
-                    enemies.splice(index, 1);
-                    lives--;
-                    document.getElementById('lives').innerText = `Lives: ${lives}`;
-                    if (lives <= 0) {
-                        gameRunning = false;
-                        alert('Game Over');
-                    }
-                } else {
-                    ctx.fillStyle = enemy.color;
-                    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
-                }
-            });
-        }
-
-        function checkCollisions() {
-            bullets.forEach((bullet, bulletIndex) => {
-                enemies.forEach((enemy, enemyIndex) => {
-                    if (bullet.x < enemy.x + enemy.width &&
-                        bullet.x + bullet.width > enemy.x &&
-                        bullet.y < enemy.y + enemy.height &&
-                        bullet.y + bullet.height > enemy.y) {
-                        bullets.splice(bulletIndex, 1);
-                        enemies.splice(enemyIndex, 1);
-                        score++;
-                        document.getElementById('score').innerText = `Score: ${score}`;
-                    }
-                });
-            });
+            enemies.push(enemy);
+            canvas.add(enemy);
         }
 
         function update() {
             if (gameRunning) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                drawBackground();
-                player.y += player.dy;
-                if (player.y < 0) {
-                    player.y = 0;
-                } else if (player.y + player.height > canvas.height) {
-                    player.y = canvas.height - player.height;
-                }
-                drawPlayer();
-                drawBullets();
-                drawEnemies();
-                checkCollisions();
+                bullets.forEach((bullet, index) => {
+                    bullet.set('left', bullet.left + bulletSpeed);
+                    if (bullet.left > canvas.width) {
+                        canvas.remove(bullet);
+                        bullets.splice(index, 1);
+                    }
+                });
+
+                enemies.forEach((enemy, index) => {
+                    enemy.set('left', enemy.left - enemySpeed);
+                    if (enemy.left + enemy.width < 0) {
+                        canvas.remove(enemy);
+                        enemies.splice(index, 1);
+                        lives--;
+                        document.getElementById('lives').innerText = `Lives: ${lives}`;
+                        if (lives <= 0) {
+                            gameRunning = false;
+                            alert('Game Over');
+                        }
+                    }
+                });
+
+                bullets.forEach((bullet, bulletIndex) => {
+                    enemies.forEach((enemy, enemyIndex) => {
+                        if (bullet.intersectsWithObject(enemy)) {
+                            canvas.remove(bullet);
+                            canvas.remove(enemy);
+                            bullets.splice(bulletIndex, 1);
+                            enemies.splice(enemyIndex, 1);
+                            score++;
+                            document.getElementById('score').innerText = `Score: ${score}`;
+                        }
+                    });
+                });
+
+                canvas.renderAll();
                 requestAnimationFrame(update);
             }
         }
@@ -213,6 +182,17 @@
         document.getElementById('stopButton').addEventListener('click', function() {
             gameRunning = false;
         });
+
+        backgroundImage.onload = function() {
+            const fabricBackgroundImage = new fabric.Image(backgroundImage, {
+                left: 0,
+                top: 0,
+                scaleX: canvas.width / backgroundImage.width,
+                scaleY: canvas.height / backgroundImage.height,
+                selectable: false
+            });
+            canvas.setBackgroundImage(fabricBackgroundImage, canvas.renderAll.bind(canvas));
+        };
     </script>
 </body>
 </html>
