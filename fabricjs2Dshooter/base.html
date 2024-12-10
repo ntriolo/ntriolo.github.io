@@ -9,10 +9,21 @@
         canvas {
             border: 1px solid black;
         }
+        #hud {
+            font-family: Arial, sans-serif;
+            margin-top: 10px;
+        }
+        #hud span {
+            margin-right: 20px;
+        }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="hud">
+        <span>Score: <span id="score">0</span></span>
+        <span>Lives: <span id="lives">3</span></span>
+    </div>
     <script>
         // Initialize the canvas
         const canvas = new fabric.Canvas('gameCanvas');
@@ -31,6 +42,16 @@
         // Arrays to track bullets and enemies
         const bullets = [];
         const enemies = [];
+
+        // Initialize score and lives
+        let score = 0;
+        let lives = 3;
+
+        // Update the HUD
+        function updateHUD() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+        }
 
         // Function to move the shooter
         function moveShooter(direction) {
@@ -93,10 +114,15 @@
                 enemy.left -= 5;
                 enemy.setCoords();
 
-                // Remove enemies that move off-screen
+                // Remove enemies that move off-screen and deduct a life
                 if (enemy.left < 0) {
                     canvas.remove(enemy);
                     enemies.splice(i, 1);
+                    lives--;
+                    updateHUD();
+                    if (lives <= 0) {
+                        endGame();
+                    }
                 }
             }
         }
@@ -113,6 +139,10 @@
                         canvas.remove(enemy);
                         bullets.splice(i, 1);
                         enemies.splice(j, 1);
+
+                        // Increment score and update HUD
+                        score += 10;
+                        updateHUD();
                         break; // Exit the inner loop
                     }
                 }
@@ -130,6 +160,12 @@
                 obj1Bounds.tl.y < obj2Bounds.br.y &&
                 obj1Bounds.br.y > obj2Bounds.tl.y
             );
+        }
+
+        // Function to end the game
+        function endGame() {
+            alert('Game Over! Final Score: ' + score);
+            document.location.reload(); // Reload the page to restart
         }
 
         // Main game loop
@@ -157,6 +193,9 @@
                 shoot();
             }
         });
+
+        // Initialize HUD
+        updateHUD();
     </script>
 </body>
 </html>
