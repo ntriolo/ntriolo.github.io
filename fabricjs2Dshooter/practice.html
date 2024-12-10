@@ -73,15 +73,23 @@
         });
 
         // Shooter movement
+        let shooterVelocity = { x: 0, y: 0 }; // Velocity for smooth movement
+
         function moveShooter(direction) {
             if (!shooter) return;
 
             const scaledHeight = shooter.height * shooter.scaleY; // Calculate the scaled height
+            const scaledWidth = shooter.width * shooter.scaleX; // Calculate the scaled width
 
+            // Update shooter position based on direction
             if (direction === 'up' && shooter.top > 0) {
-                shooter.top -= 20;
+                shooter.top -= 5; // Move up
             } else if (direction === 'down' && shooter.top < canvas.height - scaledHeight) {
-                shooter.top += 20;
+                shooter.top += 5; // Move down
+            } else if (direction === 'left' && shooter.left > 0) {
+                shooter.left -= 5; // Move left
+            } else if (direction === 'right' && shooter.left < canvas.width - scaledWidth) {
+                shooter.left += 5; // Move right
             }
 
             shooter.setCoords(); // Update the object's coordinates
@@ -241,6 +249,8 @@
             if (!gameRunning) return;
             if (event.key === 'ArrowUp') moveShooter('up');
             if (event.key === 'ArrowDown') moveShooter('down');
+            if (event.key === 'ArrowLeft') moveShooter('left');
+            if (event.key === 'ArrowRight') moveShooter('right');
             if (event.key === ' ') shoot();
         });
 
