@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D Shooter Game</title>
+    <title>2D Shooter Game with Images</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
     <style>
         canvas {
@@ -35,15 +35,7 @@
         const canvas = new fabric.Canvas('gameCanvas');
 
         // Game elements
-        const shooter = new fabric.Rect({
-            left: 50,
-            top: canvas.height / 2 - 25,
-            fill: 'blue',
-            width: 50,
-            height: 50
-        });
-        canvas.add(shooter);
-
+        let shooter;
         const bullets = [];
         const enemies = [];
 
@@ -60,22 +52,41 @@
             document.getElementById('lives').textContent = lives;
         }
 
-        // Shooter movement
-        function moveShooter(direction) {
-            if (direction === 'up' && shooter.top > 0) {
-                shooter.top -= 20;
-            } else if (direction === 'down' && shooter.top < canvas.height - shooter.height) {
-                shooter.top += 20;
-            }
-            shooter.setCoords();
-            canvas.renderAll();
-        }
+        // Load shooter image
+        fabric.Image.fromURL('https://github.com/ntriolo/ntriolo.github.io/blob/main/fabricjs2Dshooter/caveman-removebg-preview.png?raw=true', function(img) {
+            shooter = img.set({
+                left: 50,
+                top: canvas.height / 2 - 25,
+                originX: 'center',
+                originY: 'center',
+                scaleX: 0.1,
+                scaleY: 0.1 // Scale the image to fit
+            });
+            canvas.add(shooter);
+        });
+
+       // Shooter movement
+function moveShooter(direction) {
+    if (!shooter) return;
+
+    const scaledHeight = shooter.height * shooter.scaleY; // Calculate the scaled height
+
+    if (direction === 'up' && shooter.top > 0) {
+        shooter.top -= 20;
+    } else if (direction === 'down' && shooter.top < canvas.height - scaledHeight) {
+        shooter.top += 20;
+    }
+
+    shooter.setCoords(); // Update the object's coordinates
+    canvas.renderAll();  // Render the changes
+}
+
 
         // Shooting bullets
         function shoot() {
             const bullet = new fabric.Rect({
-                left: shooter.left + shooter.width,
-                top: shooter.top + shooter.height / 2 - 5,
+                left: shooter.left + shooter.width / 2,
+                top: shooter.top,
                 fill: 'red',
                 width: 10,
                 height: 10
@@ -84,17 +95,20 @@
             canvas.add(bullet);
         }
 
-        // Enemy creation
+        // Load enemy image and create an enemy
         function createEnemy() {
-            const enemy = new fabric.Rect({
-                left: canvas.width,
-                top: Math.random() * (canvas.height - 50),
-                fill: 'green',
-                width: 50,
-                height: 50
+            fabric.Image.fromURL('https://github.com/ntriolo/ntriolo.github.io/blob/main/fabricjs2Dshooter/pig.png?raw=true', function(img) {
+                const enemy = img.set({
+                    left: canvas.width,
+                    top: Math.random() * (canvas.height - 50),
+                    originX: 'center',
+                    originY: 'center',
+                    scaleX: 0.2,
+                    scaleY: 0.2 // Scale the image to fit
+                });
+                enemies.push(enemy);
+                canvas.add(enemy);
             });
-            enemies.push(enemy);
-            canvas.add(enemy);
         }
 
         // Update bullets and enemies
