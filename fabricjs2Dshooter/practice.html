@@ -145,37 +145,40 @@
             }
         });
 
-        // Shooting bullets
+        // Shooting bullets using a custom image
         function shoot() {
             if (!shooter) return;
 
             const shooterWidth = shooter.width * shooter.scaleX;
             const shooterHeight = shooter.height * shooter.scaleY;
 
-            const bullet = new fabric.Rect({
-                left: shooter.left + shooterWidth / 2,
-                top: shooter.top + shooterHeight / 2 - 5,
-                fill: 'red',
-                width: 10,
-                height: 10
-            });
+            // Load bullet image
+            fabric.Image.fromURL('https://path/to/your/bullet-image.png', function(img) {
+                img.set({
+                    left: shooter.left + shooterWidth / 2 - img.width / 2,
+                    top: shooter.top + shooterHeight / 2 - img.height / 2,
+                    originX: 'center',
+                    originY: 'center'
+                });
 
-            bullets.push(bullet);
-            canvas.add(bullet);
+                bullets.push(img);
+                canvas.add(img);
 
-            function moveBullet() {
-                if (bullet.left < canvas.width) {
-                    bullet.left += 10;
-                    bullet.setCoords();
-                    canvas.renderAll();
-                    requestAnimationFrame(moveBullet);
-                } else {
-                    canvas.remove(bullet);
-                    bullets.splice(bullets.indexOf(bullet), 1);
+                // Animate the bullet
+                function moveBullet() {
+                    if (img.left < canvas.width) {
+                        img.left += 10; // Adjust speed as needed
+                        img.setCoords();
+                        canvas.renderAll();
+                        requestAnimationFrame(moveBullet);
+                    } else {
+                        canvas.remove(img);
+                        bullets.splice(bullets.indexOf(img), 1);
+                    }
                 }
-            }
 
-            moveBullet();
+                moveBullet();
+            });
         }
 
         // Load enemy image and create an enemy
