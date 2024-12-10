@@ -26,32 +26,24 @@
             height: 50
         });
 
-        // Add the shooter to the canvas
         canvas.add(shooter);
 
-        // Arrays to keep track of bullets and enemies
+        // Arrays to track bullets and enemies
         const bullets = [];
         const enemies = [];
 
-        // Function to move the shooter up
-        function moveUp() {
-            if (shooter.top > 0) {
+        // Function to move the shooter
+        function moveShooter(direction) {
+            if (direction === 'up' && shooter.top > 0) {
                 shooter.top -= 20;
-                shooter.setCoords();
-                canvas.renderAll();
-            }
-        }
-
-        // Function to move the shooter down
-        function moveDown() {
-            if (shooter.top < canvas.height - shooter.height) {
+            } else if (direction === 'down' && shooter.top < canvas.height - shooter.height) {
                 shooter.top += 20;
-                shooter.setCoords();
-                canvas.renderAll();
             }
+            shooter.setCoords();
+            canvas.renderAll();
         }
 
-        // Function to shoot bullets
+        // Function to shoot a bullet
         function shoot() {
             const bullet = new fabric.Rect({
                 left: shooter.left + shooter.width,
@@ -61,26 +53,11 @@
                 height: 10
             });
 
-            canvas.add(bullet);
             bullets.push(bullet);
-
-            // Animate the bullet
-            function moveBullet() {
-                if (bullet.left < canvas.width) {
-                    bullet.left += 10;
-                    bullet.setCoords();
-                    canvas.renderAll();
-                    requestAnimationFrame(moveBullet);
-                } else {
-                    canvas.remove(bullet);
-                    bullets.splice(bullets.indexOf(bullet), 1);
-                }
-            }
-
-            moveBullet();
+            canvas.add(bullet);
         }
 
-        // Function to create enemies
+        // Function to create an enemy
         function createEnemy() {
             const enemy = new fabric.Rect({
                 left: canvas.width,
@@ -90,55 +67,59 @@
                 height: 50
             });
 
-            canvas.add(enemy);
             enemies.push(enemy);
-
-            // Animate the enemy
-            function moveEnemy() {
-                if (enemy.left > 0) {
-                    enemy.left -= 5;
-                    enemy.setCoords();
-                    canvas.renderAll();
-                    requestAnimationFrame(moveEnemy);
-                } else {
-                    canvas.remove(enemy);
-                    enemies.splice(enemies.indexOf(enemy), 1);
-                }
-            }
-
-            moveEnemy();
+            canvas.add(enemy);
         }
 
-        // Generate enemies at random intervals
-        setInterval(createEnemy, 2000);
+        // Function to update bullets
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                bullet.left += 10;
+                bullet.setCoords();
+
+                // Remove bullets that move off-screen
+                if (bullet.left > canvas.width) {
+                    canvas.remove(bullet);
+                    bullets.splice(i, 1);
+                }
+            }
+        }
+
+        // Function to update enemies
+        function updateEnemies() {
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                enemy.left -= 5;
+                enemy.setCoords();
+
+                // Remove enemies that move off-screen
+                if (enemy.left < 0) {
+                    canvas.remove(enemy);
+                    enemies.splice(i, 1);
+                }
+            }
+        }
 
         // Function to check for collisions
         function checkCollisions() {
-            const bulletsToRemove = [];
-            const enemiesToRemove = [];
-
-            bullets.forEach(bullet => {
-                enemies.forEach(enemy => {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
                     if (isColliding(bullet, enemy)) {
-                        bulletsToRemove.push(bullet);
-                        enemiesToRemove.push(enemy);
+                        // Remove bullet and enemy on collision
+                        canvas.remove(bullet);
+                        canvas.remove(enemy);
+                        bullets.splice(i, 1);
+                        enemies.splice(j, 1);
+                        break; // Exit the inner loop
                     }
-                });
-            });
-
-            // Remove colliding bullets and enemies after iterating
-            bulletsToRemove.forEach(bullet => {
-                canvas.remove(bullet);
-                bullets.splice(bullets.indexOf(bullet), 1);
-            });
-
-            enemiesToRemove.forEach(enemy => {
-                canvas.remove(enemy);
-                enemies.splice(enemies.indexOf(enemy), 1);
-            });
+                }
+            }
         }
 
-        // Function to check if two objects are colliding
+        // Function to check collision between two objects
         function isColliding(obj1, obj2) {
             const obj1Bounds = obj1.aCoords;
             const obj2Bounds = obj2.aCoords;
@@ -153,6 +134,8 @@
 
         // Main game loop
         function gameLoop() {
+            updateBullets();
+            updateEnemies();
             checkCollisions();
             canvas.renderAll();
             requestAnimationFrame(gameLoop);
@@ -161,13 +144,16 @@
         // Start the game loop
         gameLoop();
 
-        // Event listener for key presses
-        document.addEventListener('keydown', function(event) {
+        // Generate enemies at regular intervals
+        setInterval(createEnemy, 2000);
+
+        // Key event listeners
+        document.addEventListener('keydown', (event) => {
             if (event.key === 'ArrowUp') {
-                moveUp();
+                moveShooter('up');
             } else if (event.key === 'ArrowDown') {
-                moveDown();
-            } else if (event.key === ' ') { // Space bar to shoot
+                moveShooter('down');
+            } else if (event.key === ' ') {
                 shoot();
             }
         });
