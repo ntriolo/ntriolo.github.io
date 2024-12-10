@@ -74,7 +74,7 @@
 
         const player = {
             x: 50,
-            y: canvas.height / 2,
+            y: canvas.height / 2 - 25,
             width: 50,
             height: 50,
             speed: 5,
@@ -97,7 +97,7 @@
 
         function shoot() {
             bullets.push({
-                x: player.x,
+                x: player.x + player.width,
                 y: player.y + player.height / 2 - 5,
                 width: 20,
                 height: 10
@@ -126,7 +126,7 @@
         function drawBullets() {
             bullets.forEach((bullet, index) => {
                 bullet.x += bulletSpeed;
-                if (bullet.x + bullet.width > canvas.width) {
+                if (bullet.x > canvas.width) {
                     bullets.splice(index, 1);
                 } else {
                     ctx.drawImage(bulletImage, bullet.x, bullet.y, bullet.width, bullet.height);
