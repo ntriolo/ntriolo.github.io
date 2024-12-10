@@ -34,6 +34,13 @@
     <script>
         const canvas = new fabric.Canvas('gameCanvas');
 
+        // Set up a background image
+        fabric.Image.fromURL('https://example.com/background.png', function(img) {
+            img.scaleToWidth(canvas.width); // Scale the background to fit the canvas width
+            img.scaleToHeight(canvas.height); // Scale the background to fit the canvas height
+            canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas)); // Set as background
+        });
+
         // Game elements
         let shooter;
         const bullets = [];
@@ -65,56 +72,55 @@
             canvas.add(shooter);
         });
 
-       // Shooter movement
-function moveShooter(direction) {
-    if (!shooter) return;
+        // Shooter movement
+        function moveShooter(direction) {
+            if (!shooter) return;
 
-    const scaledHeight = shooter.height * shooter.scaleY; // Calculate the scaled height
+            const scaledHeight = shooter.height * shooter.scaleY; // Calculate the scaled height
 
-    if (direction === 'up' && shooter.top > 0) {
-        shooter.top -= 20;
-    } else if (direction === 'down' && shooter.top < canvas.height - scaledHeight) {
-        shooter.top += 20;
-    }
+            if (direction === 'up' && shooter.top > 0) {
+                shooter.top -= 20;
+            } else if (direction === 'down' && shooter.top < canvas.height - scaledHeight) {
+                shooter.top += 20;
+            }
 
-    shooter.setCoords(); // Update the object's coordinates
-    canvas.renderAll();  // Render the changes
-}
-
-// Shooting bullets
-function shoot() {
-    if (!shooter) return;
-
-    const shooterWidth = shooter.width * shooter.scaleX; // Scaled width
-    const shooterHeight = shooter.height * shooter.scaleY; // Scaled height
-
-    const bullet = new fabric.Rect({
-        left: shooter.left + shooterWidth / 2, // Starting from the shooter's right edge
-        top: shooter.top + shooterHeight / 2 - 5, // Center of the shooter vertically
-        fill: 'red',
-        width: 10,
-        height: 10
-    });
-
-    bullets.push(bullet);
-    canvas.add(bullet);
-
-    // Animate the bullet
-    function moveBullet() {
-        if (bullet.left < canvas.width) {
-            bullet.left += 10;
-            bullet.setCoords();
-            canvas.renderAll();
-            requestAnimationFrame(moveBullet);
-        } else {
-            canvas.remove(bullet);
-            bullets.splice(bullets.indexOf(bullet), 1);
+            shooter.setCoords(); // Update the object's coordinates
+            canvas.renderAll();  // Render the changes
         }
-    }
 
-    moveBullet();
-}
+        // Shooting bullets
+        function shoot() {
+            if (!shooter) return;
 
+            const shooterWidth = shooter.width * shooter.scaleX; // Scaled width
+            const shooterHeight = shooter.height * shooter.scaleY; // Scaled height
+
+            const bullet = new fabric.Rect({
+                left: shooter.left + shooterWidth / 2, // Starting from the shooter's right edge
+                top: shooter.top + shooterHeight / 2 - 5, // Center of the shooter vertically
+                fill: 'red',
+                width: 10,
+                height: 10
+            });
+
+            bullets.push(bullet);
+            canvas.add(bullet);
+
+            // Animate the bullet
+            function moveBullet() {
+                if (bullet.left < canvas.width) {
+                    bullet.left += 10;
+                    bullet.setCoords();
+                    canvas.renderAll();
+                    requestAnimationFrame(moveBullet);
+                } else {
+                    canvas.remove(bullet);
+                    bullets.splice(bullets.indexOf(bullet), 1);
+                }
+            }
+
+            moveBullet();
+        }
 
         // Load enemy image and create an enemy
         function createEnemy() {
