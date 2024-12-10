@@ -110,22 +110,24 @@
 
         // Function to check for collisions
         function checkCollisions() {
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                const bullet = bullets[i];
-                for (let j = enemies.length - 1; j >= 0; j--) {
-                    const enemy = enemies[j];
-                    if (bullet.left < enemy.left + enemy.width &&
-                        bullet.left + bullet.width > enemy.left &&
-                        bullet.top < enemy.top + enemy.height &&
-                        bullet.top + bullet.height > enemy.top) {
+            bullets.forEach(bullet => {
+                enemies.forEach(enemy => {
+                    if (isColliding(bullet, enemy)) {
                         canvas.remove(bullet);
                         canvas.remove(enemy);
-                        bullets.splice(i, 1);
-                        enemies.splice(j, 1);
-                        break; // Exit the inner loop to avoid errors
+                        bullets.splice(bullets.indexOf(bullet), 1);
+                        enemies.splice(enemies.indexOf(enemy), 1);
                     }
-                }
-            }
+                });
+            });
+        }
+
+        // Function to check if two objects are colliding
+        function isColliding(obj1, obj2) {
+            return obj1.left < obj2.left + obj2.width &&
+                   obj1.left + obj1.width > obj2.left &&
+                   obj1.top < obj2.top + obj2.height &&
+                   obj1.top + obj1.height > obj2.top;
         }
 
         // Check for collisions at regular intervals
