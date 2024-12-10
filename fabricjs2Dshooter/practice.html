@@ -65,17 +65,22 @@
             canvas.add(shooter);
         });
 
-        // Shooter movement
-        function moveShooter(direction) {
-            if (!shooter) return;
-            if (direction === 'up' && shooter.top > 0) {
-                shooter.top -= 20;
-            } else if (direction === 'down' && shooter.top < canvas.height - shooter.height) {
-                shooter.top += 20;
-            }
-            shooter.setCoords();
-            canvas.renderAll();
-        }
+       // Shooter movement
+function moveShooter(direction) {
+    if (!shooter) return;
+
+    const scaledHeight = shooter.height * shooter.scaleY; // Calculate the scaled height
+
+    if (direction === 'up' && shooter.top > 0) {
+        shooter.top -= 20;
+    } else if (direction === 'down' && shooter.top < canvas.height - scaledHeight) {
+        shooter.top += 20;
+    }
+
+    shooter.setCoords(); // Update the object's coordinates
+    canvas.renderAll();  // Render the changes
+}
+
 
         // Shooting bullets
         function shoot() {
