@@ -36,7 +36,7 @@
         // Function to move the shooter up
         function moveUp() {
             if (shooter.top > 0) {
-                shooter.top -= 10;
+                shooter.top -= 20; // Increase speed
                 canvas.renderAll();
             }
         }
@@ -44,7 +44,7 @@
         // Function to move the shooter down
         function moveDown() {
             if (shooter.top < canvas.height - shooter.height) {
-                shooter.top += 10;
+                shooter.top += 20; // Increase speed
                 canvas.renderAll();
             }
         }
@@ -110,19 +110,22 @@
 
         // Function to check for collisions
         function checkCollisions() {
-            bullets.forEach(bullet => {
-                enemies.forEach(enemy => {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
                     if (bullet.left < enemy.left + enemy.width &&
                         bullet.left + bullet.width > enemy.left &&
                         bullet.top < enemy.top + enemy.height &&
                         bullet.top + bullet.height > enemy.top) {
                         canvas.remove(bullet);
                         canvas.remove(enemy);
-                        bullets.splice(bullets.indexOf(bullet), 1);
-                        enemies.splice(enemies.indexOf(enemy), 1);
+                        bullets.splice(i, 1);
+                        enemies.splice(j, 1);
+                        break;
                     }
-                });
-            });
+                }
+            }
         }
 
         // Check for collisions at regular intervals
