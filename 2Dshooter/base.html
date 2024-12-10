@@ -69,7 +69,8 @@
             width: 50,
             height: 50,
             color: 'blue',
-            speed: 75
+            speed: 5,
+            dx: 0
         };
 
         const bullets = [];
@@ -97,15 +98,24 @@
             });
         }
 
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'ArrowLeft' && player.x > 0) {
-                player.x -= player.speed;
-            } else if (event.key === 'ArrowRight' && player.x + player.width < canvas.width) {
-                player.x += player.speed;
+        function keyDownHandler(event) {
+            if (event.key === 'ArrowLeft') {
+                player.dx = -player.speed;
+            } else if (event.key === 'ArrowRight') {
+                player.dx = player.speed;
             } else if (event.key === ' ' && gameRunning) {
                 shoot();
             }
-        });
+        }
+
+        function keyUpHandler(event) {
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                player.dx = 0;
+            }
+        }
+
+        document.addEventListener('keydown', keyDownHandler);
+        document.addEventListener('keyup', keyUpHandler);
 
         function drawBullets() {
             bullets.forEach((bullet, index) => {
@@ -166,6 +176,12 @@
         function update() {
             if (gameRunning) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                player.x += player.dx;
+                if (player.x < 0) {
+                    player.x = 0;
+                } else if (player.x + player.width > canvas.width) {
+                    player.x = canvas.width - player.width;
+                }
                 drawPlayer();
                 drawBullets();
                 drawEnemies();
