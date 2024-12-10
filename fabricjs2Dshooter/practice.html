@@ -1,9 +1,9 @@
-\<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D Shooter Game with Images</title>
+    <title>2D Shooter Game with Images and Sound</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
     <style>
         canvas {
@@ -40,6 +40,15 @@
             img.scaleToHeight(canvas.height);
             canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
         });
+
+        // Sound effects
+        const shootSound = new Audio('https://example.com/shoot-sound.mp3'); // Replace with your sound file URL
+        const hitSound = new Audio('https://example.com/hit-sound.mp3'); // Replace with your sound file URL
+        const backgroundMusic = new Audio('https://example.com/background-music.mp3'); // Replace with your sound file URL
+
+        // Play background music (looping)
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.5;
 
         // Game elements
         let shooter;
@@ -162,6 +171,7 @@
             const shooterHeight = shooter.height * shooter.scaleY;
 
             console.log('Shooting arrow'); // Debugging line
+            shootSound.play(); // Play shoot sound
 
             // Load bullet image and set its size
             fabric.Image.fromURL('https://github.com/ntriolo/ntriolo.github.io/blob/main/fabricjs2Dshooter/arrow-removebg-preview.png?raw=true', function(img) {
@@ -250,29 +260,22 @@
                 const bullet = bullets[i];
                 for (let j = enemies.length - 1; j >= 0; j--) {
                     const enemy = enemies[j];
-                    if (isColliding(bullet, enemy)) {
+                    if (bullet.left + bullet.width / 2 > enemy.left - enemy.width / 2 &&
+                        bullet.left - bullet.width / 2 < enemy.left + enemy.width / 2 &&
+                        bullet.top + bullet.height / 2 > enemy.top - enemy.height / 2 &&
+                        bullet.top - bullet.height / 2 < enemy.top + enemy.height / 2) {
+                        // Play hit sound when a collision is detected
+                        hitSound.play();
                         canvas.remove(bullet);
                         canvas.remove(enemy);
                         bullets.splice(i, 1);
                         enemies.splice(j, 1);
-                        score += 10;
+                        score += 10; // Increase score for hit
                         updateHUD();
                         break;
                     }
                 }
             }
-        }
-
-        function isColliding(obj1, obj2) {
-            const obj1Bounds = obj1.aCoords;
-            const obj2Bounds = obj2.aCoords;
-
-            return (
-                obj1Bounds.tl.x < obj2Bounds.br.x &&
-                obj1Bounds.br.x > obj2Bounds.tl.x &&
-                obj1Bounds.tl.y < obj2Bounds.br.y &&
-                obj1Bounds.br.y > obj2Bounds.tl.y
-            );
         }
 
         // Game loop
@@ -290,6 +293,7 @@
         function startGame() {
             if (!gameRunning) {
                 gameRunning = true;
+                backgroundMusic.play(); // Start background music
                 gameLoopId = requestAnimationFrame(gameLoop);
                 enemyIntervalId = setInterval(createEnemy, 2000);
                 document.getElementById('startButton').disabled = true;
@@ -301,6 +305,7 @@
         function stopGame() {
             if (gameRunning) {
                 gameRunning = false;
+                backgroundMusic.pause(); // Stop background music
                 cancelAnimationFrame(gameLoopId);
                 clearInterval(enemyIntervalId);
                 document.getElementById('startButton').disabled = false;
