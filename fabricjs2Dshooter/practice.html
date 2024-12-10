@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Shooter Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+        // Initialize the canvas
+        const canvas = new fabric.Canvas('gameCanvas');
+
+        // Create the shooter character
+        const shooter = new fabric.Rect({
+            left: 50,
+            top: canvas.height / 2 - 25,
+            fill: 'blue',
+            width: 50,
+            height: 50
+        });
+
+        canvas.add(shooter);
+
+        // Arrays to track bullets and enemies
+        const bullets = [];
+        const enemies = [];
+
+        // Function to move the shooter
+        function moveShooter(direction) {
+            if (direction === 'up' && shooter.top > 0) {
+                shooter.top -= 20;
+            } else if (direction === 'down' && shooter.top < canvas.height - shooter.height) {
+                shooter.top += 20;
+            }
+            shooter.setCoords();
+            canvas.renderAll();
+        }
+
+        // Function to shoot a bullet
+        function shoot() {
+            const bullet = new fabric.Rect({
+                left: shooter.left + shooter.width,
+                top: shooter.top + shooter.height / 2 - 5,
+                fill: 'red',
+                width: 10,
+                height: 10
+            });
+
+            bullets.push(bullet);
+            canvas.add(bullet);
+        }
+
+        // Function to create an enemy
+        function createEnemy() {
+            const enemy = new fabric.Rect({
+                left: canvas.width,
+                top: Math.random() * (canvas.height - 50),
+                fill: 'green',
+                width: 50,
+                height: 50
+            });
+
+            enemies.push(enemy);
+            canvas.add(enemy);
+        }
+
+        // Function to update bullets
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                bullet.left += 10;
+                bullet.setCoords();
+
+                // Remove bullets that move off-screen
+                if (bullet.left > canvas.width) {
+                    canvas.remove(bullet);
+                    bullets.splice(i, 1);
+                }
+            }
+        }
+
+        // Function to update enemies
+        function updateEnemies() {
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                enemy.left -= 5;
+                enemy.setCoords();
+
+                // Remove enemies that move off-screen
+                if (enemy.left < 0) {
+                    canvas.remove(enemy);
+                    enemies.splice(i, 1);
+                }
+            }
+        }
+
+        // Function to check for collisions
+        function checkCollisions() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
+                    if (isColliding(bullet, enemy)) {
+                        // Remove bullet and enemy on collision
+                        canvas.remove(bullet);
+                        canvas.remove(enemy);
+                        bullets.splice(i, 1);
+                        enemies.splice(j, 1);
+                        break; // Exit the inner loop
+                    }
+                }
+            }
+        }
+
+        // Function to check collision between two objects
+        function isColliding(obj1, obj2) {
+            const obj1Bounds = obj1.aCoords;
+            const obj2Bounds = obj2.aCoords;
+
+            return (
+                obj1Bounds.tl.x < obj2Bounds.br.x &&
+                obj1Bounds.br.x > obj2Bounds.tl.x &&
+                obj1Bounds.tl.y < obj2Bounds.br.y &&
+                obj1Bounds.br.y > obj2Bounds.tl.y
+            );
+        }
+
+        // Main game loop
+        function gameLoop() {
+            updateBullets();
+            updateEnemies();
+            checkCollisions();
+            canvas.renderAll();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game loop
+        gameLoop();
+
+        // Generate enemies at regular intervals
+        setInterval(createEnemy, 2000);
+
+        // Key event listeners
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowUp') {
+                moveShooter('up');
+            } else if (event.key === 'ArrowDown') {
+                moveShooter('down');
+            } else if (event.key === ' ') {
+                shoot();
+            }
+        });
+    </script>
+</body>
+</html>
