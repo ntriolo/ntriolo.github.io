@@ -36,9 +36,9 @@
 
         // Set up a background image
         fabric.Image.fromURL('https://github.com/ntriolo/ntriolo.github.io/blob/main/fabricjs2Dshooter/caveman%20background.jpeg?raw=true', function(img) {
-            img.scaleToWidth(canvas.width); // Scale the background to fit the canvas width
-            img.scaleToHeight(canvas.height); // Scale the background to fit the canvas height
-            canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas)); // Set as background
+            img.scaleToWidth(canvas.width);
+            img.scaleToHeight(canvas.height);
+            canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
         });
 
         // Game elements
@@ -67,37 +67,94 @@
                 originX: 'center',
                 originY: 'center',
                 scaleX: 0.1,
-                scaleY: 0.1 // Scale the image to fit
+                scaleY: 0.1
             });
             canvas.add(shooter);
         });
 
-        // Shooter movement
-        function moveShooter(direction) {
+        // Movement flags for smooth movement
+        let isMovingUp = false;
+        let isMovingDown = false;
+        let isMovingLeft = false;
+        let isMovingRight = false;
+
+        function moveShooter() {
             if (!shooter) return;
 
-            const scaledHeight = shooter.height * shooter.scaleY; // Calculate the scaled height
+            const stepSize = 5; // Adjust step size for speed
 
-            if (direction === 'up' && shooter.top > 0) {
-                shooter.top -= 20;
-            } else if (direction === 'down' && shooter.top < canvas.height - scaledHeight) {
-                shooter.top += 20;
+            if (isMovingUp && shooter.top > 0) {
+                shooter.top -= stepSize;
+            }
+            if (isMovingDown && shooter.top < canvas.height - shooter.height * shooter.scaleY) {
+                shooter.top += stepSize;
+            }
+            if (isMovingLeft && shooter.left > 0) {
+                shooter.left -= stepSize;
+            }
+            if (isMovingRight && shooter.left < canvas.width - shooter.width * shooter.scaleX) {
+                shooter.left += stepSize;
             }
 
-            shooter.setCoords(); // Update the object's coordinates
-            canvas.renderAll();  // Render the changes
+            shooter.setCoords();
+            canvas.renderAll();
+
+            if (isMovingUp || isMovingDown || isMovingLeft || isMovingRight) {
+                requestAnimationFrame(moveShooter);
+            }
         }
+
+        // Event listeners for key press and release for continuous movement
+        document.addEventListener('keydown', (event) => {
+            if (!gameRunning) return;
+
+            if (event.key === 'ArrowUp') {
+                if (!isMovingUp) {
+                    isMovingUp = true;
+                    requestAnimationFrame(moveShooter);
+                }
+            } else if (event.key === 'ArrowDown') {
+                if (!isMovingDown) {
+                    isMovingDown = true;
+                    requestAnimationFrame(moveShooter);
+                }
+            } else if (event.key === 'ArrowLeft') {
+                if (!isMovingLeft) {
+                    isMovingLeft = true;
+                    requestAnimationFrame(moveShooter);
+                }
+            } else if (event.key === 'ArrowRight') {
+                if (!isMovingRight) {
+                    isMovingRight = true;
+                    requestAnimationFrame(moveShooter);
+                }
+            } else if (event.key === ' ') {
+                shoot();
+            }
+        });
+
+        document.addEventListener('keyup', (event) => {
+            if (event.key === 'ArrowUp') {
+                isMovingUp = false;
+            } else if (event.key === 'ArrowDown') {
+                isMovingDown = false;
+            } else if (event.key === 'ArrowLeft') {
+                isMovingLeft = false;
+            } else if (event.key === 'ArrowRight') {
+                isMovingRight = false;
+            }
+        });
 
         // Shooting bullets
         function shoot() {
             if (!shooter) return;
 
-            const shooterWidth = shooter.width * shooter.scaleX; // Scaled width
-            const shooterHeight = shooter.height * shooter.scaleY; // Scaled height
+            const shooterWidth = shooter.width * shooter.scaleX;
+            const shooterHeight = shooter.height * shooter.scaleY;
 
             const bullet = new fabric.Rect({
-                left: shooter.left + shooterWidth / 2, // Starting from the shooter's right edge
-                top: shooter.top + shooterHeight / 2 - 5, // Center of the shooter vertically
+                left: shooter.left + shooterWidth / 2,
+                top: shooter.top + shooterHeight / 2 - 5,
                 fill: 'red',
                 width: 10,
                 height: 10
@@ -106,7 +163,6 @@
             bullets.push(bullet);
             canvas.add(bullet);
 
-            // Animate the bullet
             function moveBullet() {
                 if (bullet.left < canvas.width) {
                     bullet.left += 10;
@@ -131,7 +187,7 @@
                     originX: 'center',
                     originY: 'center',
                     scaleX: 0.2,
-                    scaleY: 0.2 // Scale the image to fit
+                    scaleY: 0.2
                 });
                 enemies.push(enemy);
                 canvas.add(enemy);
@@ -233,16 +289,9 @@
             }
         }
 
-        // Event listeners
+        // Event listeners for game controls
         document.getElementById('startButton').addEventListener('click', startGame);
         document.getElementById('stopButton').addEventListener('click', stopGame);
-
-        document.addEventListener('keydown', (event) => {
-            if (!gameRunning) return;
-            if (event.key === 'ArrowUp') moveShooter('up');
-            if (event.key === 'ArrowDown') moveShooter('down');
-            if (event.key === ' ') shoot();
-        });
 
         // Initialize HUD
         updateHUD();
