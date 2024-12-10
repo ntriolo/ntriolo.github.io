@@ -45,12 +45,40 @@
             }
         }
 
+        // Function to shoot bullets
+        function shoot() {
+            const bullet = new fabric.Rect({
+                left: shooter.left + shooter.width,
+                top: shooter.top + shooter.height / 2 - 5,
+                fill: 'red',
+                width: 10,
+                height: 10
+            });
+
+            canvas.add(bullet);
+
+            // Animate the bullet
+            function moveBullet() {
+                if (bullet.left < canvas.width) {
+                    bullet.left += 10;
+                    canvas.renderAll();
+                    requestAnimationFrame(moveBullet);
+                } else {
+                    canvas.remove(bullet);
+                }
+            }
+
+            moveBullet();
+        }
+
         // Event listener for key presses
         document.addEventListener('keydown', function(event) {
             if (event.key === 'ArrowUp') {
                 moveUp();
             } else if (event.key === 'ArrowDown') {
                 moveDown();
+            } else if (event.key === ' ') { // Space bar to shoot
+                shoot();
             }
         });
     </script>
