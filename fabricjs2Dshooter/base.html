@@ -29,15 +29,15 @@
         // Add the shooter to the canvas
         canvas.add(shooter);
 
-        // Array to keep track of bullets and enemies
+        // Arrays to keep track of bullets and enemies
         const bullets = [];
         const enemies = [];
 
         // Function to move the shooter up
         function moveUp() {
             if (shooter.top > 0) {
-                shooter.top -= 20; // Increase speed
-                shooter.setCoords(); // Update boundaries
+                shooter.top -= 20;
+                shooter.setCoords();
                 canvas.renderAll();
             }
         }
@@ -45,8 +45,8 @@
         // Function to move the shooter down
         function moveDown() {
             if (shooter.top < canvas.height - shooter.height) {
-                shooter.top += 20; // Increase speed
-                shooter.setCoords(); // Update boundaries
+                shooter.top += 20;
+                shooter.setCoords();
                 canvas.renderAll();
             }
         }
@@ -68,7 +68,7 @@
             function moveBullet() {
                 if (bullet.left < canvas.width) {
                     bullet.left += 10;
-                    bullet.setCoords(); // Update boundaries
+                    bullet.setCoords();
                     canvas.renderAll();
                     requestAnimationFrame(moveBullet);
                 } else {
@@ -97,7 +97,7 @@
             function moveEnemy() {
                 if (enemy.left > 0) {
                     enemy.left -= 5;
-                    enemy.setCoords(); // Update boundaries
+                    enemy.setCoords();
                     canvas.renderAll();
                     requestAnimationFrame(moveEnemy);
                 } else {
@@ -114,19 +114,28 @@
 
         // Function to check for collisions
         function checkCollisions() {
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                const bullet = bullets[i];
-                for (let j = enemies.length - 1; j >= 0; j--) {
-                    const enemy = enemies[j];
+            const bulletsToRemove = [];
+            const enemiesToRemove = [];
+
+            bullets.forEach(bullet => {
+                enemies.forEach(enemy => {
                     if (isColliding(bullet, enemy)) {
-                        canvas.remove(bullet);
-                        canvas.remove(enemy);
-                        bullets.splice(i, 1);
-                        enemies.splice(j, 1);
-                        break; // Exit the inner loop to avoid errors
+                        bulletsToRemove.push(bullet);
+                        enemiesToRemove.push(enemy);
                     }
-                }
-            }
+                });
+            });
+
+            // Remove colliding bullets and enemies after iterating
+            bulletsToRemove.forEach(bullet => {
+                canvas.remove(bullet);
+                bullets.splice(bullets.indexOf(bullet), 1);
+            });
+
+            enemiesToRemove.forEach(enemy => {
+                canvas.remove(enemy);
+                enemies.splice(enemies.indexOf(enemy), 1);
+            });
         }
 
         // Function to check if two objects are colliding
