@@ -64,13 +64,13 @@
         resizeCanvas();
 
         const player = {
-            x: canvas.width / 2,
-            y: canvas.height - 50,
+            x: 50,
+            y: canvas.height / 2 - 25,
             width: 50,
             height: 50,
             color: 'blue',
             speed: 5,
-            dx: 0
+            dy: 0
         };
 
         const bullets = [];
@@ -90,27 +90,27 @@
 
         function shoot() {
             bullets.push({
-                x: player.x + player.width / 2 - 5,
-                y: player.y,
-                width: 10,
-                height: 20,
+                x: player.x + player.width,
+                y: player.y + player.height / 2 - 5,
+                width: 20,
+                height: 10,
                 color: 'red'
             });
         }
 
         function keyDownHandler(event) {
-            if (event.key === 'ArrowLeft') {
-                player.dx = -player.speed;
-            } else if (event.key === 'ArrowRight') {
-                player.dx = player.speed;
+            if (event.key === 'ArrowUp') {
+                player.dy = -player.speed;
+            } else if (event.key === 'ArrowDown') {
+                player.dy = player.speed;
             } else if (event.key === ' ' && gameRunning) {
                 shoot();
             }
         }
 
         function keyUpHandler(event) {
-            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-                player.dx = 0;
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                player.dy = 0;
             }
         }
 
@@ -119,8 +119,8 @@
 
         function drawBullets() {
             bullets.forEach((bullet, index) => {
-                bullet.y -= bulletSpeed;
-                if (bullet.y + bullet.height < 0) {
+                bullet.x += bulletSpeed;
+                if (bullet.x > canvas.width) {
                     bullets.splice(index, 1);
                 } else {
                     ctx.fillStyle = bullet.color;
@@ -131,8 +131,8 @@
 
         function createEnemy() {
             enemies.push({
-                x: Math.random() * (canvas.width - 50),
-                y: 0,
+                x: canvas.width,
+                y: Math.random() * (canvas.height - 50),
                 width: 50,
                 height: 50,
                 color: 'green'
@@ -141,8 +141,8 @@
 
         function drawEnemies() {
             enemies.forEach((enemy, index) => {
-                enemy.y += enemySpeed;
-                if (enemy.y > canvas.height) {
+                enemy.x -= enemySpeed;
+                if (enemy.x + enemy.width < 0) {
                     enemies.splice(index, 1);
                     lives--;
                     document.getElementById('lives').innerText = `Lives: ${lives}`;
@@ -176,11 +176,11 @@
         function update() {
             if (gameRunning) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                player.x += player.dx;
-                if (player.x < 0) {
-                    player.x = 0;
-                } else if (player.x + player.width > canvas.width) {
-                    player.x = canvas.width - player.width;
+                player.y += player.dy;
+                if (player.y < 0) {
+                    player.y = 0;
+                } else if (player.y + player.height > canvas.height) {
+                    player.y = canvas.height - player.height;
                 }
                 drawPlayer();
                 drawBullets();
