@@ -81,19 +81,40 @@ function moveShooter(direction) {
     canvas.renderAll();  // Render the changes
 }
 
+// Shooting bullets
+function shoot() {
+    if (!shooter) return;
 
-        // Shooting bullets
-        function shoot() {
-            const bullet = new fabric.Rect({
-                left: shooter.left + shooter.width / 2,
-                top: shooter.top,
-                fill: 'red',
-                width: 10,
-                height: 10
-            });
-            bullets.push(bullet);
-            canvas.add(bullet);
+    const shooterWidth = shooter.width * shooter.scaleX; // Scaled width
+    const shooterHeight = shooter.height * shooter.scaleY; // Scaled height
+
+    const bullet = new fabric.Rect({
+        left: shooter.left + shooterWidth / 2, // Starting from the shooter's right edge
+        top: shooter.top + shooterHeight / 2 - 5, // Center of the shooter vertically
+        fill: 'red',
+        width: 10,
+        height: 10
+    });
+
+    bullets.push(bullet);
+    canvas.add(bullet);
+
+    // Animate the bullet
+    function moveBullet() {
+        if (bullet.left < canvas.width) {
+            bullet.left += 10;
+            bullet.setCoords();
+            canvas.renderAll();
+            requestAnimationFrame(moveBullet);
+        } else {
+            canvas.remove(bullet);
+            bullets.splice(bullets.indexOf(bullet), 1);
         }
+    }
+
+    moveBullet();
+}
+
 
         // Load enemy image and create an enemy
         function createEnemy() {
