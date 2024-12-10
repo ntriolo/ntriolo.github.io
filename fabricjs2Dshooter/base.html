@@ -112,7 +112,10 @@
         function checkCollisions() {
             bullets.forEach(bullet => {
                 enemies.forEach(enemy => {
-                    if (bullet.intersectsWithObject(enemy)) {
+                    if (bullet.left < enemy.left + enemy.width &&
+                        bullet.left + bullet.width > enemy.left &&
+                        bullet.top < enemy.top + enemy.height &&
+                        bullet.top + bullet.height > enemy.top) {
                         canvas.remove(bullet);
                         canvas.remove(enemy);
                         bullets.splice(bullets.indexOf(bullet), 1);
