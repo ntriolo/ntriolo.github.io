@@ -63,20 +63,15 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        const playerImage = new Image();
-        playerImage.src = 'https://github.com/ntriolo/ntriolo.github.io/blob/main/2Dshooter/caveman.jpeg'; // Replace with your player image path
-
-        const bulletImage = new Image();
-        bulletImage.src = 'path/to/your/bullet-image.png'; // Replace with your bullet image path
-
-        const enemyImage = new Image();
-        enemyImage.src = 'path/to/your/enemy-image.png'; // Replace with your enemy image path
+        const backgroundImage = new Image();
+        backgroundImage.src = 'path/to/your/background-image.jpg'; // Replace with your background image path
 
         const player = {
             x: 50,
             y: canvas.height / 2 - 25,
             width: 50,
             height: 50,
+            color: 'blue',
             speed: 5,
             dy: 0
         };
@@ -91,8 +86,13 @@
         let lives = 10;
         let score = 0;
 
+        function drawBackground() {
+            ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+        }
+
         function drawPlayer() {
-            ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
         }
 
         function shoot() {
@@ -100,7 +100,8 @@
                 x: player.x + player.width,
                 y: player.y + player.height / 2 - 5,
                 width: 20,
-                height: 10
+                height: 10,
+                color: 'red'
             });
         }
 
@@ -129,7 +130,8 @@
                 if (bullet.x > canvas.width) {
                     bullets.splice(index, 1);
                 } else {
-                    ctx.drawImage(bulletImage, bullet.x, bullet.y, bullet.width, bullet.height);
+                    ctx.fillStyle = bullet.color;
+                    ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
                 }
             });
         }
@@ -139,7 +141,8 @@
                 x: canvas.width,
                 y: Math.random() * (canvas.height - 50),
                 width: 50,
-                height: 50
+                height: 50,
+                color: 'green'
             });
         }
 
@@ -155,7 +158,8 @@
                         alert('Game Over');
                     }
                 } else {
-                    ctx.drawImage(enemyImage, enemy.x, enemy.y, enemy.width, enemy.height);
+                    ctx.fillStyle = enemy.color;
+                    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
                 }
             });
         }
@@ -179,6 +183,7 @@
         function update() {
             if (gameRunning) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawBackground();
                 player.y += player.dy;
                 if (player.y < 0) {
                     player.y = 0;
