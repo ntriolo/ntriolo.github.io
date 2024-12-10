@@ -1,1 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Shooter Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+        // Initialize the canvas
+        const canvas = new fabric.Canvas('gameCanvas');
 
+        // Create the shooter character
+        const shooter = new fabric.Rect({
+            left: 50,
+            top: canvas.height / 2 - 25,
+            fill: 'blue',
+            width: 50,
+            height: 50
+        });
+
+        // Add the shooter to the canvas
+        canvas.add(shooter);
+
+        // Function to move the shooter up
+        function moveUp() {
+            if (shooter.top > 0) {
+                shooter.top -= 10;
+                canvas.renderAll();
+            }
+        }
+
+        // Function to move the shooter down
+        function moveDown() {
+            if (shooter.top < canvas.height - shooter.height) {
+                shooter.top += 10;
+                canvas.renderAll();
+            }
+        }
+
+        // Function to shoot bullets
+        function shoot() {
+            const bullet = new fabric.Rect({
+                left: shooter.left + shooter.width,
+                top: shooter.top + shooter.height / 2 - 5,
+                fill: 'red',
+                width: 10,
+                height: 10
+            });
+
+            canvas.add(bullet);
+
+            // Animate the bullet
+            function moveBullet() {
+                if (bullet.left < canvas.width) {
+                    bullet.left += 10;
+                    canvas.renderAll();
+                    requestAnimationFrame(moveBullet);
+                } else {
+                    canvas.remove(bullet);
+                }
+            }
+
+            moveBullet();
+        }
+
+        // Function to create enemies
+        function createEnemy() {
+            const enemy = new fabric.Rect({
+                left: canvas.width,
+                top: Math.random() * (canvas.height - 50),
+                fill: 'green',
+                width: 50,
+                height: 50
+            });
+
+            canvas.add(enemy);
+
+            // Animate the enemy
+            function moveEnemy() {
+                if (enemy.left > 0) {
+                    enemy.left -= 5;
+                    canvas.renderAll();
+                    requestAnimationFrame(moveEnemy);
+                } else {
+                    canvas.remove(enemy);
+                }
+            }
+
+            moveEnemy();
+        }
+
+        // Generate enemies at random intervals
+        setInterval(createEnemy, 2000);
+
+        // Event listener for key presses
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowUp') {
+                moveUp();
+            } else if (event.key === 'ArrowDown') {
+                moveDown();
+            } else if (event.key === ' ') { // Space bar to shoot
+                shoot();
+            }
+        });
+    </script>
+</body>
+</html>
