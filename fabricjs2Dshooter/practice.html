@@ -83,9 +83,9 @@
 
             // Update shooter position based on direction
             if (direction === 'up' && shooter.top > 0) {
-                shooter.top -= 15; // Move up
+                shooter.top -= 30; // Move up
             } else if (direction === 'down' && shooter.top < canvas.height - scaledHeight) {
-                shooter.top += 15; // Move down
+                shooter.top += 30; // Move down
             } else if (direction === 'left' && shooter.left > 0) {
                 shooter.left -= 5; // Move left
             } else if (direction === 'right' && shooter.left < canvas.width - scaledWidth) {
