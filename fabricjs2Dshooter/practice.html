@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+\<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -152,9 +152,12 @@
             const shooterWidth = shooter.width * shooter.scaleX;
             const shooterHeight = shooter.height * shooter.scaleY;
 
+            // Log to check if the shoot function is called
+            console.log('Shooting arrow');
+
             // Load bullet image and set its size
             fabric.Image.fromURL('https://github.com/ntriolo/ntriolo.github.io/blob/main/fabricjs2Dshooter/arrow-removebg-preview.png?raw=true', function(img) {
-                // Resize the bullet image to be smaller
+                // Temporarily remove scaling to debug visibility
                 img.scaleToWidth(20); // Set width to 20 pixels
                 img.scaleToHeight(5); // Set height to 5 pixels
 
@@ -164,6 +167,8 @@
                     originX: 'center',
                     originY: 'center'
                 });
+
+                console.log('Arrow added at position:', img.left, img.top);
 
                 bullets.push(img);
                 canvas.add(img);
