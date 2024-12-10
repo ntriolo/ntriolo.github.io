@@ -9,9 +9,12 @@
         canvas {
             border: 1px solid black;
         }
-        #hud {
+        #controls, #hud {
             font-family: Arial, sans-serif;
             margin-top: 10px;
+        }
+        #controls button {
+            margin-right: 10px;
         }
         #hud span {
             margin-right: 20px;
@@ -24,11 +27,14 @@
         <span>Score: <span id="score">0</span></span>
         <span>Lives: <span id="lives">3</span></span>
     </div>
+    <div id="controls">
+        <button id="startButton">Start</button>
+        <button id="stopButton" disabled>Stop</button>
+    </div>
     <script>
-        // Initialize the canvas
         const canvas = new fabric.Canvas('gameCanvas');
 
-        // Create the shooter character
+        // Game elements
         const shooter = new fabric.Rect({
             left: 50,
             top: canvas.height / 2 - 25,
@@ -36,24 +42,25 @@
             width: 50,
             height: 50
         });
-
         canvas.add(shooter);
 
-        // Arrays to track bullets and enemies
         const bullets = [];
         const enemies = [];
 
-        // Initialize score and lives
+        // Game state
         let score = 0;
         let lives = 3;
+        let gameRunning = false;
+        let gameLoopId = null;
+        let enemyIntervalId = null;
 
-        // Update the HUD
+        // Update HUD
         function updateHUD() {
             document.getElementById('score').textContent = score;
             document.getElementById('lives').textContent = lives;
         }
 
-        // Function to move the shooter
+        // Shooter movement
         function moveShooter(direction) {
             if (direction === 'up' && shooter.top > 0) {
                 shooter.top -= 20;
@@ -64,7 +71,7 @@
             canvas.renderAll();
         }
 
-        // Function to shoot a bullet
+        // Shooting bullets
         function shoot() {
             const bullet = new fabric.Rect({
                 left: shooter.left + shooter.width,
@@ -73,12 +80,11 @@
                 width: 10,
                 height: 10
             });
-
             bullets.push(bullet);
             canvas.add(bullet);
         }
 
-        // Function to create an enemy
+        // Enemy creation
         function createEnemy() {
             const enemy = new fabric.Rect({
                 left: canvas.width,
@@ -87,19 +93,16 @@
                 width: 50,
                 height: 50
             });
-
             enemies.push(enemy);
             canvas.add(enemy);
         }
 
-        // Function to update bullets
+        // Update bullets and enemies
         function updateBullets() {
             for (let i = bullets.length - 1; i >= 0; i--) {
                 const bullet = bullets[i];
                 bullet.left += 10;
                 bullet.setCoords();
-
-                // Remove bullets that move off-screen
                 if (bullet.left > canvas.width) {
                     canvas.remove(bullet);
                     bullets.splice(i, 1);
@@ -107,49 +110,43 @@
             }
         }
 
-        // Function to update enemies
         function updateEnemies() {
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
                 enemy.left -= 5;
                 enemy.setCoords();
-
-                // Remove enemies that move off-screen and deduct a life
                 if (enemy.left < 0) {
                     canvas.remove(enemy);
                     enemies.splice(i, 1);
                     lives--;
                     updateHUD();
                     if (lives <= 0) {
-                        endGame();
+                        stopGame();
+                        alert('Game Over! Final Score: ' + score);
                     }
                 }
             }
         }
 
-        // Function to check for collisions
+        // Collision check
         function checkCollisions() {
             for (let i = bullets.length - 1; i >= 0; i--) {
                 const bullet = bullets[i];
                 for (let j = enemies.length - 1; j >= 0; j--) {
                     const enemy = enemies[j];
                     if (isColliding(bullet, enemy)) {
-                        // Remove bullet and enemy on collision
                         canvas.remove(bullet);
                         canvas.remove(enemy);
                         bullets.splice(i, 1);
                         enemies.splice(j, 1);
-
-                        // Increment score and update HUD
                         score += 10;
                         updateHUD();
-                        break; // Exit the inner loop
+                        break;
                     }
                 }
             }
         }
 
-        // Function to check collision between two objects
         function isColliding(obj1, obj2) {
             const obj1Bounds = obj1.aCoords;
             const obj2Bounds = obj2.aCoords;
@@ -162,36 +159,48 @@
             );
         }
 
-        // Function to end the game
-        function endGame() {
-            alert('Game Over! Final Score: ' + score);
-            document.location.reload(); // Reload the page to restart
-        }
-
-        // Main game loop
+        // Game loop
         function gameLoop() {
             updateBullets();
             updateEnemies();
             checkCollisions();
             canvas.renderAll();
-            requestAnimationFrame(gameLoop);
+            if (gameRunning) {
+                gameLoopId = requestAnimationFrame(gameLoop);
+            }
         }
 
-        // Start the game loop
-        gameLoop();
-
-        // Generate enemies at regular intervals
-        setInterval(createEnemy, 2000);
-
-        // Key event listeners
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'ArrowUp') {
-                moveShooter('up');
-            } else if (event.key === 'ArrowDown') {
-                moveShooter('down');
-            } else if (event.key === ' ') {
-                shoot();
+        // Start game
+        function startGame() {
+            if (!gameRunning) {
+                gameRunning = true;
+                gameLoopId = requestAnimationFrame(gameLoop);
+                enemyIntervalId = setInterval(createEnemy, 2000);
+                document.getElementById('startButton').disabled = true;
+                document.getElementById('stopButton').disabled = false;
             }
+        }
+
+        // Stop game
+        function stopGame() {
+            if (gameRunning) {
+                gameRunning = false;
+                cancelAnimationFrame(gameLoopId);
+                clearInterval(enemyIntervalId);
+                document.getElementById('startButton').disabled = false;
+                document.getElementById('stopButton').disabled = true;
+            }
+        }
+
+        // Event listeners
+        document.getElementById('startButton').addEventListener('click', startGame);
+        document.getElementById('stopButton').addEventListener('click', stopGame);
+
+        document.addEventListener('keydown', (event) => {
+            if (!gameRunning) return;
+            if (event.key === 'ArrowUp') moveShooter('up');
+            if (event.key === 'ArrowDown') moveShooter('down');
+            if (event.key === ' ') shoot();
         });
 
         // Initialize HUD
