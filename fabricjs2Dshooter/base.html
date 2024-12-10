@@ -110,16 +110,19 @@
 
         // Function to check for collisions
         function checkCollisions() {
-            bullets.forEach(bullet => {
-                enemies.forEach(enemy => {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
                     if (isColliding(bullet, enemy)) {
                         canvas.remove(bullet);
                         canvas.remove(enemy);
-                        bullets.splice(bullets.indexOf(bullet), 1);
-                        enemies.splice(enemies.indexOf(enemy), 1);
+                        bullets.splice(i, 1);
+                        enemies.splice(j, 1);
+                        break; // Exit the inner loop to avoid errors
                     }
-                });
-            });
+                }
+            }
         }
 
         // Function to check if two objects are colliding
@@ -130,8 +133,15 @@
                    obj1.top + obj1.height > obj2.top;
         }
 
-        // Check for collisions at regular intervals
-        setInterval(checkCollisions, 100);
+        // Main game loop
+        function gameLoop() {
+            checkCollisions();
+            canvas.renderAll();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game loop
+        gameLoop();
 
         // Event listener for key presses
         document.addEventListener('keydown', function(event) {
