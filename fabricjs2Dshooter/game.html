@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D Shooter Game with Images</title>
+    <title>2D Shooter Game with Projectiles</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
     <style>
         canvas {
@@ -34,16 +34,21 @@
     <script>
         const canvas = new fabric.Canvas('gameCanvas');
 
-        // Set up a background image
-        fabric.Image.fromURL('https://github.com/ntriolo/ntriolo.github.io/blob/main/fabricjs2Dshooter/caveman%20background.jpeg?raw=true', function(img) {
-            img.scaleToWidth(canvas.width);
-            img.scaleToHeight(canvas.height);
-            canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
-        });
+        // Set up a background color
+        canvas.setBackgroundColor('lightblue', canvas.renderAll.bind(canvas));
+
+        // Sound effects
+        const shootSound = new Audio('https://example.com/shoot-sound.mp3'); // Replace with your sound file URL
+        const hitSound = new Audio('https://example.com/hit-sound.mp3'); // Replace with your sound file URL
+        const backgroundMusic = new Audio('https://example.com/background-music.mp3'); // Replace with your sound file URL
+
+        // Play background music (looping)
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.5;
 
         // Game elements
         let shooter;
-        const bullets = [];
+        const projectiles = [];
         const enemies = [];
 
         // Game state
@@ -59,75 +64,50 @@
             document.getElementById('lives').textContent = lives;
         }
 
-        // Load shooter image
-        fabric.Image.fromURL('https://github.com/ntriolo/ntriolo.github.io/blob/main/fabricjs2Dshooter/caveman-removebg-preview.png?raw=true', function(img) {
-            shooter = img.set({
-                left: 50,
-                top: canvas.height / 2 - 25,
-                originX: 'center',
-                originY: 'center',
-                scaleX: 0.1,
-                scaleY: 0.1
-            });
-            canvas.add(shooter);
+        // Shooter setup
+        shooter = new fabric.Rect({
+            left: 50,
+            top: canvas.height / 2 - 25,
+            width: 50,
+            height: 50,
+            fill: 'blue',
+            originX: 'center',
+            originY: 'center'
         });
+        canvas.add(shooter);
 
-        // Movement flags for smooth movement
+        // Movement flags
         let isMovingUp = false;
         let isMovingDown = false;
-        let isMovingLeft = false;
-        let isMovingRight = false;
 
         function moveShooter() {
-            if (!shooter) return;
-
-            const stepSize = 5; // Adjust step size for speed
+            const stepSize = 5;
 
             if (isMovingUp && shooter.top > 0) {
                 shooter.top -= stepSize;
             }
-            if (isMovingDown && shooter.top < canvas.height - shooter.height * shooter.scaleY) {
+            if (isMovingDown && shooter.top < canvas.height - shooter.height) {
                 shooter.top += stepSize;
-            }
-            if (isMovingLeft && shooter.left > 0) {
-                shooter.left -= stepSize;
-            }
-            if (isMovingRight && shooter.left < canvas.width - shooter.width * shooter.scaleX) {
-                shooter.left += stepSize;
             }
 
             shooter.setCoords();
             canvas.renderAll();
 
-            if (isMovingUp || isMovingDown || isMovingLeft || isMovingRight) {
+            if (isMovingUp || isMovingDown) {
                 requestAnimationFrame(moveShooter);
             }
         }
 
-        // Event listeners for key press and release for continuous movement
+        // Keydown and keyup event listeners
         document.addEventListener('keydown', (event) => {
             if (!gameRunning) return;
 
-            if (event.key === 'ArrowUp') {
-                if (!isMovingUp) {
-                    isMovingUp = true;
-                    requestAnimationFrame(moveShooter);
-                }
-            } else if (event.key === 'ArrowDown') {
-                if (!isMovingDown) {
-                    isMovingDown = true;
-                    requestAnimationFrame(moveShooter);
-                }
-            } else if (event.key === 'ArrowLeft') {
-                if (!isMovingLeft) {
-                    isMovingLeft = true;
-                    requestAnimationFrame(moveShooter);
-                }
-            } else if (event.key === 'ArrowRight') {
-                if (!isMovingRight) {
-                    isMovingRight = true;
-                    requestAnimationFrame(moveShooter);
-                }
+            if (event.key === 'ArrowUp' && !isMovingUp) {
+                isMovingUp = true;
+                moveShooter();
+            } else if (event.key === 'ArrowDown' && !isMovingDown) {
+                isMovingDown = true;
+                moveShooter();
             } else if (event.key === ' ') {
                 shoot();
             }
@@ -138,71 +118,51 @@
                 isMovingUp = false;
             } else if (event.key === 'ArrowDown') {
                 isMovingDown = false;
-            } else if (event.key === 'ArrowLeft') {
-                isMovingLeft = false;
-            } else if (event.key === 'ArrowRight') {
-                isMovingRight = false;
             }
         });
 
-        // Shooting bullets
+        // Shooting projectiles
         function shoot() {
-            if (!shooter) return;
+            shootSound.play();
 
-            const shooterWidth = shooter.width * shooter.scaleX;
-            const shooterHeight = shooter.height * shooter.scaleY;
-
-            const bullet = new fabric.Rect({
-                left: shooter.left + shooterWidth / 2,
-                top: shooter.top + shooterHeight / 2 - 5,
+            const projectile = new fabric.Circle({
+                left: shooter.left + shooter.width / 2,
+                top: shooter.top,
+                radius: 5,
                 fill: 'red',
-                width: 10,
-                height: 10
+                originX: 'center',
+                originY: 'center'
             });
 
-            bullets.push(bullet);
-            canvas.add(bullet);
-
-            function moveBullet() {
-                if (bullet.left < canvas.width) {
-                    bullet.left += 10;
-                    bullet.setCoords();
-                    canvas.renderAll();
-                    requestAnimationFrame(moveBullet);
-                } else {
-                    canvas.remove(bullet);
-                    bullets.splice(bullets.indexOf(bullet), 1);
-                }
-            }
-
-            moveBullet();
+            projectiles.push(projectile);
+            canvas.add(projectile);
         }
 
-        // Load enemy image and create an enemy
+        // Create enemies
         function createEnemy() {
-            fabric.Image.fromURL('https://github.com/ntriolo/ntriolo.github.io/blob/main/fabricjs2Dshooter/pig-removebg-preview.png?raw=true', function(img) {
-                const enemy = img.set({
-                    left: canvas.width,
-                    top: Math.random() * (canvas.height - 50),
-                    originX: 'center',
-                    originY: 'center',
-                    scaleX: 0.2,
-                    scaleY: 0.2
-                });
-                enemies.push(enemy);
-                canvas.add(enemy);
+            const enemy = new fabric.Rect({
+                left: canvas.width,
+                top: Math.random() * (canvas.height - 50),
+                width: 50,
+                height: 50,
+                fill: 'green',
+                originX: 'center',
+                originY: 'center'
             });
+
+            enemies.push(enemy);
+            canvas.add(enemy);
         }
 
-        // Update bullets and enemies
-        function updateBullets() {
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                const bullet = bullets[i];
-                bullet.left += 10;
-                bullet.setCoords();
-                if (bullet.left > canvas.width) {
-                    canvas.remove(bullet);
-                    bullets.splice(i, 1);
+        // Update projectiles and enemies
+        function updateProjectiles() {
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const projectile = projectiles[i];
+                projectile.left += 10;
+
+                if (projectile.left > canvas.width) {
+                    canvas.remove(projectile);
+                    projectiles.splice(i, 1);
                 }
             }
         }
@@ -211,12 +171,13 @@
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
                 enemy.left -= 5;
-                enemy.setCoords();
+
                 if (enemy.left < 0) {
                     canvas.remove(enemy);
                     enemies.splice(i, 1);
                     lives--;
                     updateHUD();
+
                     if (lives <= 0) {
                         stopGame();
                         alert('Game Over! Final Score: ' + score);
@@ -225,17 +186,21 @@
             }
         }
 
-        // Collision check
+        // Collision detection
         function checkCollisions() {
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                const bullet = bullets[i];
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const projectile = projectiles[i];
                 for (let j = enemies.length - 1; j >= 0; j--) {
                     const enemy = enemies[j];
-                    if (isColliding(bullet, enemy)) {
-                        canvas.remove(bullet);
+                    if (projectile.intersectsWithObject(enemy)) {
+                        hitSound.play();
+
+                        canvas.remove(projectile);
                         canvas.remove(enemy);
-                        bullets.splice(i, 1);
+
+                        projectiles.splice(i, 1);
                         enemies.splice(j, 1);
+
                         score += 10;
                         updateHUD();
                         break;
@@ -244,33 +209,23 @@
             }
         }
 
-        function isColliding(obj1, obj2) {
-            const obj1Bounds = obj1.aCoords;
-            const obj2Bounds = obj2.aCoords;
-
-            return (
-                obj1Bounds.tl.x < obj2Bounds.br.x &&
-                obj1Bounds.br.x > obj2Bounds.tl.x &&
-                obj1Bounds.tl.y < obj2Bounds.br.y &&
-                obj1Bounds.br.y > obj2Bounds.tl.y
-            );
-        }
-
         // Game loop
         function gameLoop() {
-            updateBullets();
+            updateProjectiles();
             updateEnemies();
             checkCollisions();
             canvas.renderAll();
+
             if (gameRunning) {
                 gameLoopId = requestAnimationFrame(gameLoop);
             }
         }
 
-        // Start game
+        // Start and stop game functions
         function startGame() {
             if (!gameRunning) {
                 gameRunning = true;
+                backgroundMusic.play();
                 gameLoopId = requestAnimationFrame(gameLoop);
                 enemyIntervalId = setInterval(createEnemy, 2000);
                 document.getElementById('startButton').disabled = true;
@@ -278,10 +233,10 @@
             }
         }
 
-        // Stop game
         function stopGame() {
             if (gameRunning) {
                 gameRunning = false;
+                backgroundMusic.pause();
                 cancelAnimationFrame(gameLoopId);
                 clearInterval(enemyIntervalId);
                 document.getElementById('startButton').disabled = false;
@@ -289,7 +244,7 @@
             }
         }
 
-        // Event listeners for game controls
+        // Event listeners for buttons
         document.getElementById('startButton').addEventListener('click', startGame);
         document.getElementById('stopButton').addEventListener('click', stopGame);
 
