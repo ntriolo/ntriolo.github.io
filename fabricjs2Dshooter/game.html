@@ -31,6 +31,9 @@
         <button id="startButton">Start</button>
         <button id="stopButton" disabled>Stop</button>
     </div>
+    <audio id="shootSound" src="bow-release-bow-and-arrow-4-101936.mp3"></audio>
+    <audio id="collisionSound" src="arrow-impact-87260.mp3"></audio>
+    <audio id="backgroundMusic" src="https://www.soundjay.com/free-music/sounds/loop-1.mp3" loop></audio>
     <script>
         const canvas = new fabric.Canvas('gameCanvas');
 
@@ -52,6 +55,11 @@
         let gameRunning = false;
         let gameLoopId = null;
         let enemyIntervalId = null;
+
+        // Audio elements
+        const shootSound = document.getElementById('shootSound');
+        const collisionSound = document.getElementById('collisionSound');
+        const backgroundMusic = document.getElementById('backgroundMusic');
 
         // Update HUD
         function updateHUD() {
@@ -163,6 +171,8 @@
             bullets.push(bullet);
             canvas.add(bullet);
 
+            shootSound.play();
+
             function moveBullet() {
                 if (bullet.left < canvas.width) {
                     bullet.left += 10;
@@ -238,6 +248,7 @@
                         enemies.splice(j, 1);
                         score += 10;
                         updateHUD();
+                        collisionSound.play();
                         break;
                     }
                 }
@@ -275,6 +286,7 @@
                 enemyIntervalId = setInterval(createEnemy, 2000);
                 document.getElementById('startButton').disabled = true;
                 document.getElementById('stopButton').disabled = false;
+                backgroundMusic.play();
             }
         }
 
@@ -286,6 +298,8 @@
                 clearInterval(enemyIntervalId);
                 document.getElementById('startButton').disabled = false;
                 document.getElementById('stopButton').disabled = true;
+                backgroundMusic.pause();
+                backgroundMusic.currentTime = 0;
             }
         }
 
