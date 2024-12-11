@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D Shooter Game with Images and Sound</title>
+    <title>2D Shooter Game with Images</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
     <style>
         canvas {
@@ -40,15 +40,6 @@
             img.scaleToHeight(canvas.height);
             canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
         });
-
-        // Sound effects
-        const shootSound = new Audio('bow-release-bow-and-arrow-4-101936.mp3'); // Replace with your sound file URL
-        const hitSound = new Audio('arrow-impact-87260.mp3'); // Replace with your sound file URL
-        const backgroundMusic = new Audio('https://example.com/background-music.mp3'); // Replace with your sound file URL
-
-        // Play background music (looping)
-        backgroundMusic.loop = true;
-        backgroundMusic.volume = 0.5;
 
         // Game elements
         let shooter;
@@ -154,53 +145,45 @@
             }
         });
 
-        // Shooting bullets using a custom image
+        // Shooting bullets
         function shoot() {
             if (!shooter) return;
 
             const shooterWidth = shooter.width * shooter.scaleX;
             const shooterHeight = shooter.height * shooter.scaleY;
 
-            shootSound.play(); // Play shoot sound
-
-            // Load bullet image and set its size
-            fabric.Image.fromURL('https://github.com/ntriolo/ntriolo.github.io/blob/main/fabricjs2Dshooter/arrow-removebg-preview.png?raw=true', function(img) {
-                img.scaleToWidth(10); // Set width to 10 pixels
-                img.scaleToHeight(2.5); // Set height to 2.5 pixels
-
-                img.set({
-                    left: shooter.left + shooterWidth / 2, // Slightly to the right of the shooter
-                    top: shooter.top,
-                    originX: 'center',
-                    originY: 'center'
-                });
-
-                bullets.push(img);
-                canvas.add(img);
-
-                // Animate the bullet
-                function moveBullet() {
-                    if (img.left < canvas.width) {
-                        img.left += 10; // Adjust speed as needed
-                        img.setCoords();
-                        canvas.renderAll();
-                        requestAnimationFrame(moveBullet);
-                    } else {
-                        canvas.remove(img);
-                        bullets.splice(bullets.indexOf(img), 1);
-                    }
-                }
-
-                moveBullet();
+            const bullet = new fabric.Rect({
+                left: shooter.left + shooterWidth / 2,
+                top: shooter.top + shooterHeight / 2 - 5,
+                fill: 'red',
+                width: 10,
+                height: 10
             });
+
+            bullets.push(bullet);
+            canvas.add(bullet);
+
+            function moveBullet() {
+                if (bullet.left < canvas.width) {
+                    bullet.left += 10;
+                    bullet.setCoords();
+                    canvas.renderAll();
+                    requestAnimationFrame(moveBullet);
+                } else {
+                    canvas.remove(bullet);
+                    bullets.splice(bullets.indexOf(bullet), 1);
+                }
+            }
+
+            moveBullet();
         }
 
         // Load enemy image and create an enemy
         function createEnemy() {
             fabric.Image.fromURL('https://github.com/ntriolo/ntriolo.github.io/blob/main/fabricjs2Dshooter/pig-removebg-preview.png?raw=true', function(img) {
                 const enemy = img.set({
-                    left: canvas.width, // Start at the right edge
-                    top: Math.random() * (canvas.height - 50), // Random vertical position
+                    left: canvas.width,
+                    top: Math.random() * (canvas.height - 50),
                     originX: 'center',
                     originY: 'center',
                     scaleX: 0.2,
@@ -227,7 +210,7 @@
         function updateEnemies() {
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
-                enemy.left -= 5; // Move enemy to the left
+                enemy.left -= 5;
                 enemy.setCoords();
                 if (enemy.left < 0) {
                     canvas.remove(enemy);
@@ -248,24 +231,29 @@
                 const bullet = bullets[i];
                 for (let j = enemies.length - 1; j >= 0; j--) {
                     const enemy = enemies[j];
-                    if (
-                        bullet.left + bullet.width / 2 > enemy.left - enemy.width / 2 &&
-                        bullet.left - bullet.width / 2 < enemy.left + enemy.width / 2 &&
-                        bullet.top + bullet.height / 2 > enemy.top - enemy.height / 2 &&
-                        bullet.top - bullet.height / 2 < enemy.top + enemy.height / 2
-                    ) {
-                        // Collision detected
-                        hitSound.play();
+                    if (isColliding(bullet, enemy)) {
                         canvas.remove(bullet);
                         canvas.remove(enemy);
                         bullets.splice(i, 1);
                         enemies.splice(j, 1);
-                        score += 10; // Increase score for hit
+                        score += 10;
                         updateHUD();
                         break;
                     }
                 }
             }
+        }
+
+        function isColliding(obj1, obj2) {
+            const obj1Bounds = obj1.aCoords;
+            const obj2Bounds = obj2.aCoords;
+
+            return (
+                obj1Bounds.tl.x < obj2Bounds.br.x &&
+                obj1Bounds.br.x > obj2Bounds.tl.x &&
+                obj1Bounds.tl.y < obj2Bounds.br.y &&
+                obj1Bounds.br.y > obj2Bounds.tl.y
+            );
         }
 
         // Game loop
@@ -283,7 +271,6 @@
         function startGame() {
             if (!gameRunning) {
                 gameRunning = true;
-                backgroundMusic.play(); // Start background music
                 gameLoopId = requestAnimationFrame(gameLoop);
                 enemyIntervalId = setInterval(createEnemy, 2000);
                 document.getElementById('startButton').disabled = true;
@@ -295,7 +282,6 @@
         function stopGame() {
             if (gameRunning) {
                 gameRunning = false;
-                backgroundMusic.pause(); // Stop background music
                 cancelAnimationFrame(gameLoopId);
                 clearInterval(enemyIntervalId);
                 document.getElementById('startButton').disabled = false;
