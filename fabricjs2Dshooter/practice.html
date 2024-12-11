@@ -31,6 +31,9 @@
         <button id="startButton">Start</button>
         <button id="stopButton" disabled>Stop</button>
     </div>
+    <audio id="shootSound" src="bow-release-bow-and-arrow-4-101936.mp3"></audio>
+    <audio id="collisionSound" src="arrow-impact-87260.mp3"></audio>
+    <audio id="backgroundMusic" src="https://www.soundjay.com/free-music/sounds/loop-1.mp3" loop></audio>
     <script>
         const canvas = new fabric.Canvas('gameCanvas');
 
@@ -41,16 +44,12 @@
             canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
         });
 
-        const shootSound = new Audio('bow-release-bow-and-arrow-4-101936.mp3');
-        const hitSound = new Audio('arrow-impact-87260.mp3');
-        const backgroundMusic = new Audio('https://example.com/background-music.mp3'); 
-
-        backgroundMusic.loop = true;
-        backgroundMusic.volume = 0.5;
-
+        // Game elements
         let shooter;
         const bullets = [];
         const enemies = [];
+
+        // Game state
         let score = 0;
         let lives = 3;
         let gameRunning = false;
