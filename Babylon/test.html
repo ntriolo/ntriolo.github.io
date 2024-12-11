@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Babylon.js GLB Model with Animation</title>
+    <title>Babylon.js Log GLB Animations</title>
     <style>
         html, body {
             overflow: hidden;
@@ -43,12 +43,31 @@
 
             // Load the GLB model
             BABYLON.SceneLoader.Append("./", "humanoid1.glb", scene, function (scene) {
-                // Check if there are animations in the model
+                // Log available animations in the scene
+                console.log("Animation Groups:", scene.animationGroups);
+                
+                // If there are animations, start them and log the details
                 if (scene.animationGroups.length > 0) {
-                    // Start all animations
-                    scene.animationGroups.forEach((animGroup) => {
-                        animGroup.start(true);
+                    scene.animationGroups.forEach((animGroup, index) => {
+                        console.log(`Animation Group ${index + 1}:`);
+                        console.log("Name:", animGroup.name);
+                        console.log("Targeted Animations:", animGroup.targetedAnimations);
+                        console.log("Duration:", animGroup.to - animGroup.from);
+                        animGroup.start(true); // Start the animation loop
                     });
+                } else {
+                    console.log("No animation groups found in the model.");
+                }
+
+                // If there are skeletons (for skinned mesh models), log skeleton information
+                if (scene.skeletons.length > 0) {
+                    scene.skeletons.forEach((skeleton, index) => {
+                        console.log(`Skeleton ${index + 1}:`);
+                        console.log("Name:", skeleton.name);
+                        console.log("Bones:", skeleton.bones);
+                    });
+                } else {
+                    console.log("No skeletons found in the model.");
                 }
             });
 
