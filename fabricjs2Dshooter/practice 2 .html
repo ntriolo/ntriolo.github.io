@@ -32,7 +32,6 @@
         <button id="stopButton" disabled>Stop</button>
     </div>
     <script>
-        // Complete game logic, including shooter movement, collision handling, sound integration, etc.
         const canvas = new fabric.Canvas('gameCanvas');
 
         // Set up a background image
@@ -42,27 +41,34 @@
             canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
         });
 
-        const shootSound = new Audio('bow-release-bow-and-arrow-4-101936.mp3');
-        const hitSound = new Audio('arrow-impact-87260.mp3');
-        const backgroundMusic = new Audio('https://example.com/background-music.mp3'); 
+        // Sound effects
+        const shootSound = new Audio('bow-release-bow-and-arrow-4-101936.mp3'); // Replace with your sound file URL
+        const hitSound = new Audio('arrow-impact-87260.mp3'); // Replace with your sound file URL
+        const backgroundMusic = new Audio('https://example.com/background-music.mp3'); // Replace with your sound file URL
 
+        // Play background music (looping)
         backgroundMusic.loop = true;
         backgroundMusic.volume = 0.5;
 
+        // Game elements
         let shooter;
         const bullets = [];
         const enemies = [];
+
+        // Game state
         let score = 0;
         let lives = 3;
         let gameRunning = false;
         let gameLoopId = null;
         let enemyIntervalId = null;
 
+        // Update HUD
         function updateHUD() {
             document.getElementById('score').textContent = score;
             document.getElementById('lives').textContent = lives;
         }
 
+        // Load shooter image
         fabric.Image.fromURL('https://github.com/ntriolo/ntriolo.github.io/blob/main/fabricjs2Dshooter/caveman-removebg-preview.png?raw=true', function(img) {
             shooter = img.set({
                 left: 50,
@@ -75,56 +81,107 @@
             canvas.add(shooter);
         });
 
-        let isMovingUp = false, isMovingDown = false, isMovingLeft = false, isMovingRight = false;
+        // Movement flags for smooth movement
+        let isMovingUp = false;
+        let isMovingDown = false;
+        let isMovingLeft = false;
+        let isMovingRight = false;
 
         function moveShooter() {
             if (!shooter) return;
 
-            const step = 5;
-            if (isMovingUp && shooter.top > 0) shooter.top -= step;
-            if (isMovingDown && shooter.top < canvas.height - shooter.height * shooter.scaleY) shooter.top += step;
-            if (isMovingLeft && shooter.left > 0) shooter.left -= step;
-            if (isMovingRight && shooter.left < canvas.width - shooter.width * shooter.scaleX) shooter.left += step;
+            const stepSize = 5; // Adjust step size for speed
+
+            if (isMovingUp && shooter.top > 0) {
+                shooter.top -= stepSize;
+            }
+            if (isMovingDown && shooter.top < canvas.height - shooter.height * shooter.scaleY) {
+                shooter.top += stepSize;
+            }
+            if (isMovingLeft && shooter.left > 0) {
+                shooter.left -= stepSize;
+            }
+            if (isMovingRight && shooter.left < canvas.width - shooter.width * shooter.scaleX) {
+                shooter.left += stepSize;
+            }
 
             shooter.setCoords();
             canvas.renderAll();
-            if (isMovingUp || isMovingDown || isMovingLeft || isMovingRight) requestAnimationFrame(moveShooter);
+
+            if (isMovingUp || isMovingDown || isMovingLeft || isMovingRight) {
+                requestAnimationFrame(moveShooter);
+            }
         }
 
-        document.addEventListener('keydown', (e) => {
+        // Event listeners for key press and release for continuous movement
+        document.addEventListener('keydown', (event) => {
             if (!gameRunning) return;
-            if (e.key === 'ArrowUp') isMovingUp = true;
-            if (e.key === 'ArrowDown') isMovingDown = true;
-            if (e.key === 'ArrowLeft') isMovingLeft = true;
-            if (e.key === 'ArrowRight') isMovingRight = true;
-            if (e.key === ' ') shoot();
-            moveShooter();
+
+            if (event.key === 'ArrowUp') {
+                if (!isMovingUp) {
+                    isMovingUp = true;
+                    requestAnimationFrame(moveShooter);
+                }
+            } else if (event.key === 'ArrowDown') {
+                if (!isMovingDown) {
+                    isMovingDown = true;
+                    requestAnimationFrame(moveShooter);
+                }
+            } else if (event.key === 'ArrowLeft') {
+                if (!isMovingLeft) {
+                    isMovingLeft = true;
+                    requestAnimationFrame(moveShooter);
+                }
+            } else if (event.key === 'ArrowRight') {
+                if (!isMovingRight) {
+                    isMovingRight = true;
+                    requestAnimationFrame(moveShooter);
+                }
+            } else if (event.key === ' ') {
+                shoot();
+            }
         });
 
-        document.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowUp') isMovingUp = false;
-            if (e.key === 'ArrowDown') isMovingDown = false;
-            if (e.key === 'ArrowLeft') isMovingLeft = false;
-            if (e.key === 'ArrowRight') isMovingRight = false;
+        document.addEventListener('keyup', (event) => {
+            if (event.key === 'ArrowUp') {
+                isMovingUp = false;
+            } else if (event.key === 'ArrowDown') {
+                isMovingDown = false;
+            } else if (event.key === 'ArrowLeft') {
+                isMovingLeft = false;
+            } else if (event.key === 'ArrowRight') {
+                isMovingRight = false;
+            }
         });
 
+        // Shooting bullets using a custom image
         function shoot() {
             if (!shooter) return;
 
+            const shooterWidth = shooter.width * shooter.scaleX;
+            const shooterHeight = shooter.height * shooter.scaleY;
+
+            shootSound.play(); // Play shoot sound
+
+            // Load bullet image and set its size
             fabric.Image.fromURL('https://github.com/ntriolo/ntriolo.github.io/blob/main/fabricjs2Dshooter/arrow-removebg-preview.png?raw=true', function(img) {
-                img.scaleToWidth(20);
+                img.scaleToWidth(10); // Set width to 10 pixels
+                img.scaleToHeight(2.5); // Set height to 2.5 pixels
+
                 img.set({
-                    left: shooter.left + (shooter.width * shooter.scaleX) / 2,
+                    left: shooter.left + shooterWidth / 2, // Slightly to the right of the shooter
                     top: shooter.top,
                     originX: 'center',
                     originY: 'center'
                 });
+
                 bullets.push(img);
                 canvas.add(img);
 
+                // Animate the bullet
                 function moveBullet() {
                     if (img.left < canvas.width) {
-                        img.left += 10;
+                        img.left += 10; // Adjust speed as needed
                         img.setCoords();
                         canvas.renderAll();
                         requestAnimationFrame(moveBullet);
@@ -133,16 +190,17 @@
                         bullets.splice(bullets.indexOf(img), 1);
                     }
                 }
+
                 moveBullet();
             });
-            shootSound.play();
         }
 
+        // Load enemy image and create an enemy
         function createEnemy() {
             fabric.Image.fromURL('https://github.com/ntriolo/ntriolo.github.io/blob/main/fabricjs2Dshooter/pig-removebg-preview.png?raw=true', function(img) {
                 const enemy = img.set({
-                    left: canvas.width,
-                    top: Math.random() * (canvas.height - 50),
+                    left: canvas.width, // Start at the right edge
+                    top: Math.random() * (canvas.height - 50), // Random vertical position
                     originX: 'center',
                     originY: 'center',
                     scaleX: 0.2,
@@ -153,32 +211,103 @@
             });
         }
 
+        // Update bullets and enemies
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                bullet.left += 10;
+                bullet.setCoords();
+                if (bullet.left > canvas.width) {
+                    canvas.remove(bullet);
+                    bullets.splice(i, 1);
+                }
+            }
+        }
+
+        function updateEnemies() {
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                enemy.left -= 5; // Move enemy to the left
+                enemy.setCoords();
+                if (enemy.left < 0) {
+                    canvas.remove(enemy);
+                    enemies.splice(i, 1);
+                    lives--;
+                    updateHUD();
+                    if (lives <= 0) {
+                        stopGame();
+                        alert('Game Over! Final Score: ' + score);
+                    }
+                }
+            }
+        }
+
+        // Collision check
+        function checkCollisions() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
+                    if (
+                        bullet.left + bullet.width / 2 > enemy.left - enemy.width / 2 &&
+                        bullet.left - bullet.width / 2 < enemy.left + enemy.width / 2 &&
+                        bullet.top + bullet.height / 2 > enemy.top - enemy.height / 2 &&
+                        bullet.top - bullet.height / 2 < enemy.top + enemy.height / 2
+                    ) {
+                        // Collision detected
+                        hitSound.play();
+                        canvas.remove(bullet);
+                        canvas.remove(enemy);
+                        bullets.splice(i, 1);
+                        enemies.splice(j, 1);
+                        score += 10; // Increase score for hit
+                        updateHUD();
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Game loop
         function gameLoop() {
             updateBullets();
             updateEnemies();
             checkCollisions();
             canvas.renderAll();
-            if (gameRunning) requestAnimationFrame(gameLoop);
-        }
-
-        function updateBullets() { /* Logic */ }
-        function updateEnemies() { /* Logic */ }
-        function checkCollisions() { /* Logic */ }
-
-        function startGame() {
-            if (!gameRunning) {
-                gameRunning = true;
-                backgroundMusic.play();
+            if (gameRunning) {
                 gameLoopId = requestAnimationFrame(gameLoop);
-                enemyIntervalId = setInterval(createEnemy, 2000);
             }
         }
 
-        function stopGame() { /* Logic */ }
+        // Start game
+        function startGame() {
+            if (!gameRunning) {
+                gameRunning = true;
+                backgroundMusic.play(); // Start background music
+                gameLoopId = requestAnimationFrame(gameLoop);
+                enemyIntervalId = setInterval(createEnemy, 2000);
+                document.getElementById('startButton').disabled = true;
+                document.getElementById('stopButton').disabled = false;
+            }
+        }
 
+        // Stop game
+        function stopGame() {
+            if (gameRunning) {
+                gameRunning = false;
+                backgroundMusic.pause(); // Stop background music
+                cancelAnimationFrame(gameLoopId);
+                clearInterval(enemyIntervalId);
+                document.getElementById('startButton').disabled = false;
+                document.getElementById('stopButton').disabled = true;
+            }
+        }
+
+        // Event listeners for game controls
         document.getElementById('startButton').addEventListener('click', startGame);
         document.getElementById('stopButton').addEventListener('click', stopGame);
 
+        // Initialize HUD
         updateHUD();
     </script>
 </body>
