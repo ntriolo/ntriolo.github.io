@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Babylon.js Rigged GLB Model Example</title>
+    <title>Babylon.js GLB Model with Animation</title>
     <style>
         html, body {
             overflow: hidden;
@@ -43,12 +43,13 @@
 
             // Load the GLB model
             BABYLON.SceneLoader.Append("./", "humanoid1.glb", scene, function (scene) {
-                scene.createDefaultCameraOrLight(true, true, true);
-
-                // Assuming the model has an animation, let's start it
-                scene.animationGroups.forEach((animGroup) => {
-                    animGroup.start(true);
-                });
+                // Check if there are animations in the model
+                if (scene.animationGroups.length > 0) {
+                    // Start all animations
+                    scene.animationGroups.forEach((animGroup) => {
+                        animGroup.start(true);
+                    });
+                }
             });
 
             return scene;
