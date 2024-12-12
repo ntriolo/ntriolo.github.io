@@ -92,9 +92,9 @@
 
             const spheres = [];
             const sphereMovements = [
-                { axis: "y", speed: 0.1, amplitude: 0.5, type: "oscillate" }, // Oscillate in y direction within a small range
+                { axis: "y", speed: 0.1, amplitude: 0.05, type: "oscillate" }, // Oscillate in y direction within a small range
                 { axis: "x", speed: 0.05, type: "rotate" }, // Slow rotation along x axis
-                { axis: "z", speed: 0.002, radius: 1, type: "spiral" } // Slow spiral motion, staying close to the center
+                { axis: "z", speed: 0.002, radius: .05, type: "spiral" } // Slow spiral motion, staying close to the center
             ];
 
             for (let i = 0; i < 3; i++) {
