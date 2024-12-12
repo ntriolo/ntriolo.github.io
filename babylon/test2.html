@@ -181,6 +181,12 @@
                 isRaining = !isRaining;
             });
 
+            // Add a point light to the village
+            const pointLight = new BABYLON.PointLight("pointLight", new BABYLON.Vector3(0, 5, 0), scene);
+            pointLight.intensity = 0.8;
+            pointLight.diffuse = new BABYLON.Color3(1, 1, 1);
+            pointLight.specular = new BABYLON.Color3(1, 1, 1);
+
             return scene;
         };
 
