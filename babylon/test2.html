@@ -23,7 +23,17 @@
             camera.attachControl(canvas, true);
             const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0));
 
-            BABYLON.SceneLoader.ImportMeshAsync("", "https://assets.babylonjs.com/meshes/", "village.glb");
+            // Adjust the path here for your model or ensure the URL is correct
+            BABYLON.SceneLoader.ImportMeshAsync("", "https://assets.babylonjs.com/meshes/", "village.glb").then((result) => {
+                console.log("Village model loaded:", result);
+                // Ensure the village is positioned properly if it's loaded far away or out of sight
+                result.meshes.forEach(mesh => {
+                    mesh.position = new BABYLON.Vector3(0, 0, 0); // Center it
+                    mesh.scaling = new BABYLON.Vector3(2, 2, 2); // Adjust size if needed
+                });
+            }).catch((error) => {
+                console.error("Error loading village model:", error);
+            });
 
             const walk = function (turn, dist) {
                 this.turn = turn;
