@@ -91,17 +91,30 @@
             ];
 
             const spheres = [];
-          const sphereMovements = [
-    { speed: 0.5, radius: 5, type: "revolve" }, // Red sphere revolves around the center with a specific radius
-    { speed: 0.5, radius: 2, type: "revolve" }, // Blue sphere stays closer to the center
-    { axis: "z", speed: 0.01, radius: 0.05, type: "spiral" } // Green sphere with spiral motion (no change)
-];
+            const sphereMovements = [
+                { speed: 0.5, radius: 5, type: "revolve" }, // Red sphere revolves around the center with a specific radius
+                { speed: 0.5, radius: 2, type: "revolve" }, // Blue sphere stays closer to the center
+                { axis: "z", speed: 0.01, radius: 0.05, type: "spiral" } // Green sphere with spiral motion (no change)
+            ];
+
+            const sphereNames = ["Red", "Green", "Blue"];
 
             for (let i = 0; i < 3; i++) {
                 const sphere = BABYLON.MeshBuilder.CreateSphere("sphere" + i, sphereProperties, scene);
                 sphere.position = positions[i];
                 sphere.material = materials[i];
                 spheres.push(sphere);
+
+                // Create floating text labels
+                const dynamicTexture = new BABYLON.DynamicTexture("DynamicTexture", { width: 512, height: 256 }, scene);
+                dynamicTexture.drawText(sphereNames[i], null, 140, "bold 140px Arial", "white", "transparent", true);
+                const plane = BABYLON.MeshBuilder.CreatePlane("textPlane" + i, { width: 2, height: 1 }, scene);
+                plane.position = new BABYLON.Vector3(positions[i].x, positions[i].y + 2.5, positions[i].z);
+                plane.material = new BABYLON.StandardMaterial("textPlaneMaterial" + i, scene);
+                plane.material.diffuseTexture = dynamicTexture;
+                plane.material.diffuseTexture.hasAlpha = true;
+                plane.material.backFaceCulling = false;
+                plane.parent = sphere;
             }
 
             // Add movement logic in the render loop
