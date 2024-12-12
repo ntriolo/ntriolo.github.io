@@ -11,6 +11,7 @@
 <body>
     <canvas id="renderCanvas" style="width: 100%; height: 100%;"></canvas>
     <button id="downloadButton" style="position: absolute; top: 20px; left: 20px; z-index: 10;">Download Stickman GLB</button>
+    <button id="rainButton" style="position: absolute; top: 60px; left: 20px; z-index: 10;">Toggle Rain</button>
     
     <script>
         var canvas = document.getElementById("renderCanvas");
@@ -145,6 +146,39 @@
                 });
             }, null, function (scene, message, exception) {
                 console.error("Error loading OBJ file:", message, exception);
+            });
+
+            // Create rain particle system
+            const rainParticleSystem = new BABYLON.ParticleSystem("rain", 10000, scene);
+            rainParticleSystem.particleTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/flare.png", scene);
+            rainParticleSystem.emitter = new BABYLON.Vector3(0, 10, 0);
+            rainParticleSystem.minEmitBox = new BABYLON.Vector3(-10, 0, -10);
+            rainParticleSystem.maxEmitBox = new BABYLON.Vector3(10, 0, 10);
+            rainParticleSystem.color1 = new BABYLON.Color4(0.7, 0.7, 1, 1);
+            rainParticleSystem.color2 = new BABYLON.Color4(0.7, 0.7, 1, 1);
+            rainParticleSystem.colorDead = new BABYLON.Color4(0.7, 0.7, 1, 0.5);
+            rainParticleSystem.minSize = 0.1;
+            rainParticleSystem.maxSize = 0.5;
+            rainParticleSystem.minLifeTime = 0.3;
+            rainParticleSystem.maxLifeTime = 1.5;
+            rainParticleSystem.emitRate = 1000;
+            rainParticleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+            rainParticleSystem.gravity = new BABYLON.Vector3(0, -9.81, 0);
+            rainParticleSystem.direction1 = new BABYLON.Vector3(-1, -10, -1);
+            rainParticleSystem.direction2 = new BABYLON.Vector3(1, -10, 1);
+            rainParticleSystem.minEmitPower = 1;
+            rainParticleSystem.maxEmitPower = 3;
+            rainParticleSystem.updateSpeed = 0.01;
+
+            let isRaining = false;
+
+            document.getElementById("rainButton").addEventListener("click", () => {
+                if (isRaining) {
+                    rainParticleSystem.stop();
+                } else {
+                    rainParticleSystem.start();
+                }
+                isRaining = !isRaining;
             });
 
             return scene;
