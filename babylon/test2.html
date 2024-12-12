@@ -91,11 +91,11 @@
             ];
 
             const spheres = [];
-            const sphereMovements = [
-                { speed: 0.5, radius: 5, type: "revolve" }, // Red sphere revolves around the center with a specific radius
-                { speed: 5, radius: .5, type: "revolve" }, // Blue sphere stays closer to the center
-                { axis: "z", speed: 0.01, radius: .05, type: "spiral" } // Green sphere with spiral motion (no change)
-            ];
+          const sphereMovements = [
+    { speed: 0.5, radius: 5, type: "revolve" }, // Red sphere revolves around the center with a specific radius
+    { speed: 0.5, radius: 2, type: "revolve" }, // Blue sphere stays closer to the center
+    { axis: "z", speed: 0.01, radius: 0.05, type: "spiral" } // Green sphere with spiral motion (no change)
+];
 
             for (let i = 0; i < 3; i++) {
                 const sphere = BABYLON.MeshBuilder.CreateSphere("sphere" + i, sphereProperties, scene);
