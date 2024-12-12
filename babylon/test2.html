@@ -91,9 +91,9 @@
 
             const spheres = [];
             const sphereMovements = [
-                { axis: "y", speed: 2, amplitude: 1, type: "oscillate" },
+                { axis: "y", speed: 1, amplitude: 1, type: "oscillate" }, // Slower oscillation for red sphere
                 { axis: "x", speed: 0.03, type: "rotate" },
-                { axis: "z", speed: 0.01, radius: 3, type: "spiral" }
+                { axis: "z", speed: 0.005, radius: 3, type: "spiral" } // Slower spiral for blue sphere
             ];
 
             for (let i = 0; i < 3; i++) {
@@ -117,6 +117,7 @@
                         const angle = time * movement.speed;
                         sphere.position.x = positions[index].x + Math.cos(angle) * movement.radius;
                         sphere.position.z = positions[index].z + Math.sin(angle) * movement.radius;
+                        sphere.position.y = positions[index].y + Math.sin(angle) * 0.5; // Add vertical movement for return
                     }
                 });
             });
