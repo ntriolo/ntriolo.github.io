@@ -92,9 +92,9 @@
 
             const spheres = [];
             const sphereMovements = [
-                { axis: "y", speed: 0.1, amplitude: 0.05, type: "oscillate" }, // Oscillate in y direction within a small range
-                { axis: "x", speed: 0.05, type: "rotate" }, // Slow rotation along x axis
-                { axis: "z", speed: 0.002, radius: .05, type: "spiral" } // Slow spiral motion, staying close to the center
+                { speed: 0.5, radius: 5, type: "revolve" }, // Red sphere revolves around the center with a specific radius
+                { speed: 0.8, radius: 7, type: "revolve" }, // Blue sphere revolves around the center with a larger radius
+                { axis: "z", speed: 0.01, radius: .05, type: "spiral" } // Green sphere with spiral motion (no change)
             ];
 
             for (let i = 0; i < 3; i++) {
@@ -109,12 +109,11 @@
                 const time = performance.now() * 0.001; // Time in seconds
                 spheres.forEach((sphere, index) => {
                     const movement = sphereMovements[index];
-                    if (movement.type === "oscillate") {
-                        const axis = movement.axis;
-                        // Restrict oscillation within a smaller range
-                        sphere.position[axis] = positions[index][axis] + Math.sin(time * movement.speed) * movement.amplitude;
-                    } else if (movement.type === "rotate") {
-                        sphere.rotation[movement.axis] += movement.speed;
+                    if (movement.type === "revolve") {
+                        // Revolve around the center (0, 0, 0)
+                        const angle = time * movement.speed;
+                        sphere.position.x = movement.radius * Math.cos(angle);
+                        sphere.position.z = movement.radius * Math.sin(angle);
                     } else if (movement.type === "spiral") {
                         const angle = time * movement.speed;
                         sphere.position.x = positions[index].x + Math.cos(angle) * movement.radius;
