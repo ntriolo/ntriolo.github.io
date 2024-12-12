@@ -181,11 +181,14 @@
                 isRaining = !isRaining;
             });
 
-            // Add a point light to the village
+            // Point Light Setup
             const pointLight = new BABYLON.PointLight("pointLight", new BABYLON.Vector3(0, 5, 0), scene);
-            pointLight.intensity = 0.8;
-            pointLight.diffuse = new BABYLON.Color3(1, 1, 1);
-            pointLight.specular = new BABYLON.Color3(1, 1, 1);
+            pointLight.intensity = 1;  // Set intensity to a higher value
+            pointLight.diffuse = new BABYLON.Color3(1, 1, 1); // White light
+            pointLight.specular = new BABYLON.Color3(1, 1, 1); // Specular effect to make materials shine
+            pointLight.range = 10;  // Range of the point light
+            pointLight.position = new BABYLON.Vector3(0, 5, 0); // Position of the light
+            scene.lights.push(pointLight); // Add the light to the scene
 
             return scene;
         };
