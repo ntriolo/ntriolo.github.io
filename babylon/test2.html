@@ -91,9 +91,9 @@
 
             const spheres = [];
             const sphereMovements = [
-                { axis: "y", speed: 1, amplitude: 1, type: "oscillate" }, // Slower oscillation for red sphere
+                { axis: "y", speed: 0.2, amplitude: 1, type: "oscillate" }, // Slower oscillation for red sphere
                 { axis: "x", speed: 0.03, type: "rotate" },
-                { axis: "z", speed: 0.005, radius: 3, type: "spiral" } // Slower spiral for blue sphere
+                { axis: "z", speed: 0.005, radius: 3, type: "spiral" } // Adjusted spiral for blue sphere
             ];
 
             for (let i = 0; i < 3; i++) {
