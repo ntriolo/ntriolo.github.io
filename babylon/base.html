@@ -72,43 +72,58 @@
                 });
             });
 
-            // Create the sphere
-            var sphere = BABYLON.MeshBuilder.CreateSphere("sphere", {
-                diameter: 0.5,
-                segments: 32,
-            }, scene);
-
-            sphere.position = new BABYLON.Vector3(0, 0, 6);
-            var material = new BABYLON.StandardMaterial("material", scene);
-            material.diffuseColor = new BABYLON.Color3(1, 0, 0);
-            sphere.material = material;
-
-            var sphereProperties = {
-                diameter: 2,
-                segments: 32,
-            };
-
-            var materials = [
+            // Create spheres with unique movements
+            const sphereProperties = { diameter: 2, segments: 32 };
+            const materials = [
                 new BABYLON.StandardMaterial("material1", scene),
                 new BABYLON.StandardMaterial("material2", scene),
                 new BABYLON.StandardMaterial("material3", scene)
             ];
+            materials[0].diffuseColor = new BABYLON.Color3(1, 0, 0); // Red
+            materials[1].diffuseColor = new BABYLON.Color3(0, 1, 0); // Green
+            materials[2].diffuseColor = new BABYLON.Color3(0, 0, 1); // Blue
 
-            materials[0].diffuseColor = new BABYLON.Color3(1, 0, 0);
-            materials[1].diffuseColor = new BABYLON.Color3(0, 1, 0);
-            materials[2].diffuseColor = new BABYLON.Color3(0, 0, 1);
-
-            var positions = [
-                new BABYLON.Vector3(0, 0, 0),
-                new BABYLON.Vector3(0, 2, 0),
-                new BABYLON.Vector3(2, 0, 0)
+            // Start the spheres near the camera or the center of the village
+            const positions = [
+                new BABYLON.Vector3(1, 0, 1),  // Close to camera, in front of the village
+                new BABYLON.Vector3(2, 0, 2),  // Slightly further but still close
+                new BABYLON.Vector3(0, 0, 2)   // Another position near the center
             ];
 
-            for (var i = 0; i < 3; i++) {
-                var sphere = BABYLON.MeshBuilder.CreateSphere("sphere" + i, sphereProperties, scene);
+            const spheres = [];
+          const sphereMovements = [
+    { speed: 0.5, radius: 5, type: "revolve" }, // Red sphere revolves around the center with a specific radius
+    { speed: 0.5, radius: 2, type: "revolve" }, // Blue sphere stays closer to the center
+    { axis: "z", speed: 0.01, radius: 0.05, type: "spiral" } // Green sphere with spiral motion (no change)
+];
+
+            for (let i = 0; i < 3; i++) {
+                const sphere = BABYLON.MeshBuilder.CreateSphere("sphere" + i, sphereProperties, scene);
                 sphere.position = positions[i];
                 sphere.material = materials[i];
+                spheres.push(sphere);
             }
+
+            // Add movement logic in the render loop
+            scene.onBeforeRenderObservable.add(() => {
+                const time = performance.now() * 0.001; // Time in seconds
+                spheres.forEach((sphere, index) => {
+                    const movement = sphereMovements[index];
+                    if (movement.type === "revolve") {
+                        // Revolve around the center (0, 0, 0)
+                        const angle = time * movement.speed;
+                        // Set y to stay constant
+                        sphere.position.y = 0;
+                        sphere.position.x = movement.radius * Math.cos(angle);
+                        sphere.position.z = movement.radius * Math.sin(angle);
+                    } else if (movement.type === "spiral") {
+                        const angle = time * movement.speed;
+                        sphere.position.x = positions[index].x + Math.cos(angle) * movement.radius;
+                        sphere.position.z = positions[index].z + Math.sin(angle) * movement.radius;
+                        sphere.position.y = positions[index].y + Math.sin(angle) * 0.25; // Small vertical movement
+                    }
+                });
+            });
 
             BABYLON.SceneLoader.ImportMesh("", "./", "StanfordBunny.obj", scene, function (meshes) {
                 meshes.forEach(mesh => {
