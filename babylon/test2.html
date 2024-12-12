@@ -93,7 +93,7 @@
             const spheres = [];
             const sphereMovements = [
                 { speed: 0.5, radius: 5, type: "revolve" }, // Red sphere revolves around the center with a specific radius
-                { speed: 0.8, radius: 2, type: "revolve" }, // Blue sphere stays closer to the center
+                { speed: 0.8, radius: 3, type: "revolve" }, // Blue sphere stays closer to the center
                 { axis: "z", speed: 0.01, radius: .05, type: "spiral" } // Green sphere with spiral motion (no change)
             ];
 
@@ -112,6 +112,8 @@
                     if (movement.type === "revolve") {
                         // Revolve around the center (0, 0, 0)
                         const angle = time * movement.speed;
+                        // Set y to stay constant
+                        sphere.position.y = 0;
                         sphere.position.x = movement.radius * Math.cos(angle);
                         sphere.position.z = movement.radius * Math.sin(angle);
                     } else if (movement.type === "spiral") {
